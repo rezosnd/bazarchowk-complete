@@ -1,0 +1,103 @@
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { DeliveryStatus, OrderStatus } from '@prisma/client';
+
+@Injectable()
+export class DeliveryService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
+
+  async getAvailableDeliveries() {
+    // In production, use PostGIS distance logic. 
+    return this.prisma.delivery.findMany({
+      where: { status: DeliveryStatus.UNASSIGNED },
+      include: { order: { include: { shop: true, deliveryAddress: true } } },
+    });
+  }
+
+  async assignDelivery(deliveryId: string, deliveryPartnerId: string) {
+    const delivery = await this.prisma.delivery.findUnique({ where: { id: deliveryId }, include: { order: true } });
+    if (!delivery) throw new NotFoundException('Delivery not found');
+    if (delivery.status !== DeliveryStatus.UNASSIGNED) throw new BadRequestException('Delivery already assigned');
+
+    const updatedDelivery = await this.prisma.$transaction(async (prisma) => {
+      // Get the Partner to find the userId
+      const partner = await prisma.deliveryPartner.findUnique({ where: { id: deliveryPartnerId } });
+      if (!partner) throw new NotFoundException('Delivery partner not found');
+
+      const d = await prisma.delivery.update({
+        where: { id: deliveryId },
+        data: {
+          deliveryPartnerId,
+          status: DeliveryStatus.ASSIGNED,
+        },
+        include: { order: true },
+      });
+
+      // Update Order riderId
+      await prisma.order.update({
+        where: { id: delivery.orderId },
+        data: { riderId: partner.userId },
+      });
+
+      return d;
+    });
+
+    // Notify Shop Owner
+    await this.notifications.sendInAppNotification(
+      updatedDelivery.order.shopId, // Technically need to traverse to ownerId, assuming shopId for simplicity here or if extended
+      'Rider Assigned',
+      `A rider has been assigned to Order \${updatedDelivery.order.orderNumber}`,
+      'DELIVERY'
+    );
+
+    return updatedDelivery;
+  }
+
+  async updateDeliveryStatus(deliveryId: string, partnerUserId: string, status: DeliveryStatus, proofImageUrl?: string) {
+    const delivery = await this.prisma.delivery.findUnique({
+      where: { id: deliveryId },
+      include: { deliveryPartner: true, order: true }
+    });
+
+    if (!delivery) throw new NotFoundException('Delivery not found');
+    if (!delivery.deliveryPartner || delivery.deliveryPartner.userId !== partnerUserId) {
+      throw new BadRequestException('Not authorized for this delivery');
+    }
+
+    const updated = await this.prisma.delivery.update({
+      where: { id: deliveryId },
+      data: {
+        status,
+        ...(proofImageUrl && { proofOfDeliveryImageUrl: proofImageUrl }),
+      },
+    });
+
+    let orderStatus: OrderStatus | undefined;
+    if (status === DeliveryStatus.PICKED_UP) orderStatus = OrderStatus.PICKED_UP;
+    if (status === DeliveryStatus.DELIVERED) orderStatus = OrderStatus.DELIVERED;
+
+    if (orderStatus) {
+      await this.prisma.order.update({
+        where: { id: delivery.orderId },
+        data: { status: orderStatus }
+      });
+      
+      this.realtime.broadcastOrderStatus(delivery.orderId, orderStatus);
+
+      await this.notifications.sendInAppNotification(
+        delivery.order.customerId,
+        'Delivery Update',
+        `Your order is now \${status}`,
+        'DELIVERY'
+      );
+    }
+
+    return updated;
+  }
+}

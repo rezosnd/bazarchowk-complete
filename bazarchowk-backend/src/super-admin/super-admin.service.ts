@@ -1,0 +1,380 @@
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateMarketDto, UpdateMarketDto, CreateCityConfigDto } from './dto/super-admin.dto';
+
+@Injectable()
+export class SuperAdminService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  // ==================== PLATFORM DASHBOARD ====================
+
+  async getPlatformOverview() {
+    try {
+      const [
+        totalUsers,
+        totalShops,
+        totalOrders,
+        totalRevenue,
+        pendingShopVerifications,
+        pendingAdApprovals,
+        activeDeliveryPartners,
+        openSupportTickets,
+        recentFraudLogs,
+      ] = await Promise.all([
+        this.prisma.user.count({ where: { deletedAt: null } }),
+        this.prisma.shop.count(),
+        this.prisma.order.count(),
+        this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { status: 'DELIVERED' } }),
+        this.prisma.shop.count({ where: { isVerified: false, isActive: true } }),
+        this.prisma.advertisement.count({ where: { status: 'PENDING' } }),
+        this.prisma.deliveryPartner.count({ where: { isOnline: true } }),
+        this.prisma.supportTicket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
+        this.prisma.fraudLog.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+      ]);
+
+      return {
+        users: { total: totalUsers },
+        shops: { total: totalShops, pendingVerification: pendingShopVerifications },
+        orders: { total: totalOrders },
+        revenue: { total: totalRevenue._sum.totalAmount || 0 },
+        ads: { pendingApproval: pendingAdApprovals },
+        delivery: { onlinePartners: activeDeliveryPartners },
+        support: { openTickets: openSupportTickets },
+        recentFraudAlerts: recentFraudLogs,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to retrieve dashboard overview');
+    }
+  }
+
+  // ==================== USER MANAGEMENT ====================
+
+  async getAllUsers(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = { deletedAt: null };
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where, skip, take: limit,
+        include: { role: true, _count: { select: { customerOrders: true, shops: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { data: users, total, page, limit };
+  }
+
+  async banUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: false },
+    });
+  }
+
+  async unbanUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: true },
+    });
+  }
+
+  // ==================== SHOP MANAGEMENT ====================
+
+  async getAllShops(page: number, limit: number, verified?: boolean) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (verified !== undefined) where.isVerified = verified;
+    const [shops, total] = await Promise.all([
+      this.prisma.shop.findMany({
+        where, skip, take: limit,
+        include: {
+          owner: { select: { id: true, firstName: true, email: true, phone: true } },
+          _count: { select: { products: true, orders: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.shop.count({ where }),
+    ]);
+    return { data: shops, total, page, limit };
+  }
+
+  async verifyShop(shopId: string) {
+    const shop = await this.prisma.shop.findUnique({ where: { id: shopId } });
+    if (!shop) throw new NotFoundException('Shop not found');
+    return this.prisma.shop.update({
+      where: { id: shopId },
+      data: { isVerified: true },
+    });
+  }
+
+  async suspendShop(shopId: string) {
+    const shop = await this.prisma.shop.findUnique({ where: { id: shopId } });
+    if (!shop) throw new NotFoundException('Shop not found');
+    return this.prisma.shop.update({
+      where: { id: shopId },
+      data: { isActive: false },
+    });
+  }
+
+  // ==================== REVENUE MANAGEMENT ====================
+
+  async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day') {
+    const orders = await this.prisma.order.groupBy({
+      by: ['createdAt'],
+      _sum: { totalAmount: true },
+      _count: { id: true },
+      where: {
+        status: 'DELIVERED',
+        createdAt: { gte: startDate, lte: endDate },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const topShops = await this.prisma.order.groupBy({
+      by: ['shopId'],
+      _sum: { totalAmount: true },
+      _count: { id: true },
+      where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } },
+      orderBy: { _sum: { totalAmount: 'desc' } },
+      take: 10,
+    });
+
+    return { dailyRevenue: orders, topShops };
+  }
+
+  // ==================== ADVERTISEMENT MANAGEMENT ====================
+
+  async getPendingAds() {
+    return this.prisma.advertisement.findMany({
+      where: { status: 'PENDING' },
+      include: { shop: { select: { id: true, name: true, city: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async approveAd(adId: string) {
+    const ad = await this.prisma.advertisement.findUnique({ where: { id: adId } });
+    if (!ad) throw new NotFoundException('Advertisement not found');
+    return this.prisma.advertisement.update({
+      where: { id: adId },
+      data: { status: 'ACTIVE', startDate: new Date() },
+    });
+  }
+
+  async rejectAd(adId: string) {
+    const ad = await this.prisma.advertisement.findUnique({ where: { id: adId } });
+    if (!ad) throw new NotFoundException('Advertisement not found');
+    return this.prisma.advertisement.update({
+      where: { id: adId },
+      data: { status: 'REJECTED' },
+    });
+  }
+
+  // ==================== DELIVERY NETWORK MANAGEMENT ====================
+
+  async getDeliveryNetwork(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [partners, total] = await Promise.all([
+      this.prisma.deliveryPartner.findMany({
+        skip, take: limit,
+        include: {
+          user: { select: { firstName: true, lastName: true, phone: true, email: true } },
+          _count: { select: { deliveries: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.deliveryPartner.count(),
+    ]);
+    return { data: partners, total, page, limit };
+  }
+
+  // ==================== FRAUD MANAGEMENT ====================
+
+  async getFraudLogs(page: number, limit: number, resolved?: boolean) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (resolved !== undefined) where.isResolved = resolved;
+    const [logs, total] = await Promise.all([
+      this.prisma.fraudLog.findMany({
+        where, skip, take: limit,
+        include: { user: { select: { firstName: true, email: true, phone: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.fraudLog.count({ where }),
+    ]);
+    return { data: logs, total, page, limit };
+  }
+
+  async resolveFraudLog(fraudLogId: string) {
+    const log = await this.prisma.fraudLog.findUnique({ where: { id: fraudLogId } });
+    if (!log) throw new NotFoundException('Fraud log not found');
+    return this.prisma.fraudLog.update({
+      where: { id: fraudLogId },
+      data: { isResolved: true },
+    });
+  }
+
+  // ==================== MARKET MANAGEMENT ====================
+
+  async createMarket(dto: CreateMarketDto) {
+    const village = await this.prisma.village.findUnique({ where: { id: dto.villageId } });
+    if (!village) throw new NotFoundException('Village not found');
+    
+    return this.prisma.market.create({
+      data: dto
+    });
+  }
+
+  async getMarkets(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+    const [markets, total] = await Promise.all([
+      this.prisma.market.findMany({ where, skip, take: limit, include: { village: true } }),
+      this.prisma.market.count({ where })
+    ]);
+    return { data: markets, total, page, limit };
+  }
+
+  async updateMarket(id: string, dto: UpdateMarketDto) {
+    const market = await this.prisma.market.findUnique({ where: { id } });
+    if (!market) throw new NotFoundException('Market not found');
+    return this.prisma.market.update({ where: { id }, data: dto });
+  }
+
+  // ==================== CITY CONFIG MANAGEMENT ====================
+
+  async createCityConfig(dto: CreateCityConfigDto) {
+    const existing = await this.prisma.cityConfig.findUnique({ where: { slug: dto.slug } });
+    if (existing) throw new BadRequestException('City with this slug already exists');
+    return this.prisma.cityConfig.create({ data: dto });
+  }
+
+  async getCities(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [cities, total] = await Promise.all([
+      this.prisma.cityConfig.findMany({ skip, take: limit }),
+      this.prisma.cityConfig.count()
+    ]);
+    return { data: cities, total, page, limit };
+  }
+
+  // ==================== SUPER ADMIN ACTIONS LOGGING ====================
+
+  async recordAction(adminId: string, actionType: string, targetId: string, targetType: string, reason?: string, metadata?: any, ipAddress?: string) {
+    return this.prisma.superAdminAction.create({
+      data: {
+        adminId,
+        actionType,
+        targetId,
+        targetType,
+        reason,
+        metadata: metadata ? metadata : undefined,
+        ipAddress,
+      }
+    });
+  }
+
+  async getAdminActions(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [actions, total] = await Promise.all([
+      this.prisma.superAdminAction.findMany({
+        skip, take: limit,
+        include: { admin: { select: { firstName: true, lastName: true, email: true } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.superAdminAction.count()
+    ]);
+    return { data: actions, total, page, limit };
+  }
+
+  // ==================== PLATFORM REPORTS ====================
+
+  async generatePlatformReport(adminId: string, title: string, reportType: string, startDate: Date, endDate: Date, data: any) {
+    return this.prisma.platformReport.create({
+      data: {
+        title,
+        reportType,
+        data,
+        generatedBy: adminId,
+        startDate,
+        endDate
+      }
+    });
+  }
+
+  async getPlatformReports(page: number, limit: number, reportType?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (reportType) where.reportType = reportType;
+
+    const [reports, total] = await Promise.all([
+      this.prisma.platformReport.findMany({
+        where, skip, take: limit,
+        include: { generator: { select: { firstName: true, lastName: true } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.platformReport.count({ where })
+    ]);
+    return { data: reports, total, page, limit };
+  }
+
+  // ==================== OPERATIONAL LOGS ====================
+
+  async getOperationalLogs(page: number, limit: number, severity?: string, moduleName?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (severity) where.severity = severity;
+    if (moduleName) where.module = moduleName;
+
+    const [logs, total] = await Promise.all([
+      this.prisma.operationalLog.findMany({
+        where, skip, take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.operationalLog.count({ where })
+    ]);
+    return { data: logs, total, page, limit };
+  }
+
+  async resolveOperationalLog(id: string) {
+    const log = await this.prisma.operationalLog.findUnique({ where: { id } });
+    if (!log) throw new NotFoundException('Operational log not found');
+    return this.prisma.operationalLog.update({
+      where: { id },
+      data: { isResolved: true }
+    });
+  }
+
+  // ==================== CASH COLLECTION MONITORING ====================
+
+  async getCashCollections(page: number, limit: number, status?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [collections, total] = await Promise.all([
+      this.prisma.cashCollection.findMany({
+        where, skip, take: limit,
+        include: { 
+          rider: { select: { firstName: true, lastName: true, phone: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.cashCollection.count({ where })
+    ]);
+    return { data: collections, total, page, limit };
+  }
+}
