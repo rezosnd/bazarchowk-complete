@@ -1,0 +1,43 @@
+/* BazarChowk — Global CSS */
+:root {
+  --color-primary: #00b140;
+  --color-primary-light: #33c068;
+  --color-primary-dark: #008f33;
+  --color-secondary: #ff8a00;
+  --color-secondary-light: #ffa333;
+  --color-background: #ffffff;
+  --color-text: #0a0a0a;
+  --color-text-secondary: #495057;
+  --color-border: #e9ecef;
+
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+  --font-rounded: var(--font-display);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0d0d0d;
+    --color-text: #f8f9fa;
+    --color-text-secondary: #adb5bd;
+    --color-border: #2a2a2a;
+  }
+}

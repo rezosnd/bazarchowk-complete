@@ -1,0 +1,92 @@
+{
+  "common": {
+    "appName": "BazarChowk",
+    "search": "Search",
+    "seeAll": "See All",
+    "apply": "Apply Language",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "close": "Close"
+  },
+  "language": {
+    "title": "Choose Language",
+    "subtitle": "Select your preferred language for the entire BazarChowk experience.",
+    "searchPlaceholder": "Search Language",
+    "apply": "Apply Language",
+    "name": "ಕನ್ನಡ",
+    "short": "KN"
+  },
+  "header": {
+    "deliveringTo": "Delivering to",
+    "location": "Patna, Bihar"
+  },
+  "ai": {
+    "title": "Bazar AI Assistant",
+    "subtitle": "Just tell me what you need",
+    "greeting": "Hi Rehan, what would you like today?",
+    "pills": {
+      "vegetables": "Order vegetables",
+      "plumber": "Book a plumber",
+      "doctor": "Need a doctor",
+      "cake": "Birthday cake",
+      "medicine": "Medicine delivery"
+    }
+  },
+  "search": {
+    "placeholder": "Search groceries, food, medicine..."
+  },
+  "categories": {
+    "all": "ಎಲ್ಲಾ",
+    "grocery": "ದಿನಸಿ",
+    "food": "ಆಹಾರ",
+    "medicine": "ಔಷಧಿ",
+    "salon": "ಸಲೂನ್",
+    "hospital": "ಆಸ್ಪತ್ರೆ",
+    "bakery": "ಬೇಕರಿ",
+    "electrician": "ಎಲೆಕ್ಟ್ರಿಷಿಯನ್",
+    "plumber": "ಪ್ಲಂಬರ್",
+    "tutor": "ಶಿಕ್ಷಕ",
+    "taxi": "ಟ್ಯಾಕ್ಸಿ",
+    "cleaning": "ಸ್ವಚ್ಛತೆ",
+    "more": "More"
+  },
+  "navigation": {
+    "home": "Home",
+    "categories": "Categories",
+    "aiAssistant": "AI Assistant",
+    "orders": "Orders",
+    "profile": "Profile"
+  },
+  "sections": {
+    "nearbyShops": "Nearby Shops",
+    "popularMarkets": "Popular Markets",
+    "todaysOffers": "Today's Offers",
+    "recommended": "Recommended For You"
+  },
+  "shops": {
+    "open": "Open",
+    "closed": "Closed",
+    "rating": "Rating",
+    "distance": "Distance"
+  },
+  "offers": {
+    "off": "OFF",
+    "minOrder": "Min. order"
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders yet",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "help": "Help & Support",
+    "logout": "Logout"
+  }
+}

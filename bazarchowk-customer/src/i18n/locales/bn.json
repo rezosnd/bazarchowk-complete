@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "BazarChowk",
+    "search": "অনুসন্ধান",
+    "seeAll": "সব দেখুন",
+    "apply": "ভাষা প্রয়োগ করুন",
+    "cancel": "বাতিল",
+    "loading": "লোড হচ্ছে...",
+    "close": "বন্ধ করুন"
+  },
+  "language": {
+    "title": "Choose Language",
+    "subtitle": "Select your preferred language for the entire BazarChowk experience.",
+    "searchPlaceholder": "Search Language",
+    "apply": "Apply Language",
+    "name": "বাংলা",
+    "short": "BN"
+  },
+  "header": {
+    "deliveringTo": "ডেলিভারি স্থান",
+    "location": "পাটনা, বিহার",
+    "chooseLanguage": "ভাষা চয়ন করুন",
+    "selectPreferred": "আপনার পছন্দের ভাষা নির্বাচন করুন।",
+    "searchLanguage": "ভাষা অনুসন্ধান করুন"
+  },
+  "ai": {
+    "title": "বাজার এআই সহকারী",
+    "subtitle": "আপনার কী দরকার বলুন",
+    "greeting": "হ্যালো রেহান, আজ আপনার কী দরকার?",
+    "pills": {
+      "vegetables": "সবজি অর্ডার করুন",
+      "plumber": "প্লাম্বার বুক করুন",
+      "doctor": "ডাক্তার দরকার",
+      "cake": "জন্মদিনের কেক",
+      "medicine": "ওষুধ ডেলিভারি"
+    }
+  },
+  "search": {
+    "placeholder": "মুদি, খাবার, ওষুধ অনুসন্ধান করুন..."
+  },
+  "categories": {
+    "all": "সব",
+    "grocery": "মুদিখানা",
+    "food": "খাদ্য",
+    "medicine": "ঔষধ",
+    "salon": "সেলুন",
+    "hospital": "হাসপাতাল",
+    "bakery": "বেকারি",
+    "electrician": "ইলেকট্রিশিয়ান",
+    "plumber": "প্লাম্বার",
+    "tutor": "গৃহশিক্ষক",
+    "taxi": "ট্যাক্সি",
+    "cleaning": "পরিষ্কার",
+    "more": "আরও"
+  },
+  "navigation": {
+    "home": "হোম",
+    "categories": "বিভাগ",
+    "aiAssistant": "এআই সহকারী",
+    "orders": "অর্ডার",
+    "profile": "প্রোফাইল"
+  },
+  "sections": {
+    "nearbyShops": "কাছাকাছি দোকান",
+    "popularMarkets": "জনপ্রিয় বাজার",
+    "todaysOffers": "আজকের অফার",
+    "recommended": "আপনার জন্য প্রস্তাবিত"
+  },
+  "shops": {
+    "open": "খোলা",
+    "closed": "বন্ধ",
+    "rating": "রেটিং",
+    "distance": "দূরত্ব"
+  },
+  "offers": {
+    "off": "ছাড়",
+    "minOrder": "ন্যূনতম অর্ডার"
+  },
+  "orders": {
+    "title": "আমার অর্ডার",
+    "empty": "কোনো অর্ডার নেই",
+    "status": {
+      "pending": "অপেক্ষমাণ",
+      "confirmed": "নিশ্চিত",
+      "delivered": "সরবরাহকৃত",
+      "cancelled": "বাতিল"
+    }
+  },
+  "profile": {
+    "title": "প্রোফাইল",
+    "settings": "সেটিংস",
+    "help": "সাহায্য",
+    "logout": "লগ আউট"
+  }
+}

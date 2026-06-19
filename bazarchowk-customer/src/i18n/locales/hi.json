@@ -1,0 +1,103 @@
+{
+  "common": {
+    "appName": "BazarChowk",
+    "search": "खोजें",
+    "seeAll": "सभी देखें",
+    "apply": "भाषा लागू करें",
+    "cancel": "रद्द करें",
+    "loading": "लोड हो रहा है...",
+    "close": "बंद करें"
+  },
+  "language": {
+    "title": "Choose Language",
+    "subtitle": "Select your preferred language for the entire BazarChowk experience.",
+    "searchPlaceholder": "Search Language",
+    "apply": "Apply Language",
+    "name": "हिन्दी",
+    "short": "HI"
+  },
+  "header": {
+    "deliveringTo": "डिलीवरी स्थान",
+    "location": "पटना, बिहार",
+    "chooseLanguage": "भाषा चुनें",
+    "selectPreferred": "BazarChowk के लिए अपनी पसंदीदा भाषा चुनें।",
+    "searchLanguage": "भाषा खोजें"
+  },
+  "ai": {
+    "title": "बाज़ार एआई असिस्टेंट",
+    "subtitle": "बस बताएं आपको क्या चाहिए",
+    "greeting": "नमस्ते रेहान, आज आपको क्या चाहिए?",
+    "pills": {
+      "vegetables": "सब्जियां ऑर्डर करें",
+      "plumber": "प्लंबर बुक करें",
+      "doctor": "डॉक्टर की जरूरत है",
+      "cake": "जन्मदिन का केक",
+      "medicine": "दवा वितरण"
+    }
+  },
+  "search": {
+    "placeholder": "किराने का सामान, भोजन, दवा खोजें..."
+  },
+  "categories": {
+    "all": "सभी",
+    "grocery": "किराना",
+    "food": "भोजन",
+    "medicine": "दवा",
+    "salon": "सैलून",
+    "hospital": "अस्पताल",
+    "bakery": "बेकरी",
+    "electrician": "बिजली मिस्त्री",
+    "plumber": "प्लंबर",
+    "tutor": "ट्यूटर",
+    "taxi": "टैक्सी",
+    "cleaning": "सफाई",
+    "more": "अधिक"
+  },
+  "navigation": {
+    "home": "होम",
+    "categories": "श्रेणियाँ",
+    "aiAssistant": "एआई असिस्टेंट",
+    "orders": "ऑर्डर",
+    "profile": "प्रोफ़ाइल"
+  },
+  "sections": {
+    "nearbyShops": "आसपास की दुकानें",
+    "popularMarkets": "लोकप्रिय बाज़ार",
+    "todaysOffers": "आज के ऑफर",
+    "recommended": "आपके लिए अनुशंसित"
+  },
+  "shops": {
+    "open": "खुला है",
+    "closed": "बंद है",
+    "rating": "रेटिंग",
+    "distance": "दूरी"
+  },
+  "offers": {
+    "off": "छूट",
+    "minOrder": "न्यूनतम ऑर्डर"
+  },
+  "orders": {
+    "title": "मेरे ऑर्डर",
+    "empty": "अभी तक कोई ऑर्डर नहीं",
+    "emptySubtitle": "जब आप अपना पहला ऑर्डर देंगे तो आपका ऑर्डर इतिहास यहां दिखाई देगा",
+    "status": {
+      "pending": "लंबित",
+      "confirmed": "पुष्टि की गई",
+      "delivered": "पहुंचा दिया गया",
+      "cancelled": "रद्द"
+    }
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "settings": "सेटिंग्स",
+    "help": "सहायता और समर्थन",
+    "logout": "लॉग आउट",
+    "savedAddresses": "सहेजे गए पते",
+    "paymentMethods": "भुगतान के तरीके",
+    "notifications": "सूचनाएं",
+    "about": "बाज़ार चौक के बारे में",
+    "join": "बाज़ार चौक से जुड़ें",
+    "signInSubtitle": "ऑर्डर ट्रैक करने, पते सहेजने और बहुत कुछ के लिए साइन इन करें",
+    "signInButton": "साइन इन / साइन अप करें"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "common": {
+    "appName": "BazarChowk",
+    "search": "Search",
+    "seeAll": "See All",
+    "apply": "Apply Language",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "close": "Close"
+  },
+  "language": {
+    "title": "Choose Language",
+    "subtitle": "Select your preferred language for the entire BazarChowk experience.",
+    "searchPlaceholder": "Search Language",
+    "apply": "Apply Language",
+    "name": "English",
+    "short": "EN"
+  },
+  "header": {
+    "deliveringTo": "Delivering to",
+    "location": "Patna, Bihar",
+    "chooseLanguage": "Choose Language",
+    "selectPreferred": "Select your preferred language for BazarChowk.",
+    "searchLanguage": "Search language"
+  },
+  "ai": {
+    "title": "Bazar AI Assistant",
+    "subtitle": "Just tell me what you need",
+    "greeting": "Hi Rehan, what would you like today?",
+    "pills": {
+      "vegetables": "Fresh Vegetables",
+      "plumber": "Find a Plumber",
+      "doctor": "Doctor Appointment",
+      "cake": "Order a Cake",
+      "medicine": "Order Medicine"
+    }
+  },
+  "search": {
+    "placeholder": "Search grocery, food & more"
+  },
+  "categories": {
+    "all": "All",
+    "grocery": "Grocery",
+    "food": "Food",
+    "medicine": "Medicine",
+    "salon": "Salon",
+    "hospital": "Hospital",
+    "bakery": "Bakery",
+    "electrician": "Electrician",
+    "plumber": "Plumber",
+    "tutor": "Tutor",
+    "taxi": "Taxi",
+    "cleaning": "Cleaning",
+    "more": "More",
+    "viewAll": "View All"
+  },
+  "navigation": {
+    "home": "Home",
+    "categories": "Categories",
+    "aiAssistant": "AI Assistant",
+    "orders": "Orders",
+    "profile": "Profile"
+  },
+  "tabs": {
+    "home": "Home",
+    "categories": "Categories",
+    "aiAssistant": "AI Assistant",
+    "orders": "Orders",
+    "profile": "Profile"
+  },
+  "sections": {
+    "popularMarkets": "Popular Markets Near You",
+    "todaysOffers": "Today's Offers",
+    "recommended": "Recommended For You",
+    "nearbyShops": "Nearby Shops"
+  },
+  "shops": {
+    "open": "OPEN",
+    "closed": "CLOSED",
+    "rating": "Rating",
+    "distance": "Distance"
+  },
+  "offers": {
+    "off": "OFF",
+    "minOrder": "Min Order"
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders yet",
+    "emptySubtitle": "Your order history will appear here once you place your first order",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "help": "Help & Support",
+    "logout": "Log Out",
+    "savedAddresses": "Saved Addresses",
+    "paymentMethods": "Payment Methods",
+    "notifications": "Notifications",
+    "about": "About BazarChowk",
+    "join": "Join BazarChowk",
+    "signInSubtitle": "Sign in to track orders, save addresses, and more",
+    "signInButton": "Sign In / Sign Up"
+  }
+}

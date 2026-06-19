@@ -1,0 +1,104 @@
+{
+  "expo": {
+    "name": "BazarChowk",
+    "slug": "bazarchowk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/APP-ICON.png",
+    "scheme": "bazarchowk",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tech.veritasco.bazarchowk.customer",
+      "icon": "./assets/images/APP-ICON.png",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "BazarChowk uses your location to find nearby stores and deliver to your address.",
+        "NSLocationAlwaysUsageDescription": "BazarChowk uses your location to track deliveries.",
+        "NSCameraUsageDescription": "BazarChowk needs camera access for profile photos.",
+        "NSPhotoLibraryUsageDescription": "BazarChowk needs photo library access to upload images."
+      }
+    },
+    "android": {
+      "package": "tech.veritasco.bazarchowk.customer",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/APP-ICON.png",
+        "backgroundColor": "#00B140"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "SCHEDULE_EXACT_ALARM"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "bazarchowkapi.veritasco.tech"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/APP-ICON.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash-screeb.png",
+          "resizeMode": "cover",
+          "android": {
+            "image": "./assets/images/splash-screeb.png",
+            "resizeMode": "cover",
+            "backgroundColor": "#FFFFFF"
+          },
+          "ios": {
+            "image": "./assets/images/splash-screeb.png",
+            "resizeMode": "cover",
+            "backgroundColor": "#FFFFFF"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/APP-ICON.png",
+          "color": "#00B140",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "BazarChowk uses your location to find nearby stores and deliver to your address."
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "https://bazarchowkapi.veritasco.tech",
+      "eas": {
+        "projectId": "bazarchowk-customer"
+      }
+    }
+  }
+}
