@@ -47,6 +47,37 @@ export class InventoryService {
     return inventory;
   }
 
+  async findByShopId(shopId: string, ownerId: string) {
+    const shop = await this.prisma.shop.findUnique({ where: { id: shopId } });
+    if (!shop || shop.ownerId !== ownerId) throw new ForbiddenException('Not allowed');
+
+    return this.prisma.inventory.findMany({
+      where: { shopId },
+      include: {
+        productVariant: {
+          include: { product: true }
+        }
+      },
+      orderBy: { quantity: 'asc' }
+    });
+  }
+
+  async getGlobalInventory() {
+    return this.prisma.inventory.findMany({
+      include: {
+        shop: true,
+        productVariant: {
+          include: { product: true }
+        },
+        logs: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { quantity: 'asc' }
+    });
+  }
+
   async updateStock(inventoryId: string, ownerId: string, updateDto: UpdateStockDto) {
     const inventory = await this.prisma.inventory.findUnique({
       where: { id: inventoryId },

@@ -25,19 +25,36 @@ export default function AddProductScreen() {
   const [variantPrice, setVariantPrice] = useState('');
   const [stock, setStock] = useState('10');
 
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/categories`);
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch categories');
+    }
+  };
+
   const handleSave = async () => {
     if (!name || !basePrice || !categoryId || !sku || !variantPrice) {
-      alert('Please fill all required fields');
+      alert('Please fill all required fields and select a category');
       return;
     }
 
     setLoading(true);
     try {
-      // In production, pass Bearer token and ownerId/shopId
       const shopId = await SecureStore.getItemAsync('bazar_shop_id');
-      if (!shopId) throw new Error('Shop ID not found in session');
+      const token = await SecureStore.getItemAsync('partner_token');
+      if (!shopId || !token) throw new Error('Missing session or auth token');
 
-      // 1. Create Product
       const productPayload = {
         shopId,
         categoryId,
@@ -50,14 +67,16 @@ export default function AddProductScreen() {
 
       const productRes = await fetch(`${API_BASE}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(productPayload),
       });
 
       if (!productRes.ok) throw new Error('Failed to create product');
       const product = await productRes.json();
 
-      // 2. Create Default Variant
       const variantPayload = {
         sku,
         name: variantName,
@@ -65,15 +84,26 @@ export default function AddProductScreen() {
         stock: parseInt(stock, 10),
       };
 
-      await fetch(`${API_BASE}/products/${product.id}/variants`, {
+      const varRes = await fetch(`${API_BASE}/products/${product.id}/variants`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(variantPayload),
       });
+      if (!varRes.ok) throw new Error('Failed to create variant');
+      const variant = await varRes.json();
 
-      alert('Product created successfully!');
+      // Initialize inventory ledger
+      await fetch(`${API_BASE}/inventory/init?productVariantId=${variant.id}&shopId=${shopId}&initialQuantity=${variant.stock}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      alert('Product Added Successfully!');
       router.back();
-    } catch (e) {
+    } catch (e: any) {
       alert('Error saving product. Ensure valid categoryId.');
     } finally {
       setLoading(false);
@@ -91,15 +121,33 @@ export default function AddProductScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         
-        {/* Basic Info */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
           
           <Text style={styles.label}>Product Name *</Text>
           <TextInput style={styles.input} placeholder="e.g. Organic Tomatoes" value={name} onChangeText={setName} />
 
-          <Text style={styles.label}>Category ID * (Use valid UUID)</Text>
-          <TextInput style={styles.input} placeholder="UUID..." value={categoryId} onChangeText={setCategoryId} />
+          <Text style={styles.label}>Category *</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                onPress={() => setCategoryId(cat.id)}
+                style={[
+                  styles.categoryChip,
+                  categoryId === cat.id && styles.categoryChipSelected
+                ]}
+              >
+                <Text style={[
+                  styles.categoryChipText,
+                  categoryId === cat.id && styles.categoryChipTextSelected
+                ]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {categories.length === 0 && <Text style={{ color: '#94A3B8' }}>Loading categories...</Text>}
+          </ScrollView>
 
           <Text style={styles.label}>Base Price (₹) *</Text>
           <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={basePrice} onChangeText={setBasePrice} />
@@ -172,4 +220,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   btn: { backgroundColor: '#00B140', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   btnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  categoryChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 10, borderWidth: 1, borderColor: 'transparent' },
+  categoryChipSelected: { backgroundColor: '#DCFCE7', borderColor: '#00B140' },
+  categoryChipText: { fontSize: 14, color: '#64748B', fontWeight: '600' },
+  categoryChipTextSelected: { color: '#00B140', fontWeight: '700' }
 });

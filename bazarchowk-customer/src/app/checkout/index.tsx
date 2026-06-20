@@ -16,7 +16,7 @@ export default function CheckoutScreen() {
   
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI' | 'RAZORPAY'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI' | 'RAZORPAY' | 'WALLET'>('COD');
 
   useEffect(() => {
     fetchData();
@@ -137,6 +137,17 @@ export default function CheckoutScreen() {
             <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>Cash on Delivery</Text>
             <View style={[styles.radio, paymentMethod === 'COD' && styles.radioActive]}>
               {paymentMethod === 'COD' && <View style={styles.radioInner} />}
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.paymentCard, paymentMethod === 'WALLET' && styles.paymentCardActive]}
+            onPress={() => setPaymentMethod('WALLET')}
+          >
+            <Ionicons name="wallet-outline" size={24} color={paymentMethod === 'WALLET' ? PRIMARY : '#64748B'} />
+            <Text style={[styles.paymentText, paymentMethod === 'WALLET' && styles.paymentTextActive]}>BazarChowk Wallet</Text>
+            <View style={[styles.radio, paymentMethod === 'WALLET' && styles.radioActive]}>
+              {paymentMethod === 'WALLET' && <View style={styles.radioInner} />}
             </View>
           </TouchableOpacity>
 

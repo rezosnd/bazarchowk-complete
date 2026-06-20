@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -25,8 +26,8 @@ export default function ShopOnboardingScreen() {
 
     setLoading(true);
     try {
-      // In production, get Bearer token from auth store
-      // const token = useAuthStore.getState().token;
+      const token = await SecureStore.getItemAsync('partner_token');
+      if (!token) throw new Error('Authentication token missing. Please log in again.');
       
       const payload = {
         name,
@@ -34,7 +35,7 @@ export default function ShopOnboardingScreen() {
         address,
         city,
         state: stateName,
-        latitude: 25.5941, // Hardcoded for onboarding step, Partner updates later via Location screen
+        latitude: 25.5941, // Default fallback, Partner updates later via Location screen
         longitude: 85.1376,
         deliveryRadius: parseFloat(deliveryRadius),
       };
@@ -43,20 +44,22 @@ export default function ShopOnboardingScreen() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
+        const newShop = await res.json();
+        await SecureStore.setItemAsync('bazar_shop_id', newShop.id);
         alert('Shop Registered Successfully! Redirecting to Timings...');
         router.push('/shop/timings');
       } else {
         const err = await res.json();
         alert(err.message || 'Failed to register shop');
       }
-    } catch (e) {
-      alert('Network Error. Ensure backend is running.');
+    } catch (e: any) {
+      alert(e.message || 'Network Error. Ensure backend is running.');
     } finally {
       setLoading(false);
     }

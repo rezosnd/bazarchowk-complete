@@ -29,6 +29,19 @@ export class InventoryController {
     return this.inventoryService.initializeInventory(productVariantId, shopId, Number(initialQuantity) || 0);
   }
 
+  @Get('shop/:shopId')
+  @ApiOperation({ summary: 'Get all inventory for a shop' })
+  getInventoryByShop(@Param('shopId') shopId: string, @CurrentUser() user: any) {
+    return this.inventoryService.findByShopId(shopId, user.id);
+  }
+
+  @Get('global')
+  @ApiOperation({ summary: 'Get all inventory across all shops (Admin only)' })
+  @Roles('ADMIN')
+  getGlobalInventory() {
+    return this.inventoryService.getGlobalInventory();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get inventory ledger and logs' })
   getInventory(@Param('id') id: string, @CurrentUser() user: any) {

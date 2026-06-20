@@ -81,7 +81,7 @@ export class SearchService {
 
     // Geofencing if lat/lon provided (Software-level haversine distance filtering)
     if (searchQuery.latitude && searchQuery.longitude) {
-      const { latitude, longitude, radius = 5 } = searchQuery;
+      const { latitude, longitude, radius = 20 } = searchQuery;
       
       const isWithinRadius = (lat1: number, lon1: number, lat2: number, lon2: number, rad: number) => {
         const R = 6371; // km
@@ -96,19 +96,19 @@ export class SearchService {
 
       if (shops.length > 0) {
         shops = shops.filter(shop => 
-          isWithinRadius(latitude, longitude, shop.latitude, shop.longitude, Math.max(radius, shop.deliveryRadius || 5))
+          isWithinRadius(latitude, longitude, shop.latitude, shop.longitude, Math.max(radius, shop.deliveryRadius || 20))
         );
       }
 
       if (products.length > 0) {
         products = products.filter(product => 
-          isWithinRadius(latitude, longitude, product.shop.latitude, product.shop.longitude, Math.max(radius, product.shop.deliveryRadius || 5))
+          isWithinRadius(latitude, longitude, product.shop.latitude, product.shop.longitude, Math.max(radius, product.shop.deliveryRadius || 20))
         );
       }
 
       if (services.length > 0) {
         services = services.filter(service => 
-          isWithinRadius(latitude, longitude, service.shop.latitude, service.shop.longitude, Math.max(radius, service.shop.deliveryRadius || 5))
+          isWithinRadius(latitude, longitude, service.shop.latitude, service.shop.longitude, Math.max(radius, service.shop.deliveryRadius || 20))
         );
       }
     }

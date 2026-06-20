@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { FloatingCart } from '@/components/FloatingCart';
 
 const { width: W, height: H } = Dimensions.get('window');
 const EMERALD = '#00B140';
@@ -34,7 +35,8 @@ function triggerHaptics(type: 'heavy' | 'light' | 'selection' | 'medium') {
 }
 
 import { useAIStore } from '@/store/aiStore';
-
+import { useAuthStore } from '@/store/auth.store';
+import { useCartStore } from '@/store/cart.store';
 
 // ─── Global AI Overlay ────────────────────────────────────────────────────────
 
@@ -252,6 +254,15 @@ export default function TabsLayout() {
   const tabHeight = 65 + bottomPad;
 
   const aiActiveState = useSharedValue(0);
+
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const fetchCart = useCartStore(state => state.fetchCart);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated]);
 
   const centerX = W / 2;
   const notchRadius = 42; // Larger to fit 72px button

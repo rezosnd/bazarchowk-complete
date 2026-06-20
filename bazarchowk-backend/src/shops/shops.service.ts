@@ -39,6 +39,19 @@ export class ShopsService {
     return this.prisma.shop.findMany({ include: { timings: true } });
   }
 
+  async findMyShop(ownerId: string) {
+    const shop = await this.prisma.shop.findFirst({
+      where: { ownerId },
+      include: { timings: true, documents: true, holidays: true },
+    });
+    if (!shop) throw new NotFoundException('You do not have a shop registered yet');
+
+    return {
+      ...shop,
+      status: this.computeShopStatus(shop.timings, shop.holidays),
+    };
+  }
+
   /**
    * Get a shop with full open/closed status for today.
    * Customers will see "Open Now", "Closed", "Closes at 9 PM", or "Holiday: Diwali"

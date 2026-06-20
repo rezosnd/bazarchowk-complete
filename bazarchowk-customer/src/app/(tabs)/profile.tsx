@@ -18,7 +18,7 @@ export default function ProfileScreen() {
 
   const MENU_ITEMS = [
     { id: 'addresses', icon: 'location-outline', label: t('profile.savedAddresses') },
-    { id: 'payments', icon: 'card-outline', label: t('profile.paymentMethods') },
+    { id: 'wallet', icon: 'wallet-outline', label: 'BazarChowk Wallet' },
     { id: 'notifications', icon: 'notifications-outline', label: t('profile.notifications') },
     { id: 'support', icon: 'headset-outline', label: t('profile.help') },
     { id: 'about', icon: 'information-circle-outline', label: t('profile.about') },
@@ -82,6 +82,7 @@ export default function ProfileScreen() {
               activeOpacity={0.7}
               onPress={() => {
                 if (item.id === 'addresses') router.push('/addresses');
+                if (item.id === 'wallet') router.push('/wallet' as any);
               }}
             >
               <View style={styles.menuIconWrap}>

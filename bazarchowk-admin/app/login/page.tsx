@@ -12,11 +12,26 @@ export default function AdminLogin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: Connect to backend API
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        throw new Error('Invalid credentials');
+      }
+      const data = await res.json();
+      if (data.user?.role?.name !== 'ADMIN' && data.user?.role?.name !== 'SUPER_ADMIN') {
+         throw new Error('Unauthorized: You are not an admin');
+      }
+      localStorage.setItem('admin_token', data.accessToken);
       router.push('/');
-    }, 1000);
+    } catch (err: any) {
+      alert(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

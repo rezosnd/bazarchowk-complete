@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
+import * as SecureStore from 'expo-secure-store';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function ShopLocationScreen() {
   const insets = useSafeAreaInsets();
@@ -11,16 +14,35 @@ export default function ShopLocationScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [shopId, setShopId] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
 
   useEffect(() => {
-    fetchLocation();
+    fetchShopAndLocation();
   }, []);
 
-  const fetchLocation = async () => {
+  const fetchShopAndLocation = async () => {
     setLoading(true);
+    try {
+      const token = await SecureStore.getItemAsync('partner_token');
+      if (token) {
+        const res = await fetch(`${API_URL}/shops/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setShopId(data.id);
+          setAddress(data.address || '');
+          setCity(data.city || '');
+          setStateName(data.state || '');
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch shop profile', e);
+    }
+
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       alert('Permission to access location was denied');
@@ -31,27 +53,48 @@ export default function ShopLocationScreen() {
     const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
     setLocation(loc);
     
-    // In production, we would reverse geocode here
-    // const [geo] = await Location.reverseGeocodeAsync(loc.coords);
-    // setAddress(geo.name || '');
-    // setCity(geo.city || '');
-    // setStateName(geo.region || '');
+    // Reverse geocoding can be done here if needed
     
     setLoading(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!address || !city || !stateName || !location) {
       alert('Please fill all details and ensure GPS is synced');
       return;
     }
+    if (!shopId) {
+      alert('Could not find your shop profile. Please try restarting the app.');
+      return;
+    }
+
     setSaving(true);
-    // Simulate backend call to PATCH /shops/:id
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const token = await SecureStore.getItemAsync('partner_token');
+      const res = await fetch(`${API_URL}/shops/${shopId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          address,
+          city,
+          state: stateName,
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update shop location');
+      
       alert('Shop Location updated successfully!');
       router.back();
-    }, 1000);
+    } catch (e: any) {
+      alert(e.message || 'Error saving location');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

@@ -4,59 +4,39 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
+import { useCartStore } from '@/store/cart.store';
 
 const PRIMARY = '#00B140';
 
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
-  const [cart, setCart] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const { cart, loading, fetchCart, updateQuantity, removeItem } = useCartStore();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
-    } else {
-      setLoading(false);
     }
   }, [isAuthenticated]);
 
-  const fetchCart = async () => {
-    try {
-      const { data } = await api.get('/cart');
-      setCart(data);
-    } catch (error) {
-      console.warn('Failed to fetch cart', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      await removeItem(itemId);
-      return;
-    }
-    
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     setUpdatingId(itemId);
     try {
-      await api.patch(`/cart/items/${itemId}`, { quantity: newQuantity });
-      fetchCart();
+      await updateQuantity(itemId, newQuantity);
     } catch (error: any) {
-      alert(error?.message || 'Failed to update quantity. Check stock limits.');
+      alert(error?.response?.data?.message || error?.message || 'Failed to update quantity.');
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const removeItem = async (itemId: string) => {
+  const handleRemoveItem = async (itemId: string) => {
     setUpdatingId(itemId);
     try {
-      await api.delete(`/cart/items/${itemId}`);
-      fetchCart();
+      await removeItem(itemId);
     } catch (error) {
       alert('Failed to remove item');
     } finally {
@@ -138,11 +118,11 @@ export default function CartScreen() {
                   <ActivityIndicator size="small" color={PRIMARY} style={{ margin: 12 }} />
                 ) : (
                   <>
-                    <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity - 1)} style={styles.qtyBtn}>
+                    <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)} style={styles.qtyBtn}>
                       <Ionicons name="remove" size={16} color="#0F172A" />
                     </TouchableOpacity>
                     <Text style={styles.qtyText}>{item.quantity}</Text>
-                    <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity + 1)} style={styles.qtyBtn}>
+                    <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)} style={styles.qtyBtn}>
                       <Ionicons name="add" size={16} color="#0F172A" />
                     </TouchableOpacity>
                   </>

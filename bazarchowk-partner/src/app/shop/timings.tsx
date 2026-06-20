@@ -32,15 +32,20 @@ export default function ShopTimingsScreen() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // In production, get Bearer token and shopId from state
+      const token = await SecureStore.getItemAsync('partner_token');
       const shopId = await SecureStore.getItemAsync('bazar_shop_id');
+      
+      if (!token) throw new Error('Authentication token missing.');
       if (!shopId) throw new Error('Shop ID not found in session');
 
       const payload = { timings: schedule };
 
       const res = await fetch(`${API_BASE}/shops/${shopId}/timings/bulk`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(payload),
       });
 

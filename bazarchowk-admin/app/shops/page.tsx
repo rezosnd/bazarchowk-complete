@@ -42,10 +42,18 @@ export default function ShopsAdminPage() {
   const handleVerify = async (id: string, currentStatus: boolean) => {
     setProcessingId(id);
     try {
-      // In production, pass Bearer Token
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Authentication required. Please log in.');
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/shops/${id}/verify`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ isVerified: !currentStatus }),
       });
 

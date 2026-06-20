@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import api from '@/services/api';
+import { useCartStore } from '@/store/cart.store';
 
 const PRIMARY = '#00B140';
 
@@ -16,6 +17,7 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCartStore();
 
   useEffect(() => {
     fetchProduct();
@@ -42,14 +44,11 @@ export default function ProductDetailScreen() {
     if (!selectedVariant) return;
     setAddingToCart(true);
     try {
-      await api.post('/cart/items', {
-        productVariantId: selectedVariant.id,
-        quantity,
-      });
+      await addToCart(selectedVariant.id, quantity);
       alert(`Added ${quantity}x ${selectedVariant.name} to cart!`);
       router.back();
     } catch (e: any) {
-      alert(e?.message || 'Failed to add to cart. Check stock limits.');
+      alert(e?.response?.data?.message || e?.message || 'Failed to add to cart. Check stock limits.');
     } finally {
       setAddingToCart(false);
     }

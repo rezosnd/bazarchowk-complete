@@ -31,6 +31,14 @@ export class ShopsController {
     return this.shopsService.findAll();
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Partner: Get own shop' })
+  findMyShop(@CurrentUser() user: any) {
+    return this.shopsService.findMyShop(user.id);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Public: Get a shop — includes real-time status (OPEN/CLOSED + reason)',

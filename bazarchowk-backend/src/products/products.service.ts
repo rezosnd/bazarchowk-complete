@@ -32,10 +32,11 @@ export class ProductsService {
     const whereClause: any = {};
     if (shopId) whereClause.shopId = shopId;
     if (query) {
+      const tsQuery = query.trim().split(/\s+/).join(' & ');
       whereClause.OR = [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { searchTerms: { contains: query, mode: 'insensitive' } },
+        { name: { search: tsQuery } },
+        { description: { search: tsQuery } },
+        { searchTerms: { search: tsQuery } },
       ];
     }
 

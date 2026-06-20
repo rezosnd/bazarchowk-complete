@@ -74,7 +74,7 @@ export class OrdersService {
           shopId: createDto.shopId,
           deliveryAddressId: createDto.deliveryAddressId,
           paymentMethod: createDto.paymentMethod,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: createDto.paymentMethod === 'WALLET' ? PaymentStatus.PAID : PaymentStatus.PENDING,
           status: OrderStatus.PLACED,
           totalAmount,
           items: {
@@ -90,6 +90,28 @@ export class OrdersService {
         },
         include: { shop: true, customer: true }
       });
+
+      if (createDto.paymentMethod === 'WALLET') {
+        const wallet = await prisma.wallet.findUnique({ where: { userId: customerId } });
+        if (!wallet || wallet.balance < totalAmount) {
+          throw new BadRequestException('Insufficient wallet balance');
+        }
+        const updatedWallet = await prisma.wallet.update({
+          where: { userId: customerId },
+          data: { balance: { decrement: totalAmount } }
+        });
+        await prisma.walletTransaction.create({
+          data: {
+            walletId: updatedWallet.id,
+            type: 'DEBIT',
+            amount: totalAmount,
+            reason: 'ORDER_PAYMENT',
+            description: `Payment for order ${orderNumber}`,
+            referenceId: newOrder.id,
+            balanceAfter: updatedWallet.balance,
+          }
+        });
+      }
 
       // Update Inventory & Clear Cart Items
       for (const item of shopItems) {

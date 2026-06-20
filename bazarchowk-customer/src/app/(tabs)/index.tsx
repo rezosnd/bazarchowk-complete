@@ -43,8 +43,29 @@ const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1542838132-92c5330049
 
 // ─── Components ──────────────────────────────────────────────────────────────
 
+import { useCartStore } from '@/store/cart.store';
+
 function HomeHeader() {
   const { t } = useTranslation();
+  const { cart } = useCartStore();
+  
+  const itemsCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0;
+  
+  const scale = useSharedValue(1);
+  
+  useEffect(() => {
+    if (itemsCount > 0) {
+      scale.value = withSequence(
+        withTiming(1.2, { duration: 150 }),
+        withSpring(1, { damping: 5, stiffness: 200 })
+      );
+    }
+  }, [itemsCount]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -60,15 +81,22 @@ function HomeHeader() {
         </View>
       </View>
       <View style={styles.headerRight}>
+        <LanguageSelector />
+
         <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7}>
           <Ionicons name="notifications-outline" size={26} color={TEXT_MAIN} />
           <View style={styles.badge}><Text style={styles.badgeText}>3</Text></View>
         </TouchableOpacity>
 
-        <LanguageSelector />
-
-        <TouchableOpacity activeOpacity={0.8}>
-          <Image source={{ uri: 'https://i.pravatar.cc/150?img=11' }} style={styles.avatar} />
+        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/cart')}>
+          <Animated.View style={[styles.cartIconWrapper, animatedStyle]}>
+            <Ionicons name="cart-outline" size={28} color={TEXT_MAIN} />
+            {itemsCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{itemsCount}</Text>
+              </View>
+            )}
+          </Animated.View>
         </TouchableOpacity>
       </View>
     </View>
@@ -558,12 +586,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: TEXT_MAIN,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  cartIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: EMERALD,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(0,177,64,0.2)',
+    borderColor: '#FFF',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 
   // AI Hero

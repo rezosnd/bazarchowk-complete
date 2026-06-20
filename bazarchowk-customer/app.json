@@ -45,7 +45,10 @@
               "host": "bazarchowkapi.veritasco.tech"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -88,7 +91,8 @@
           "locationAlwaysAndWhenInUsePermission": "BazarChowk uses your location to find nearby stores and deliver to your address."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

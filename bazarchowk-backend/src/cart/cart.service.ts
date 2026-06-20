@@ -33,11 +33,24 @@ export class CartService {
   }
 
   async addToCart(userId: string, dto: AddToCartDto) {
-    const variant = await this.prisma.productVariant.findUnique({ where: { id: dto.productVariantId } });
+    const variant = await this.prisma.productVariant.findUnique({ 
+      where: { id: dto.productVariantId },
+      include: { product: true }
+    });
     if (!variant) throw new NotFoundException('Product variant not found');
     if (!variant.isActive) throw new BadRequestException('Product is currently unavailable');
 
-    const cart = await this.getCart(userId);
+    let cart = await this.getCart(userId);
+
+    // Single shop validation
+    if (cart.items.length > 0) {
+      const existingShopId = cart.items[0].productVariant.product.shopId;
+      if (existingShopId !== variant.product.shopId) {
+        // Clear the cart because it's from a different shop
+        await this.clearCart(userId);
+        cart = await this.getCart(userId);
+      }
+    }
 
     // Check existing item
     const existingItem = await this.prisma.cartItem.findUnique({
@@ -48,7 +61,7 @@ export class CartService {
     
     // Validate stock
     if (variant.stock < newQuantity) {
-      throw new BadRequestException(`Only \${variant.stock} items left in stock`);
+      throw new BadRequestException(`Only ${variant.stock} items left in stock`);
     }
 
     if (existingItem) {

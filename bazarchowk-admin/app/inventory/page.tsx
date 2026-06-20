@@ -33,14 +33,15 @@ export default function InventoryAdminPage() {
   const fetchGlobalInventory = async () => {
     setLoading(true);
     try {
-      // Assuming a global admin endpoint exists, or fallback to fetching all shops and mapping
-      const res = await fetch(`${API_BASE}/inventory/global`);
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/inventory/global`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setInventory(data);
       } else {
-        // Fallback for demo purposes if global endpoint isn't fully mocked
-        setInventory([]);
+        console.error('Failed to load inventory');
       }
     } catch (error) {
       console.error('Failed to fetch global inventory', error);

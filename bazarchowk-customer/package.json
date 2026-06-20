@@ -25,6 +25,7 @@
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "expo-web-browser": "~56.0.5",
     "i18next": "^26.3.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -44,7 +45,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "node --max-old-space-size=8192 node_modules/expo/bin/cli.js start -c",
     "start:clear": "expo start --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",

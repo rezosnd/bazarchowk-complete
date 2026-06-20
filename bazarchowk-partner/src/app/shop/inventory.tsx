@@ -23,11 +23,13 @@ export default function ShopInventoryScreen() {
 
   const fetchInventory = async () => {
     try {
+      const token = await SecureStore.getItemAsync('partner_token');
       const shopId = await SecureStore.getItemAsync('bazar_shop_id');
-      if (!shopId) throw new Error('Shop ID not found in session');
+      if (!shopId || !token) throw new Error('Missing session data');
       
-      // We assume the backend exposes GET /inventory/shop/:shopId returning array of Inventory ledgers
-      const res = await fetch(`${API_BASE}/inventory/shop/${shopId}`);
+      const res = await fetch(`${API_BASE}/inventory/shop/${shopId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setInventoryList(data);
@@ -48,9 +50,13 @@ export default function ShopInventoryScreen() {
     if (!selectedItem) return;
     setUpdating(true);
     try {
+      const token = await SecureStore.getItemAsync('partner_token');
       const res = await fetch(`${API_BASE}/inventory/${selectedItem.id}/set`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           quantity: parseInt(newStock, 10),
           reason: 'Partner manual adjustment via App',

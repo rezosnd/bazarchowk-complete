@@ -92,10 +92,15 @@ export default function CategoriesAdminPage() {
       isActive,
     };
 
-    // In a real production app, you would pass the Bearer Token here.
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      alert('Authentication required. Please log in.');
+      return;
+    }
+
     const headers = {
       'Content-Type': 'application/json',
-      // 'Authorization': `Bearer ${localStorage.getItem('token')}` 
+      'Authorization': `Bearer ${token}` 
     };
 
     try {
@@ -126,9 +131,9 @@ export default function CategoriesAdminPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to completely delete this category? This will cascade delete all its products and subcategories.')) return;
     
-    // In a real production app, pass the Bearer Token here.
+    const token = localStorage.getItem('admin_token');
     const headers = {
-      // 'Authorization': `Bearer ${localStorage.getItem('token')}` 
+      'Authorization': `Bearer ${token}` 
     };
 
     try {
