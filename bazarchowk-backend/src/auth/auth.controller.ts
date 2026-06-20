@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Req, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Req, Request, Res, ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -6,6 +6,25 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+
+@Injectable()
+export class GoogleAdminGuard extends AuthGuard('google') {
+  getAuthenticateOptions(context: ExecutionContext) {
+    return {
+      state: 'admin',
+    };
+  }
+}
+
+@Injectable()
+export class GoogleDynamicGuard extends AuthGuard('google') {
+  getAuthenticateOptions(context: ExecutionContext) {
+    const req = context.switchToHttp().getRequest();
+    return {
+      state: req.query.redirectUri || 'bazarchowk://auth',
+    };
+  }
+}
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -60,16 +79,34 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleDynamicGuard)
   @ApiOperation({ summary: 'Trigger Google OAuth flow' })
   async googleAuth(@Req() req: any) {
     // Initiates the Google OAuth flow
   }
 
+  @Get('google/admin')
+  @UseGuards(GoogleAdminGuard)
+  @ApiOperation({ summary: 'Trigger Google OAuth flow for Admin' })
+  async googleAuthAdmin(@Req() req: any) {
+    // Initiates the Google OAuth flow with state=admin
+  }
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Google OAuth callback handler' })
-  googleAuthRedirect(@Req() req: any) {
-    return this.authService.googleLogin(req);
+  async googleAuthRedirect(@Req() req: any, @Res() res: any) {
+    const tokens = await this.authService.googleLogin(req);
+    
+    // Redirect to Admin Panel if state indicates admin login
+    if (req.query.state === 'admin') {
+      const adminUrl = process.env.ADMIN_URL || 'http://localhost:3001';
+      return res.redirect(`${adminUrl}/login?token=${tokens.accessToken}`);
+    }
+    
+    const redirectUri = req.query.state || 'bazarchowk://auth';
+    
+    // Redirect to Expo app deep link
+    return res.redirect(`${redirectUri}?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`);
   }
 }

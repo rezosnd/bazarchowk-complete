@@ -6,12 +6,23 @@ import { FiActivity, FiDollarSign, FiShoppingBag, FiTruck } from "react-icons/fi
 export default function AdminDashboard() {
   const [liveOrders, setLiveOrders] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
-    totalRevenue: 45200,
-    totalOrders: 154,
-    activeRiders: 28,
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeRiders: 0,
   });
 
   useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/analytics/dashboard-metrics`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) setMetrics(data);
+      })
+      .catch(err => console.error("Failed to fetch dashboard metrics", err));
+
     socketService.connect();
 
     socketService.on("new_platform_order", (data) => {

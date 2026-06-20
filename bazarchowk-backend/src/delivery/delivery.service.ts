@@ -20,20 +20,30 @@ export class DeliveryService {
     });
   }
 
-  async assignDelivery(deliveryId: string, deliveryPartnerId: string) {
+  async assignDelivery(deliveryId: string, userId: string) {
     const delivery = await this.prisma.delivery.findUnique({ where: { id: deliveryId }, include: { order: true } });
     if (!delivery) throw new NotFoundException('Delivery not found');
     if (delivery.status !== DeliveryStatus.UNASSIGNED) throw new BadRequestException('Delivery already assigned');
 
     const updatedDelivery = await this.prisma.$transaction(async (prisma) => {
-      // Get the Partner to find the userId
-      const partner = await prisma.deliveryPartner.findUnique({ where: { id: deliveryPartnerId } });
-      if (!partner) throw new NotFoundException('Delivery partner not found');
+      // Find the DeliveryPartner record for this user
+      let partner = await prisma.deliveryPartner.findUnique({ where: { userId } });
+      
+      // Auto-create profile if missing so the rider can start working immediately
+      if (!partner) {
+        partner = await prisma.deliveryPartner.create({
+          data: {
+            userId,
+            vehicleType: 'Bike',
+            isOnline: true
+          }
+        });
+      }
 
       const d = await prisma.delivery.update({
         where: { id: deliveryId },
         data: {
-          deliveryPartnerId,
+          deliveryPartnerId: partner.id,
           status: DeliveryStatus.ASSIGNED,
         },
         include: { order: true },

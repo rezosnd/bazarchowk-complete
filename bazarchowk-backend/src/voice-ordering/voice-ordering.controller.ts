@@ -13,7 +13,7 @@ export class VoiceOrderingController {
   constructor(private readonly voiceService: VoiceOrderingService) {}
 
   @Post('process')
-  @ApiOperation({ summary: 'Conversational Voice Ordering AI via GPT-4' })
+  @ApiOperation({ summary: 'Conversational Voice Ordering AI via Gemini' })
   @ApiBody({ type: ProcessVoiceOrderDto })
   processVoiceOrder(
     @Body() dto: ProcessVoiceOrderDto,

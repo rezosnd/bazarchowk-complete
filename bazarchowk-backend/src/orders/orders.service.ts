@@ -105,7 +105,7 @@ export class OrdersService {
             walletId: updatedWallet.id,
             type: 'DEBIT',
             amount: totalAmount,
-            reason: 'ORDER_PAYMENT',
+            reason: 'PURCHASE',
             description: `Payment for order ${orderNumber}`,
             referenceId: newOrder.id,
             balanceAfter: updatedWallet.balance,
@@ -148,10 +148,19 @@ export class OrdersService {
     });
 
     // 4. Send Notifications
+    // To Shop Owner
     await this.notifications.sendInAppNotification(
       order.shop.ownerId,
       'New Order Received',
       `You have a new order (${order.orderNumber}) for ₹${order.totalAmount}`,
+      'ORDER'
+    );
+
+    // To Customer
+    await this.notifications.sendInAppNotification(
+      customerId,
+      'Order Placed Successfully',
+      `Your order (${order.orderNumber}) for ₹${order.totalAmount} has been placed.`,
       'ORDER'
     );
 
@@ -255,11 +264,50 @@ export class OrdersService {
           const newDel = await this.prisma.delivery.create({
             data: { orderId } // status defaults to UNASSIGNED
           });
-          // Alert all available riders
-          this.realtime.sendToAllRiders('new_delivery', {
-            deliveryId: newDel.id,
-            orderId: newDel.orderId
+          
+          // Alert nearby riders (within 8km)
+          const onlineRiders = await this.prisma.deliveryPartner.findMany({
+            where: { isOnline: true, currentLatitude: { not: null }, currentLongitude: { not: null } }
           });
+
+          const shopLat = order.shop.latitude;
+          const shopLng = order.shop.longitude;
+          let notifiedCount = 0;
+
+          for (const rider of onlineRiders) {
+            if (!rider.currentLatitude || !rider.currentLongitude) continue;
+
+            const R = 6371; // Earth's radius in km
+            const dLat = (rider.currentLatitude - shopLat) * (Math.PI / 180);
+            const dLon = (rider.currentLongitude - shopLng) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(shopLat * (Math.PI / 180)) * Math.cos(rider.currentLatitude * (Math.PI / 180)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c;
+
+            if (distance <= 8) {
+              await this.notifications.sendInAppNotification(
+                rider.userId,
+                'New Delivery Nearby!',
+                `An order is ready for pickup near you (${distance.toFixed(1)} km away).`,
+                'DELIVERY'
+              );
+              this.realtime.sendToUser(rider.userId, 'new_delivery', {
+                deliveryId: newDel.id,
+                orderId: newDel.orderId
+              });
+              notifiedCount++;
+            }
+          }
+
+          if (notifiedCount === 0) {
+            // Fallback: Alert all available riders if nobody is nearby
+            this.realtime.sendToAllRiders('new_delivery', {
+              deliveryId: newDel.id,
+              orderId: newDel.orderId
+            });
+          }
         }
       }
 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function NotificationsAdminPage() {
   const [targetAudience, setTargetAudience] = useState<'ALL' | 'CUSTOMER' | 'PARTNER' | 'RIDER'>('ALL');
@@ -92,7 +92,7 @@ export default function NotificationsAdminPage() {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. 🚀 Mega Sale is Live!"
+                  placeholder="e.g. ðŸš€ Mega Sale is Live!"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                 />
               </div>

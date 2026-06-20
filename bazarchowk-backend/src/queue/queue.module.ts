@@ -13,10 +13,7 @@ import { EmailModule } from '../email/email.module';
     EmailModule,
     // Root Connection
     BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: Number(process.env.REDIS_PORT) || 6379,
-      },
+      connection: new (require('ioredis').Redis)(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null }),
     }),
     // Register Queues
     BullModule.registerQueue(

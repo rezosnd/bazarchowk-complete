@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-const admin = require('firebase-admin');
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
 @Injectable()
 export class NotificationsService {
@@ -13,12 +14,12 @@ export class NotificationsService {
 
   private initializeFirebase() {
     try {
-      if (!admin.apps.length) {
+      if (!getApps().length) {
         // In production, load from proper environment variables or credentials file
         // For safe fallback, we only initialize if the env vars are available
         if (process.env.FIREBASE_PROJECT_ID) {
-          admin.initializeApp({
-            credential: admin.credential.cert({
+          initializeApp({
+            credential: cert({
               projectId: process.env.FIREBASE_PROJECT_ID,
               clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
               privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
@@ -100,7 +101,7 @@ export class NotificationsService {
     }));
 
     try {
-      const response = await admin.messaging().sendEach(messages);
+      const response = await getMessaging().sendEach(messages);
       this.logger.log(`FCM Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
 
       response.responses.forEach((res: any, idx: number) => {
@@ -197,7 +198,7 @@ export class NotificationsService {
           });
 
           try {
-            const response = await admin.messaging().sendEach(messages);
+            const response = await getMessaging().sendEach(messages);
             this.logger.log(`Broadcast chunk sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
           } catch (e) {
             this.logger.error('Failed to send broadcast FCM batch', e);
@@ -208,7 +209,7 @@ export class NotificationsService {
       this.logger.log(`[MOCK BROADCAST] To ${users.length} users | Title: ${title}`);
     }
 
-    return { success: true, count: userIds.length };
+    return { success: true, count: users.length };
   }
 
   async getUserNotifications(userId: string) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ShopsService } from './shops.service';
 import { CreateShopDto } from './dto/create-shop.dto';
 import { UpdateShopDto } from './dto/update-shop.dto';
@@ -26,9 +26,9 @@ export class ShopsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Public: List all shops' })
-  findAll() {
-    return this.shopsService.findAll();
+  @ApiOperation({ summary: 'Public: List all shops (optionally filtered by radius)' })
+  findAll(@Query('lat') lat?: string, @Query('lng') lng?: string) {
+    return this.shopsService.findAll(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
   }
 
   @Get('me')

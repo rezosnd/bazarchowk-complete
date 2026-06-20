@@ -26,7 +26,7 @@ export class SubmitRiderDepositDto {
   @Min(0)
   totalAmount: number;
 
-  @ApiPropertyOptional({ description: 'URL of receipt/handover photo uploaded to R2' })
+  @ApiPropertyOptional({ description: 'URL of receipt/handover photo uploaded to Cloudinary' })
   @IsOptional()
   @IsString()
   receiptImageUrl?: string;

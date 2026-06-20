@@ -45,6 +45,44 @@ export class CloudinaryStorageService {
     });
   }
 
+  async uploadFile(buffer: Buffer, folder: string, filename: string, resourceType: 'raw' | 'video' | 'auto' = 'raw'): Promise<UploadApiResponse> {
+    return new Promise((resolve, reject) => {
+      if (!buffer) {
+        return reject(new Error('No buffer provided'));
+      }
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder, resource_type: resourceType, public_id: filename },
+        (error, result) => {
+          if (error || !result) {
+            this.logger.error('Cloudinary raw upload failed:', error);
+            return reject(new InternalServerErrorException('File upload failed'));
+          }
+          resolve(result);
+        }
+      );
+      
+      const stream = new Readable();
+      stream.push(buffer);
+      stream.push(null);
+      stream.pipe(uploadStream);
+    });
+  }
+
+  async listFiles(folder: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      cloudinary.api.resources(
+        { type: 'upload', prefix: `${folder}/`, max_results: 100, resource_type: 'raw' },
+        (error, result) => {
+          if (error) {
+            this.logger.error('Failed to list files from Cloudinary:', error);
+            return reject(new InternalServerErrorException('Failed to list files'));
+          }
+          resolve(result.resources || []);
+        }
+      );
+    });
+  }
+
   async deleteImage(publicId: string): Promise<void> {
     try {
       await cloudinary.uploader.destroy(publicId);

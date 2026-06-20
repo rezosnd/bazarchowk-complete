@@ -12,13 +12,14 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring } from 'react-native-reanimated';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useAIStore } from '@/store/aiStore';
 import { BlurView } from 'expo-blur';
+import * as Location from 'expo-location';
 
 const { width: W } = Dimensions.get('window');
 
@@ -45,10 +46,13 @@ const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1542838132-92c5330049
 // ─── Components ──────────────────────────────────────────────────────────────
 
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store';
 
 function HomeHeader() {
   const { t } = useTranslation();
   const { cart } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
+  
   const { data: notifications = [] } = useQuery({ 
     queryKey: ['notifications'], 
     queryFn: async () => {
@@ -56,6 +60,20 @@ function HomeHeader() {
       return res.data;
     } 
   });
+
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const res = await api.get('/addresses');
+      return res.data;
+    },
+    enabled: isAuthenticated
+  });
+  
+  const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+  const displayLocation = defaultAddress 
+    ? `${defaultAddress.title || defaultAddress.type || 'Home'} - ${defaultAddress.addressLine1}, ${defaultAddress.city}`
+    : t('header.location');
   
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
   const itemsCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0;
@@ -83,8 +101,8 @@ function HomeHeader() {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.deliveringTo} numberOfLines={1}>{t('header.deliveringTo')}</Text>
-          <TouchableOpacity style={styles.locationRow} activeOpacity={0.7}>
-            <Text style={styles.locationText} numberOfLines={1}>{t('header.location')}</Text>
+          <TouchableOpacity style={styles.locationRow} activeOpacity={0.7} onPress={() => router.push('/addresses')}>
+            <Text style={styles.locationText} numberOfLines={1}>{displayLocation}</Text>
             <Ionicons name="chevron-down" size={16} color={TEXT_MAIN} />
           </TouchableOpacity>
         </View>
@@ -289,7 +307,27 @@ function SectionHeader({ title }: { title: string }) {
 
 function NearbyShops() {
   const { t } = useTranslation();
-  const { data: shops = [], isLoading } = useQuery({ queryKey: ['shops'], queryFn: HomeService.getNearbyShops });
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+      try {
+        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      } catch (e) {
+        console.warn('Failed to get location', e);
+      }
+    })();
+  }, []);
+
+  const { data: shops = [], isLoading } = useQuery({ 
+    queryKey: ['shops', location?.lat, location?.lng], 
+    queryFn: () => HomeService.getNearbyShops(location?.lat, location?.lng) 
+  });
 
   if (isLoading || shops.length === 0) return null;
 
@@ -298,7 +336,7 @@ function NearbyShops() {
       <SectionHeader title={t('sections.nearbyShops')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {shops.map((shop: any) => (
-          <TouchableOpacity key={shop.id} style={styles.shopCard} activeOpacity={0.9}>
+          <TouchableOpacity key={shop.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/shop/${shop.id}`)}>
             <View style={styles.shopImgWrapper}>
               <Image source={{ uri: shop.bannerUrl || shop.logoUrl || PLACEHOLDER_IMG }} style={styles.shopImg} contentFit="cover" />
               {shop.status?.isOpen && (
@@ -310,7 +348,7 @@ function NearbyShops() {
             <View style={styles.shopInfo}>
               <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
               <Text style={styles.shopMeta}>
-                1.5 km • <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
+                {shop.distanceKm ? `${shop.distanceKm.toFixed(1)} km` : 'Near you'} • <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
               </Text>
               <Text style={styles.shopTime}>{shop.status?.reason || '15–20 min'}</Text>
             </View>
@@ -332,7 +370,7 @@ function PopularMarkets() {
       <SectionHeader title={t('sections.popularMarkets')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {markets.map((m: any) => (
-          <TouchableOpacity key={m.id} style={styles.marketCard} activeOpacity={0.9}>
+          <TouchableOpacity key={m.id} style={styles.marketCard} activeOpacity={0.9} onPress={() => router.push(`/market/${m.id}` as any)}>
             <Image source={{ uri: m.imageUrl || PLACEHOLDER_IMG }} style={styles.marketImg} contentFit="cover" />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -421,7 +459,7 @@ function RecommendedSection() {
       <SectionHeader title={t('sections.recommended')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {products.map((prod: any) => (
-          <TouchableOpacity key={prod.id} style={styles.productCard} activeOpacity={0.9}>
+          <TouchableOpacity key={prod.id} style={styles.productCard} activeOpacity={0.9} onPress={() => router.push(`/product/${prod.id}`)}>
             <Image source={{ uri: prod.images?.[0]?.url || PLACEHOLDER_IMG }} style={styles.productImg} contentFit="cover" />
             <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
             <View style={styles.productPriceRow}>
@@ -477,11 +515,13 @@ export default function HomeScreen() {
       />
 
       <Animated.View style={animatedMainStyle}>
+        <View style={{ paddingTop: insets.top }}>
+          <HomeHeader />
+        </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
         >
-          <HomeHeader />
           <AIHero />
           <GlobalSearch />
           <CategoryGrid />

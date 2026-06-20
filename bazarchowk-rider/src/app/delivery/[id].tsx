@@ -2,75 +2,66 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-
 import * as Location from 'expo-location';
 import { socketService } from '../../services/socket';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ActiveDeliveryScreen() {
-  const { id } = useLocalSearchParams(); // This is the order ID
   const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams();
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [locationSubscription, setLocationSubscription] = useState<Location.LocationSubscription | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchOrderDetails();
+  }, [id]);
+
+  useEffect(() => {
+    let locationSubscription: Location.LocationSubscription | null = null;
+
+    const startTracking = async () => {
+      if (order?.delivery?.status === 'OUT_FOR_DELIVERY') {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Location tracking is required for live updates.');
+          return;
+        }
+
+        locationSubscription = await Location.watchPositionAsync(
+          { 
+            accuracy: Location.Accuracy.High, 
+            timeInterval: 3000, 
+            distanceInterval: 2 
+          },
+          (loc) => {
+            socketService.emit('update_location', {
+              orderId: order.id,
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+              heading: loc.coords.heading
+            });
+          }
+        );
+      }
+    };
+
+    startTracking();
+
     return () => {
       if (locationSubscription) {
         locationSubscription.remove();
       }
     };
-  }, [id]);
-
-  useEffect(() => {
-    if (order?.status === 'PICKED_UP') {
-      startLiveTracking();
-    } else {
-      stopLiveTracking();
-    }
-  }, [order?.status]);
-
-  const startLiveTracking = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Location permission is required for live tracking.');
-      return;
-    }
-
-    const sub = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        timeInterval: 5000,
-        distanceInterval: 10,
-      },
-      (location) => {
-        socketService.emit('update_location', {
-          orderId: id,
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          heading: location.coords.heading,
-        });
-      }
-    );
-    setLocationSubscription(sub);
-  };
-
-  const stopLiveTracking = () => {
-    if (locationSubscription) {
-      locationSubscription.remove();
-      setLocationSubscription(null);
-    }
-  };
+  }, [order?.delivery?.status, order?.id]);
 
   const fetchOrderDetails = async () => {
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('rider_token');
       const res = await fetch(`${API_BASE}/orders/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -78,62 +69,73 @@ export default function ActiveDeliveryScreen() {
         const data = await res.json();
         setOrder(data);
       }
-    } catch (e) {
-      console.warn('Failed to fetch order details');
+    } catch (error) {
+      console.error('Failed to fetch order');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateOrderStatus = async (newStatus: string) => {
-    setProcessing(true);
+  const handleUpdateStatus = async (newStatus: string) => {
+    if (!order?.delivery?.id) return;
+    
+    setUpdating(true);
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
-      const res = await fetch(`${API_BASE}/orders/${id}/status`, {
+      const token = await SecureStore.getItemAsync('rider_token');
+      const res = await fetch(`${API_BASE}/delivery/${order.delivery.id}/status`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ status: newStatus, notes: `Rider updated status to ${newStatus}` })
+        body: JSON.stringify({ status: newStatus })
       });
-      
+
       if (res.ok) {
+        Alert.alert('Status Updated', `Delivery marked as ${newStatus}`);
         if (newStatus === 'DELIVERED') {
-          Alert.alert('Success', 'Order delivered successfully!');
-          router.replace('/(tabs)/orders');
+          router.replace('/(tabs)/orders' as any);
         } else {
           fetchOrderDetails();
         }
       } else {
-        Alert.alert('Error', 'Failed to update order status');
+        Alert.alert('Error', 'Failed to update status');
       }
     } catch (e) {
-      Alert.alert('Network Error', 'Could not reach server');
+      Alert.alert('Error', 'Failed to connect');
     } finally {
-      setProcessing(false);
+      setUpdating(false);
     }
   };
 
-  const openMaps = (lat: number, lng: number, label: string) => {
+  const openMap = (lat: number, lng: number, label: string) => {
     const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
     const latLng = `${lat},${lng}`;
     const url = Platform.select({
       ios: `${scheme}${label}@${latLng}`,
       android: `${scheme}${latLng}(${label})`
     });
-    Linking.openURL(url as string);
+    if (url) Linking.openURL(url);
   };
 
-  if (loading || !order) {
+  if (loading) {
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00B140" /></View>;
+  }
+
+  if (!order) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00B140" />
+      <View style={[styles.center, { paddingTop: insets.top }]}>
+        <Text style={styles.emptyText}>Order not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: '#00B140', fontWeight: 'bold' }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  const isPickedUp = order.status === 'PICKED_UP' || order.status === 'DELIVERED';
+  const deliveryStatus = order?.delivery?.status || 'ASSIGNED';
+  const customerName = order.customer?.firstName ? `${order.customer.firstName} ${order.customer.lastName || ''}` : 'Customer';
+  const customerPhone = order.customer?.phone || 'Unknown';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -141,29 +143,38 @@ export default function ActiveDeliveryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.title}>Active Delivery</Text>
+        <Text style={styles.title}>Delivery #{order.orderNumber}</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.statusCard}>
-          <Text style={styles.statusLabel}>Current Status</Text>
-          <Text style={styles.statusValue}>{order.status}</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        
+        {/* Status Badge */}
+        <View style={styles.statusBadge}>
+          <Ionicons name="time" size={20} color="#00B140" />
+          <Text style={styles.statusText}>{deliveryStatus.replace('_', ' ')}</Text>
         </View>
 
         {/* Pickup Details */}
-        <View style={[styles.card, isPickedUp && { opacity: 0.6 }]}>
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="storefront" size={20} color="#00B140" />
-            <Text style={styles.cardTitle}>Pickup: {order.shop?.name}</Text>
+            <View style={styles.iconBoxGreen}>
+              <Ionicons name="storefront" size={20} color="#00B140" />
+            </View>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Pickup From Shop</Text>
+              <Text style={styles.cardSub}>{order.shop?.name}</Text>
+              <Text style={styles.cardAddress}>{order.shop?.address}</Text>
+            </View>
           </View>
-          <Text style={styles.addressText}>{order.shop?.address}, {order.shop?.city}</Text>
-          
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.shop?.phone || '0000000000'}`)}>
-              <Ionicons name="call" size={20} color="#3B82F6" />
+            <TouchableOpacity style={styles.actionBtnOutline} onPress={() => Linking.openURL(`tel:${order.shop?.phone || ''}`)}>
+              <Ionicons name="call" size={18} color="#00B140" />
+              <Text style={styles.actionTextGreen}>Call Shop</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => openMaps(order.shop?.lat || 0, order.shop?.lng || 0, order.shop?.name)}>
-              <Ionicons name="navigate" size={20} color="#10B981" />
+            <TouchableOpacity style={styles.actionBtnOutline} onPress={() => openMap(order.shop?.latitude, order.shop?.longitude, order.shop?.name)}>
+              <Ionicons name="navigate" size={18} color="#00B140" />
+              <Text style={styles.actionTextGreen}>Navigate</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -171,58 +182,48 @@ export default function ActiveDeliveryScreen() {
         {/* Dropoff Details */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="home" size={20} color="#DC2626" />
-            <Text style={styles.cardTitle}>Dropoff: {order.customer?.name}</Text>
+            <View style={styles.iconBoxRed}>
+              <Ionicons name="home" size={20} color="#DC2626" />
+            </View>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Deliver To Customer</Text>
+              <Text style={styles.cardSub}>{customerName}</Text>
+              <Text style={styles.cardAddress}>{order.deliveryAddress?.houseFlat}, {order.deliveryAddress?.street}, {order.deliveryAddress?.city}</Text>
+            </View>
           </View>
-          <Text style={styles.addressText}>
-            {order.deliveryAddress?.houseFlat}, {order.deliveryAddress?.street}, {order.deliveryAddress?.city}
-          </Text>
-          <Text style={styles.addressText}>Landmark: {order.deliveryAddress?.landmark}</Text>
-
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.customer?.phone || '0000000000'}`)}>
-              <Ionicons name="call" size={20} color="#3B82F6" />
+            <TouchableOpacity style={styles.actionBtnOutline} onPress={() => Linking.openURL(`tel:${customerPhone}`)}>
+              <Ionicons name="call" size={18} color="#DC2626" />
+              <Text style={styles.actionTextRed}>Call Customer</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => openMaps(order.deliveryAddress?.lat || 0, order.deliveryAddress?.lng || 0, 'Customer')}>
-              <Ionicons name="navigate" size={20} color="#10B981" />
+            <TouchableOpacity style={styles.actionBtnOutline} onPress={() => openMap(order.deliveryAddress?.latitude, order.deliveryAddress?.longitude, 'Customer Location')}>
+              <Ionicons name="navigate" size={18} color="#DC2626" />
+              <Text style={styles.actionTextRed}>Navigate</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Order Details */}
-        <View style={styles.card}>
-           <Text style={styles.cardTitle}>Order Details</Text>
-           <View style={styles.divider} />
-           {order.items?.map((item: any) => (
-             <Text key={item.id} style={styles.itemText}>{item.quantity} x {item.productVariant?.name}</Text>
-           ))}
-           <View style={styles.divider} />
-           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-             <Text style={styles.totalLabel}>Collect Cash</Text>
-             <Text style={styles.totalValue}>₹{order.totalAmount}</Text>
-           </View>
+        {/* Order Amount */}
+        <View style={styles.amountCard}>
+          <Text style={styles.amountLabel}>Collect Cash from Customer?</Text>
+          <Text style={[styles.amountValue, order.paymentMethod === 'COD' ? {color: '#DC2626'} : {color: '#00B140'}]}>
+            {order.paymentMethod === 'COD' ? `YES: â‚¹${order.totalAmount}` : 'NO (Prepaid Online)'}
+          </Text>
         </View>
+
       </ScrollView>
 
-      {/* Action Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom || 24 }]}>
-        {order.status === 'READY' && (
-          <TouchableOpacity 
-            style={[styles.primaryBtn, { backgroundColor: '#F59E0B' }]} 
-            disabled={processing}
-            onPress={() => updateOrderStatus('PICKED_UP')}
-          >
-            {processing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryText}>Mark as Picked Up</Text>}
+      {/* Footer Action */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+        {deliveryStatus === 'ASSIGNED' && (
+          <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('OUT_FOR_DELIVERY')}>
+            {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Start Delivery</Text>}
           </TouchableOpacity>
         )}
         
-        {order.status === 'PICKED_UP' && (
-          <TouchableOpacity 
-            style={[styles.primaryBtn, { backgroundColor: '#00B140' }]} 
-            disabled={processing}
-            onPress={() => updateOrderStatus('DELIVERED')}
-          >
-            {processing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryText}>Mark as Delivered</Text>}
+        {deliveryStatus === 'OUT_FOR_DELIVERY' && (
+          <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('DELIVERED')}>
+            {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Mark as Delivered</Text>}
           </TouchableOpacity>
         )}
       </View>
@@ -233,29 +234,38 @@ export default function ActiveDeliveryScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0',
+  },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginLeft: 8 },
-  scroll: { padding: 16, gap: 16 },
+  title: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  scroll: { padding: 16, paddingBottom: 100, gap: 16 },
   
-  statusCard: { backgroundColor: '#1E293B', padding: 16, borderRadius: 16, alignItems: 'center' },
-  statusLabel: { color: '#94A3B8', fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  statusValue: { color: '#FFF', fontSize: 24, fontWeight: '900' },
+  statusBadge: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#DCFCE7', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 8 },
+  statusText: { fontSize: 14, fontWeight: '800', color: '#00B140' },
   
-  card: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  addressText: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 12 },
+  emptyText: { fontSize: 18, color: '#64748B', fontWeight: '600' },
   
-  actionRow: { flexDirection: 'row', gap: 12 },
-  iconBtn: { flex: 1, height: 44, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  card: { backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
+  cardHeader: { flexDirection: 'row', padding: 16, borderBottomWidth: 1, borderColor: '#F1F5F9', gap: 12 },
+  iconBoxGreen: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
+  iconBoxRed: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  cardInfo: { flex: 1 },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  cardSub: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 2 },
+  cardAddress: { fontSize: 14, color: '#475569', lineHeight: 20 },
   
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
-  itemText: { fontSize: 14, color: '#475569', marginBottom: 4 },
-  totalLabel: { fontSize: 16, color: '#64748B', fontWeight: '600' },
-  totalValue: { fontSize: 20, color: '#00B140', fontWeight: '800' },
-
-  footer: { backgroundColor: '#FFF', padding: 20, borderTopWidth: 1, borderColor: '#E2E8F0' },
-  primaryBtn: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  primaryText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  actionRow: { flexDirection: 'row', padding: 12, gap: 12, backgroundColor: '#F8FAFC' },
+  actionBtnOutline: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFF' },
+  actionTextGreen: { fontSize: 14, fontWeight: '700', color: '#00B140' },
+  actionTextRed: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
+  
+  amountCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  amountLabel: { fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 4 },
+  amountValue: { fontSize: 20, fontWeight: '900' },
+  
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, borderTopWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  primaryBtn: { backgroundColor: '#00B140', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

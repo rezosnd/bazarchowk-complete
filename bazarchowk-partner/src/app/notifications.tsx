@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
 const PRIMARY = '#00B140';
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -19,7 +19,9 @@ export default function NotificationsScreen() {
 
   const fetchNotifications = async () => {
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('partner_token');
+      if (!token) return;
+
       const res = await fetch(`${API_BASE}/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -37,7 +39,7 @@ export default function NotificationsScreen() {
   const markAsRead = async (id: string) => {
     try {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('partner_token');
       await fetch(`${API_BASE}/notifications/${id}/read`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -48,7 +50,7 @@ export default function NotificationsScreen() {
   const markAllAsRead = async () => {
     try {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('partner_token');
       await fetch(`${API_BASE}/notifications/read-all`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }

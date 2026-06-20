@@ -21,4 +21,9 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   languagePref?: string;
+
+  @ApiProperty({ example: '+919876543210', required: false })
+  @IsString()
+  @IsOptional()
+  phone?: string;
 }

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Switch, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -26,6 +26,12 @@ export default function ShopTimingsScreen() {
   const toggleDay = (index: number) => {
     const newSchedule = [...schedule];
     newSchedule[index].isClosed = !newSchedule[index].isClosed;
+    setSchedule(newSchedule);
+  };
+
+  const updateTime = (index: number, field: 'openTime' | 'closeTime', value: string) => {
+    const newSchedule = [...schedule];
+    newSchedule[index][field] = value;
     setSchedule(newSchedule);
   };
 
@@ -86,11 +92,25 @@ export default function ShopTimingsScreen() {
               {!day.isClosed && (
                 <View style={styles.timeWrap}>
                   <View style={styles.timeBox}>
-                    <Text style={styles.timeText}>{day.openTime}</Text>
+                    <TextInput 
+                      style={styles.timeInput}
+                      value={day.openTime}
+                      onChangeText={(val) => updateTime(idx, 'openTime', val)}
+                      placeholder="09:00"
+                      keyboardType="numeric"
+                      maxLength={5}
+                    />
                   </View>
                   <Text style={{ color: '#94A3B8' }}>-</Text>
                   <View style={styles.timeBox}>
-                    <Text style={styles.timeText}>{day.closeTime}</Text>
+                    <TextInput 
+                      style={styles.timeInput}
+                      value={day.closeTime}
+                      onChangeText={(val) => updateTime(idx, 'closeTime', val)}
+                      placeholder="21:00"
+                      keyboardType="numeric"
+                      maxLength={5}
+                    />
                   </View>
                 </View>
               )}
@@ -128,8 +148,8 @@ const styles = StyleSheet.create({
   dayName: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   status: { fontSize: 12, fontWeight: '600', marginTop: 2 },
   timeWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
-  timeBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  timeText: { fontSize: 14, fontWeight: '600', color: '#334155' },
+  timeBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8 },
+  timeInput: { paddingHorizontal: 12, paddingVertical: 6, fontSize: 14, fontWeight: '600', color: '#334155', minWidth: 60, textAlign: 'center' },
   btn: { backgroundColor: '#00B140', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   btnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 });

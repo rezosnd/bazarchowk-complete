@@ -19,7 +19,7 @@ interface Order {
   items: OrderItem[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function OrdersAdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -134,7 +134,7 @@ export default function OrdersAdminPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-bold text-gray-900">₹{order.totalAmount}</div>
+                    <div className="font-bold text-gray-900">â‚¹{order.totalAmount}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{order.paymentMethod}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">

@@ -16,7 +16,7 @@ export class DeliveryController {
 
   @Get('available')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER', 'ADMIN')
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
   @ApiOperation({ summary: 'Get all unassigned deliveries (for Riders)' })
   getAvailableDeliveries() {
     return this.deliveryService.getAvailableDeliveries();
@@ -24,15 +24,15 @@ export class DeliveryController {
 
   @Patch(':id/assign')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER', 'ADMIN')
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
   @ApiOperation({ summary: 'Rider accepts a delivery' })
-  assignDelivery(@Param('id') id: string, @Body('deliveryPartnerId') partnerId: string) {
-    return this.deliveryService.assignDelivery(id, partnerId);
+  assignDelivery(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.deliveryService.assignDelivery(id, user.id);
   }
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER', 'ADMIN')
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
   @ApiOperation({ summary: 'Update delivery status (e.g., DELIVERED)' })
   updateStatus(
     @Param('id') id: string,

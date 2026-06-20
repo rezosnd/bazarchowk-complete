@@ -15,7 +15,7 @@ export class BackupController {
   constructor(private readonly backupService: BackupService) {}
 
   @Post('trigger')
-  @ApiOperation({ summary: 'Manually trigger a database backup to Cloudflare R2' })
+  @ApiOperation({ summary: 'Manually trigger a database backup to Cloudinary' })
   async triggerManualBackup(@CurrentUser() user: any) {
     return this.backupService.performBackup('MANUAL', user.id);
   }
@@ -29,9 +29,9 @@ export class BackupController {
     return this.backupService.getBackupHistory(page, limit);
   }
 
-  @Get('list-r2')
-  @ApiOperation({ summary: 'List all backup files directly from Cloudflare R2 storage' })
-  async listR2Backups() {
-    return this.backupService.listBackupsFromR2();
+  @Get('list-cloudinary')
+  @ApiOperation({ summary: 'List all backup files directly from Cloudinary storage' })
+  async listCloudinaryBackups() {
+    return this.backupService.listBackupsFromCloudinary();
   }
 }

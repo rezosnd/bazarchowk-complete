@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
+import api from '@/services/api';
 import { Button, Input } from '@/components/ui';
 import { useTheme } from '@/hooks';
 import { useAuthStore } from '@/store';
@@ -22,47 +22,48 @@ import { BorderRadius, FontSize, FontWeight, Spacing } from '@/theme';
 export default function RegisterScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { register } = useAuthStore();
+  const { initialize, user } = useAuthStore();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!firstName.trim()) e.firstName = 'First Name is required';
     if (!lastName.trim()) e.lastName = 'Last Name is required';
-    if (!email || !email.includes('@')) e.email = 'Enter a valid email address';
-    if (!password || password.length < 6) e.password = 'Password must be at least 6 characters';
+    if (!phone || phone.length < 10) e.phone = 'Enter a valid mobile number';
     return e;
   };
 
-  const handleRegister = async () => {
+  const handleCompleteProfile = async () => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     setErrors({});
     try {
-      await register(firstName.trim(), lastName.trim(), email.trim(), password);
-      router.replace('/' as any);
+      await api.patch('/users/me', {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim()
+      });
+      await initialize();
+      router.replace('/(tabs)');
     } catch (e: unknown) {
-      setErrors({ general: e instanceof Error ? e.message : 'Registration failed' });
+      setErrors({ general: 'Failed to update profile. Please try again.' });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      await WebBrowser.openAuthSessionAsync(
-        'https://bazarchowkapi.veritasco.tech/auth/google',
-        'bazarchowk://auth'
-      );
-    } catch (e) {
-      console.log('Google Auth Error:', e);
     }
   };
 
@@ -82,9 +83,6 @@ export default function RegisterScreen() {
           colors={['#00B140', '#00752A']}
           style={[styles.topHeader, { paddingTop: insets.top + Spacing.lg }]}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
           <View style={styles.logoContainer}>
             <Image
               source={require('@/assets/images/APP-ICON.png')}
@@ -92,8 +90,8 @@ export default function RegisterScreen() {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.headerTitle}>Create Account</Text>
-          <Text style={styles.headerSubtitle}>Join India's Premier Super App</Text>
+          <Text style={styles.headerTitle}>Complete Profile</Text>
+          <Text style={styles.headerSubtitle}>Just one more step to start shopping</Text>
         </LinearGradient>
 
         <View style={[styles.form, { backgroundColor: theme.background }]}>
@@ -103,9 +101,9 @@ export default function RegisterScreen() {
             </View>
           )}
 
-          <Text style={[styles.formTitle, { color: theme.text }]}>Get Started</Text>
+          <Text style={[styles.formTitle, { color: theme.text }]}>Almost there!</Text>
           <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
-            Enter your details below to create your account
+            Please verify your details and enter your mobile number.
           </Text>
 
           <View style={{ marginTop: 8 }}>
@@ -135,52 +133,31 @@ export default function RegisterScreen() {
             <View style={{ height: 16 }} />
             <Input
               label="Email Address"
-              placeholder="you@example.com"
               value={email}
-              onChangeText={(t) => { setEmail(t.trim()); setErrors((e) => ({ ...e, email: '' })); }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-              required
+              editable={false}
+              style={{ backgroundColor: '#F3F4F6', color: '#6B7280' }}
             />
+            
             <View style={{ height: 16 }} />
             <Input
-              label="Password"
-              placeholder="••••••••"
-              value={password}
-              onChangeText={(t) => { setPassword(t); setErrors((e) => ({ ...e, password: '' })); }}
-              secureTextEntry
-              error={errors.password}
+              label="Mobile Number"
+              placeholder="+91 98765 43210"
+              value={phone}
+              onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: '' })); }}
+              keyboardType="phone-pad"
+              error={errors.phone}
               required
             />
           </View>
 
           <Button
-            title="Create Account"
-            onPress={handleRegister}
+            title="Complete Registration"
+            onPress={handleCompleteProfile}
             loading={loading}
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 24 }}
           />
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity style={styles.googleBtn} activeOpacity={0.7} onPress={handleGoogleLogin}>
-            <Ionicons name="logo-google" size={24} color="#DB4437" />
-            <Text style={styles.googleBtnText}>Continue with Google</Text>
-          </TouchableOpacity>
-
           <View style={styles.footerSpacer} />
-
-          <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLink}>
-            <Text style={[styles.loginText, { color: theme.textSecondary }]}>
-              Already have an account?{' '}
-              <Text style={{ color: theme.primary, fontWeight: '700' }}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
 
           <Text style={[styles.termsText, { color: theme.textSecondary }]}>
             By registering, you agree to BazarChowk's{' '}
@@ -199,16 +176,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 48,
     paddingHorizontal: Spacing.xl,
-  },
-  backBtn: { 
-    alignSelf: 'flex-start', 
-    marginBottom: Spacing.md,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   logoContainer: {
     width: 80,
@@ -251,58 +218,24 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 20,
   },
-  formTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  formSubtitle: { fontSize: 15, lineHeight: 22, marginTop: -4, marginBottom: 8 },
   errorBanner: {
     backgroundColor: '#FEE2E2',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    padding: 12,
+    borderRadius: 12,
     marginBottom: 8,
   },
-  errorBannerText: { color: '#EF4444', fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    marginHorizontal: 16,
+  errorBannerText: {
+    color: '#DC2626',
     fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  googleBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#374151',
-  },
+  formTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  formSubtitle: { fontSize: 15, lineHeight: 22, marginTop: -4, marginBottom: 8 },
   footerSpacer: {
     flex: 1,
     minHeight: 16,
   },
-  loginLink: { alignItems: 'center', marginBottom: 16 },
-  loginText: { fontSize: 15, textAlign: 'center' },
   termsText: {
     fontSize: 12,
     textAlign: 'center',

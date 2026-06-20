@@ -9,7 +9,7 @@ import { GlobalCacheService } from './cache.service';
     CacheModule.registerAsync({
       useFactory: async () => ({
         store: await redisStore({
-          url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
+          url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
           ttl: 60 * 1000, // Default TTL 60 seconds
         }),
       }),

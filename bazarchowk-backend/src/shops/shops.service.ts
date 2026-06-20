@@ -18,8 +18,13 @@ export class ShopsService {
   // ==================== SHOP CRUD ====================
 
   async create(ownerId: string, createShopDto: CreateShopDto) {
+    const data: any = { ...createShopDto, ownerId };
+    if (createShopDto.partnerType) {
+      data.partnerType = createShopDto.partnerType as any;
+    }
+
     const shop = await this.prisma.shop.create({
-      data: { ...createShopDto, ownerId },
+      data,
     });
 
     const ownerRole = await this.prisma.role.findUnique({ where: { name: 'SHOP_OWNER' } });
@@ -35,8 +40,25 @@ export class ShopsService {
     return shop;
   }
 
-  async findAll() {
-    return this.prisma.shop.findMany({ include: { timings: true } });
+  async findAll(lat?: number, lng?: number) {
+    const shops = await this.prisma.shop.findMany({ include: { timings: true } });
+    if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
+      const filteredShops = shops.map(shop => {
+        if (shop.latitude == null || shop.longitude == null) return { ...shop, distanceKm: 999 };
+        const R = 6371; // Earth's radius in km
+        const dLat = (shop.latitude - lat) * (Math.PI / 180);
+        const dLon = (shop.longitude - lng) * (Math.PI / 180);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+        return { ...shop, distanceKm: distance };
+      }).filter(shop => shop.distanceKm <= Math.max(shop.deliveryRadius || 0, 25.0));
+      return filteredShops.sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+    return shops;
   }
 
   async findMyShop(ownerId: string) {

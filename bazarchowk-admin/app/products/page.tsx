@@ -20,7 +20,7 @@ interface Product {
   variants: ProductVariant[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ProductsAdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -126,7 +126,7 @@ export default function ProductsAdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                      ₹{product.basePrice}
+                      â‚¹{product.basePrice}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{product.variants?.length || 0} Variants</div>

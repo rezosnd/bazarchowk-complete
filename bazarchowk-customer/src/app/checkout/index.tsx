@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+import RazorpayCheckout from 'react-native-razorpay';
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
 
@@ -44,11 +44,11 @@ export default function CheckoutScreen() {
 
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
-      alert('Please select a delivery address');
+      Alert.alert('Error', 'Please select a delivery address');
       return;
     }
     if (!shopId) {
-      alert('Missing shop ID');
+      Alert.alert('Error', 'Missing shop ID');
       return;
     }
     setPlacingOrder(true);
@@ -62,22 +62,44 @@ export default function CheckoutScreen() {
       const orderId = res.data.id;
 
       if (paymentMethod === 'RAZORPAY') {
-        // 1. Generate Payment Link
+        // 1. Generate Razorpay Order
         const paymentRes = await api.post('/payments/create', { orderId });
-        const { shortUrl } = paymentRes.data;
+        const { razorpayOrderId, amount } = paymentRes.data;
 
-        // 2. Open Secure WebBrowser for Payment
-        await WebBrowser.openBrowserAsync(shortUrl);
-        // Once the user closes the browser, we assume they completed it or aborted. 
-        // Our webhook will catch the actual status.
+        // 2. Open Native Razorpay Checkout
+        try {
+          const data = await RazorpayCheckout.open({
+            key: 'rzp_live_Sr05Li4YOC8ZQo', // Use your public key
+            amount: amount,
+            name: 'BazarChowk',
+            description: 'Order Payment',
+            image: 'https://bazarchowk.com/logo.png', // Add your hosted logo
+            order_id: razorpayOrderId,
+            theme: { color: '#00B140' }
+          });
+          
+          // Verify on backend
+          await api.post('/payments/verify', {
+            razorpayOrderId: data.razorpay_order_id,
+            razorpayPaymentId: data.razorpay_payment_id,
+            razorpaySignature: data.razorpay_signature
+          });
+        } catch (error: any) {
+          const errorMsg = error?.description || error?.response?.data?.message || error?.message || 'Payment cancelled or failed';
+          Alert.alert('Payment Failed', typeof errorMsg === 'string' ? errorMsg : 'Payment failed or cancelled.');
+          // You could redirect them to orders here so they can retry later.
+          router.replace('/(tabs)/orders' as any);
+          return;
+        }
       }
 
       // Clear the local cart
       await useCartStore.getState().fetchCart();
-      alert(paymentMethod === 'RAZORPAY' ? 'Checkout completed. Check orders for status.' : `Order Placed Successfully! ID: ${res.data.orderNumber}`);
-      router.replace('/(tabs)/orders'); // Assume orders tab exists
+      Alert.alert('Success', paymentMethod === 'RAZORPAY' ? 'Checkout completed. Check orders for status.' : `Order Placed Successfully! ID: ${res.data.orderNumber}`);
+      router.replace('/(tabs)/orders' as any); // Assume orders tab exists
     } catch (error: any) {
-      alert(error?.message || 'Failed to place order');
+      const globalErrorMsg = error?.response?.data?.message || error?.message || 'Failed to place order';
+      Alert.alert('Error', typeof globalErrorMsg === 'string' ? globalErrorMsg : 'Failed to place order');
     } finally {
       setPlacingOrder(false);
     }
@@ -167,13 +189,13 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.paymentCard, paymentMethod === 'UPI' && styles.paymentCardActive]}
-            onPress={() => setPaymentMethod('UPI')}
+            style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
+            onPress={() => setPaymentMethod('RAZORPAY')}
           >
-            <Ionicons name="qr-code-outline" size={24} color={paymentMethod === 'UPI' ? PRIMARY : '#64748B'} />
-            <Text style={[styles.paymentText, paymentMethod === 'UPI' && styles.paymentTextActive]}>Pay via UPI</Text>
-            <View style={[styles.radio, paymentMethod === 'UPI' && styles.radioActive]}>
-              {paymentMethod === 'UPI' && <View style={styles.radioInner} />}
+            <Ionicons name="card-outline" size={24} color={paymentMethod === 'RAZORPAY' ? PRIMARY : '#64748B'} />
+            <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online (Cards/UPI/NetBanking)</Text>
+            <View style={[styles.radio, paymentMethod === 'RAZORPAY' && styles.radioActive]}>
+              {paymentMethod === 'RAZORPAY' && <View style={styles.radioInner} />}
             </View>
           </TouchableOpacity>
         </View>

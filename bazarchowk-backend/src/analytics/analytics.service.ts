@@ -18,6 +18,32 @@ export class AnalyticsService {
     });
   }
 
+  // 1.5 Admin Dashboard Metrics
+  async getDashboardMetrics() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const revenue = await this.prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { createdAt: { gte: today }, status: 'DELIVERED' }
+    });
+
+    const totalOrders = await this.prisma.order.count();
+    
+    let activeRiders = 0;
+    const riderRole = await this.prisma.role.findUnique({ where: { name: 'RIDER' } });
+    if (riderRole) {
+      activeRiders = await this.prisma.user.count({ where: { roleId: riderRole.id } });
+    }
+
+    return {
+      totalRevenue: revenue._sum.totalAmount || 0,
+      totalOrders,
+      activeRiders
+    };
+  }
+
+
   // 2. Global Platform Revenue
   async getGlobalRevenue(startDate: Date, endDate: Date) {
     const orders = await this.prisma.order.aggregate({

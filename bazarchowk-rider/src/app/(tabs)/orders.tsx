@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function RiderOrdersScreen() {
   const insets = useSafeAreaInsets();
@@ -31,7 +31,7 @@ export default function RiderOrdersScreen() {
 
   const fetchAvailableDeliveries = async () => {
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('rider_token');
       const res = await fetch(`${API_BASE}/delivery/available`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -40,7 +40,7 @@ export default function RiderOrdersScreen() {
         setDeliveries(data);
       }
     } catch (error) {
-      console.error('Failed to fetch deliveries');
+      console.error('Failed to fetch deliveries:', error);
     } finally {
       setLoading(false);
     }
@@ -49,32 +49,33 @@ export default function RiderOrdersScreen() {
   const handleAcceptDelivery = async (deliveryId: string, orderId: string) => {
     setAssigningId(deliveryId);
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
-      // A hack to parse JWT or just pass token if backend gets it from CurrentUser
-      // But API expects { deliveryPartnerId } in body. Wait, the backend decorator might just need any string or it extracts it. 
-      // Actually if we look at backend, it takes `@Body('deliveryPartnerId') partnerId: string`. We will pass a dummy or actual user ID.
-      // Better yet, in a real app, we'd decode the JWT to get the ID.
-      const userId = await SecureStore.getItemAsync('bazar_user_id'); 
-      if (!userId) throw new Error('Not authenticated');
+      const token = await SecureStore.getItemAsync('rider_token');
+      if (!token) throw new Error('Not authenticated');
 
       const res = await fetch(`${API_BASE}/delivery/${deliveryId}/assign`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ deliveryPartnerId: userId })
+        }
       });
 
       if (res.ok) {
         Alert.alert('Delivery Accepted!', 'Navigate to the shop now.');
         router.push(`/delivery/${orderId}` as any);
       } else {
-        Alert.alert('Error', 'Delivery might have been claimed by another rider.');
+        const errorData = await res.json().catch(() => ({}));
+        let msg = 'Delivery might have been claimed by another rider.';
+        if (typeof errorData.message === 'string') msg = errorData.message;
+        else if (Array.isArray(errorData.message)) msg = errorData.message.join(', ');
+        else if (errorData.message) msg = JSON.stringify(errorData.message);
+        
+        Alert.alert('Backend Error', msg);
         fetchAvailableDeliveries();
       }
-    } catch (e) {
-      Alert.alert('Error', 'Failed to connect');
+    } catch (e: any) {
+      console.error('Handle Accept Delivery Error:', e);
+      Alert.alert('Error', e.message || 'Failed to connect');
     } finally {
       setAssigningId(null);
     }
@@ -118,7 +119,7 @@ export default function RiderOrdersScreen() {
                     <Text style={styles.addressText}>{order.shop?.city}</Text>
                   </View>
                   <View style={styles.amountBox}>
-                    <Text style={styles.amountText}>₹{order.totalAmount}</Text>
+                    <Text style={styles.amountText}>â‚¹{order.totalAmount}</Text>
                   </View>
                 </View>
 

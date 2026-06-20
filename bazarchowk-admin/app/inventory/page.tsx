@@ -20,7 +20,7 @@ interface InventoryItem {
   logs: InventoryLog[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function InventoryAdminPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);

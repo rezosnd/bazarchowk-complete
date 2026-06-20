@@ -49,43 +49,34 @@ export class PaymentsService {
     try {
       const amountInPaise = Math.round(order.totalAmount * 100);
 
-      // Create Payment Link
-      const paymentLink = await this.razorpay.paymentLink.create({
+      // Create Razorpay Order
+      const razorpayOrder = await this.razorpay.orders.create({
         amount: amountInPaise,
         currency: 'INR',
-        accept_partial: false,
-        reference_id: `ref_${order.orderNumber}`,
-        description: `Payment for BazarChowk Order ${order.orderNumber}`,
-        customer: {
-          name: order.customer.name || 'Customer',
-          email: order.customer.email || 'customer@bazarchowk.com',
-          contact: order.customer.phone || '9999999999'
-        },
-        notify: {
-          sms: true,
-          email: true
-        },
-        reminder_enable: true,
+        receipt: `ref_${order.orderNumber}`,
+        notes: {
+          orderId: order.id,
+          customerId: order.customerId
+        }
       });
 
       // Upsert payment tracking record
       const payment = await this.prisma.payment.upsert({
         where: { orderId: order.id },
         update: {
-          razorpayOrderId: paymentLink.id, // storing link id here
+          razorpayOrderId: razorpayOrder.id,
           amount: order.totalAmount,
         },
         create: {
           orderId: order.id,
-          razorpayOrderId: paymentLink.id,
+          razorpayOrderId: razorpayOrder.id,
           amount: order.totalAmount,
         },
       });
 
       return {
-        paymentLinkId: paymentLink.id,
-        shortUrl: paymentLink.short_url,
-        status: paymentLink.status,
+        razorpayOrderId: razorpayOrder.id,
+        amount: amountInPaise,
         orderId: order.id,
       };
     } catch (error) {
@@ -175,6 +166,11 @@ export class PaymentsService {
       const razorpayPaymentId = payload.payload.payment.entity.id;
       const razorpayOrderId = payload.payload.payment.entity.order_id;
       
+      if (!razorpayOrderId) {
+        // This was likely a wallet deposit (Payment Link without Order ID)
+        return { received: true, note: 'Ignored non-order payment (likely wallet)' };
+      }
+
       const payment = await this.prisma.payment.findUnique({
         where: { razorpayOrderId },
       });
@@ -197,6 +193,9 @@ export class PaymentsService {
       }
     } else if (event === 'payment.failed') {
        const razorpayOrderId = payload.payload.payment.entity.order_id;
+       if (!razorpayOrderId) {
+         return { received: true, note: 'Ignored non-order payment failure' };
+       }
        const payment = await this.prisma.payment.findUnique({
         where: { razorpayOrderId },
       });
@@ -298,7 +297,7 @@ export class PaymentsService {
           order: {
             select: {
               orderNumber: true,
-              customer: { select: { name: true, phone: true } },
+              customer: { select: { firstName: true, lastName: true, phone: true } },
               shop: { select: { name: true } }
             }
           }

@@ -4,13 +4,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ShopProfileScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [shopId, setShopId] = useState('');
   const [name, setName] = useState('');
@@ -44,6 +47,52 @@ export default function ShopProfileScreen() {
       console.warn('Failed to fetch profile', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const pickImage = async (type: 'logo' | 'banner') => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: type === 'logo' ? [1, 1] : [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setUploading(true);
+      try {
+        const token = await SecureStore.getItemAsync('partner_token');
+        if (!token) throw new Error('Missing auth token');
+
+        const formData = new FormData();
+        formData.append('file', {
+          uri: asset.uri,
+          name: asset.fileName || 'upload.jpg',
+          type: asset.mimeType || 'image/jpeg',
+        } as any);
+
+        const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (uploadRes.status === 200 || uploadRes.status === 201) {
+          const data = uploadRes.data;
+          if (type === 'logo') setLogoUrl(data.url);
+          else setBannerUrl(data.url);
+        } else {
+          console.error(uploadRes.data);
+          alert('Failed to upload image. Backend returned an error.');
+        }
+      } catch (err: any) {
+        console.error(err?.response?.data || err.message);
+        alert('Network error while uploading');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -99,26 +148,29 @@ export default function ShopProfileScreen() {
         {/* Banner Preview */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Branding Images</Text>
-          <Text style={styles.label}>Banner Image URL</Text>
-          <TextInput style={styles.input} placeholder="https://example.com/banner.jpg" value={bannerUrl} onChangeText={setBannerUrl} />
-          {bannerUrl ? (
-            <Image source={{ uri: bannerUrl }} style={styles.bannerPreview} resizeMode="cover" />
-          ) : (
-            <View style={[styles.bannerPreview, styles.placeholder]}>
-              <Ionicons name="image-outline" size={24} color="#94A3B8" />
-              <Text style={styles.placeholderText}>No Banner Image</Text>
-            </View>
-          )}
+          <Text style={styles.label}>Banner Image</Text>
+          <TouchableOpacity onPress={() => pickImage('banner')} disabled={uploading}>
+            {bannerUrl ? (
+              <Image source={{ uri: bannerUrl }} style={styles.bannerPreview} resizeMode="cover" />
+            ) : (
+              <View style={[styles.bannerPreview, styles.placeholder]}>
+                <Ionicons name="image-outline" size={24} color="#94A3B8" />
+                <Text style={styles.placeholderText}>Tap to Upload Banner</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-          <Text style={[styles.label, { marginTop: 16 }]}>Logo Image URL</Text>
-          <TextInput style={styles.input} placeholder="https://example.com/logo.png" value={logoUrl} onChangeText={setLogoUrl} />
-          {logoUrl ? (
-            <Image source={{ uri: logoUrl }} style={styles.logoPreview} resizeMode="cover" />
-          ) : (
-            <View style={[styles.logoPreview, styles.placeholder]}>
-              <Ionicons name="image-outline" size={20} color="#94A3B8" />
-            </View>
-          )}
+          <Text style={[styles.label, { marginTop: 16 }]}>Logo Image</Text>
+          <TouchableOpacity onPress={() => pickImage('logo')} disabled={uploading}>
+            {logoUrl ? (
+              <Image source={{ uri: logoUrl }} style={styles.logoPreview} resizeMode="cover" />
+            ) : (
+              <View style={[styles.logoPreview, styles.placeholder]}>
+                <Ionicons name="image-outline" size={20} color="#94A3B8" />
+                <Text style={styles.placeholderText}>Tap to Upload Logo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
@@ -137,8 +189,8 @@ export default function ShopProfileScreen() {
           />
         </View>
 
-        <TouchableOpacity style={styles.btn} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Save Profile</Text>}
+        <TouchableOpacity style={styles.btn} onPress={handleSave} disabled={saving || uploading}>
+          {saving || uploading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Save Profile</Text>}
         </TouchableOpacity>
       </ScrollView>
     </View>

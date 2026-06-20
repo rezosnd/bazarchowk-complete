@@ -51,7 +51,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       if (!this.connectedUsers.has(userId)) {
         this.connectedUsers.set(userId, new Set());
       }
-      this.connectedUsers.get(userId).add(client.id);
+      this.connectedUsers.get(userId)?.add(client.id);
 
       // Join role specific rooms
       if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
@@ -64,7 +64,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         if (!this.connectedShops.has(decoded.shopId)) {
           this.connectedShops.set(decoded.shopId, new Set());
         }
-        this.connectedShops.get(decoded.shopId).add(client.id);
+        this.connectedShops.get(decoded.shopId)?.add(client.id);
       }
 
       if (role === 'RIDER' || role === 'DELIVERY_PARTNER') {

@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ShopProductsScreen() {
   const insets = useSafeAreaInsets();
@@ -78,7 +78,7 @@ export default function ShopProductsScreen() {
                 )}
                 <View style={styles.info}>
                   <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-                  <Text style={styles.price}>₹{product.basePrice}</Text>
+                  <Text style={styles.price}>â‚¹{product.basePrice}</Text>
                   
                   <View style={styles.metaRow}>
                     <Text style={styles.variantsText}>{product.variants?.length || 0} Variants</Text>

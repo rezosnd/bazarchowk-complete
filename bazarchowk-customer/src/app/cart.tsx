@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -27,7 +27,7 @@ export default function CartScreen() {
     try {
       await updateQuantity(itemId, newQuantity);
     } catch (error: any) {
-      alert(error?.response?.data?.message || error?.message || 'Failed to update quantity.');
+      Alert.alert('Error', error?.response?.data?.message || error?.message || 'Failed to update quantity.');
     } finally {
       setUpdatingId(null);
     }
@@ -38,7 +38,7 @@ export default function CartScreen() {
     try {
       await removeItem(itemId);
     } catch (error) {
-      alert('Failed to remove item');
+      Alert.alert('Error', 'Failed to remove item');
     } finally {
       setUpdatingId(null);
     }

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import api from '@/services/api';
+import RazorpayCheckout from 'react-native-razorpay';
 
 const PRIMARY = '#00B140';
 
@@ -35,16 +36,32 @@ export default function WalletScreen() {
 
     setAdding(true);
     try {
-      // Simulation: Directly credit wallet for demo purposes.
-      // In production, this would open Razorpay, then call /wallet/credit on success.
-      await api.post('/wallet/deposit', {
+      const { data: linkData } = await api.post('/wallet/deposit/create-link', {
         amount,
+        redirectUri: 'ignored' // no longer needed for native SDK
       });
+
+      const data = await RazorpayCheckout.open({
+        key: 'rzp_live_Sr05Li4YOC8ZQo',
+        amount: linkData.amount,
+        name: 'BazarChowk Wallet',
+        description: 'Add money to wallet',
+        order_id: linkData.razorpayOrderId,
+        theme: { color: PRIMARY }
+      });
+
+      await api.post('/wallet/deposit/verify', {
+        razorpay_order_id: data.razorpay_order_id,
+        razorpay_payment_id: data.razorpay_payment_id,
+        razorpay_signature: data.razorpay_signature
+      });
+      
       setAddAmount('');
       Alert.alert('Success', `₹${amount} added to your wallet!`);
       fetchWallet();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add money');
+      const errorMsg = error?.description || error?.response?.data?.message || error?.message || 'Failed to add money';
+      Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Payment failed or cancelled');
     } finally {
       setAdding(false);
     }

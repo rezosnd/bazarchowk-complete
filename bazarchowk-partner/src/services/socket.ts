@@ -3,12 +3,12 @@ import * as SecureStore from 'expo-secure-store';
 
 class SocketService {
   private socket: Socket | null = null;
-  private url = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+  private url = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
   async connect() {
     if (this.socket?.connected) return;
 
-    const token = await SecureStore.getItemAsync('bazar_token');
+    const token = await SecureStore.getItemAsync('partner_token');
     if (!token) return;
 
     this.socket = io(`${this.url}/realtime`, {

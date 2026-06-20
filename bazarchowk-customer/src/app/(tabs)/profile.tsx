@@ -43,13 +43,15 @@ export default function ProfileScreen() {
           <View style={styles.userInfo}>
             <View style={[styles.avatar, { backgroundColor: theme.primarySurface }]}>
               <Text style={styles.avatarText}>
-                {user.name.charAt(0).toUpperCase()}
+                {user?.name?.charAt(0)?.toUpperCase() || user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.userName, { color: theme.text }]}>{user.name}</Text>
-              <Text style={[styles.userPhone, { color: theme.textSecondary }]}>{user.phone}</Text>
-              {user.email && (
+              <Text style={[styles.userName, { color: theme.text }]}>
+                {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User')}
+              </Text>
+              {user?.phone && <Text style={[styles.userPhone, { color: theme.textSecondary }]}>{user.phone}</Text>}
+              {user?.email && (
                 <Text style={[styles.userEmail, { color: theme.textTertiary }]}>{user.email}</Text>
               )}
             </View>

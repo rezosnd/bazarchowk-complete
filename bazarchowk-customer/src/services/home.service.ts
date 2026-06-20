@@ -42,8 +42,12 @@ export const HomeService = {
     const res = await api.get('/categories');
     return res.data;
   },
-  getNearbyShops: async (): Promise<Shop[]> => {
-    const res = await api.get('/shops');
+  getNearbyShops: async (lat?: number, lng?: number): Promise<Shop[]> => {
+    let url = '/shops';
+    if (lat !== undefined && lng !== undefined) {
+      url += `?lat=${lat}&lng=${lng}`;
+    }
+    const res = await api.get(url);
     return res.data;
   },
   getMarkets: async (): Promise<Market[]> => {

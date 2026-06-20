@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
+import { useAuthStore } from '@/store/auth.store';
 
 const PRIMARY = '#00B140';
 
@@ -33,7 +34,15 @@ export default function ProductReviewsScreen() {
     }
   };
 
+  const { isAuthenticated } = useAuthStore();
+
   const submitReview = async () => {
+    if (!isAuthenticated) {
+      Alert.alert('Login Required', 'Please login to submit a review.', [
+        { text: 'OK', onPress: () => router.push('/(auth)/login') }
+      ]);
+      return;
+    }
     if (!rating) return;
     setSubmitting(true);
     try {

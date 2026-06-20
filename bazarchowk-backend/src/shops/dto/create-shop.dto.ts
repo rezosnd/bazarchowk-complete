@@ -45,4 +45,9 @@ export class CreateShopDto {
   @IsOptional()
   @IsNumber()
   deliveryRadius?: number;
+
+  @ApiPropertyOptional({ example: 'GROCERY' })
+  @IsOptional()
+  @IsString()
+  partnerType?: string;
 }

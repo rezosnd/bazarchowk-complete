@@ -10,19 +10,24 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { TokenStorage } from '@/services/api';
 import { Button, Input } from '@/components/ui';
 import { useTheme } from '@/hooks';
 import { useAuthStore } from '@/store';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/theme';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { login, guestLogin } = useAuthStore();
+  const { login, guestLogin, initialize } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,12 +69,37 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     try {
-      await WebBrowser.openAuthSessionAsync(
-        'https://bazarchowkapi.veritasco.tech/auth/google',
-        'bazarchowk://auth'
-      );
-    } catch (e) {
+      const redirectUri = Linking.createURL('auth');
+      const authUrl = `${process.env.EXPO_PUBLIC_API_URL || 'http://10.227.220.1.nip.io:3000'}/auth/google?redirectUri=${encodeURIComponent(redirectUri)}`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      
+      if (result.type === 'success' && result.url) {
+        const queryStr = result.url.split('?')[1];
+        if (queryStr) {
+          const params = queryStr.split('&');
+          let accessToken = '';
+          let refreshToken = '';
+          params.forEach(param => {
+            const [key, val] = param.split('=');
+            if (key === 'accessToken') accessToken = val;
+            if (key === 'refreshToken') refreshToken = val;
+          });
+          
+          if (accessToken && refreshToken) {
+            await TokenStorage.setTokens(accessToken, refreshToken);
+            await initialize();
+            const user = useAuthStore.getState().user;
+            if (user && !user.phone) {
+              router.replace('/register');
+            } else {
+              router.replace('/(tabs)');
+            }
+          }
+        }
+      }
+    } catch (e: any) {
       console.log('Google Auth Error:', e);
+      Alert.alert('Google Auth Error', e.message || 'Something went wrong.');
     }
   };
 
@@ -108,66 +138,12 @@ export default function LoginScreen() {
             Login to your account
           </Text>
 
-          <View style={{ marginTop: 8 }}>
-            <Input
-              label="Email Address"
-              placeholder="you@example.com"
-              value={email}
-              onChangeText={(t) => {
-                setEmail(t.trim());
-                setError('');
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={error.includes('email') ? error : undefined}
-              required
-            />
-            <View style={{ height: 16 }} />
-            <Input
-              label="Password"
-              placeholder="••••••••"
-              value={password}
-              onChangeText={(t) => {
-                setPassword(t);
-                setError('');
-              }}
-              secureTextEntry
-              error={error.includes('Password') || error === 'Invalid credentials' ? error : undefined}
-              required
-            />
-          </View>
-
-          <Button
-            title="Login"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={!email || password.length < 6}
-            style={{ marginTop: 8 }}
-          />
-
-          <TouchableOpacity style={{ alignItems: 'center', marginTop: 12 }} onPress={handleGuestLogin}>
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>Continue as Guest</Text>
-          </TouchableOpacity>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
           <TouchableOpacity style={styles.googleBtn} activeOpacity={0.7} onPress={handleGoogleLogin}>
             <Ionicons name="logo-google" size={24} color="#DB4437" />
             <Text style={styles.googleBtnText}>Continue with Google</Text>
           </TouchableOpacity>
 
           <View style={styles.footerSpacer} />
-
-          <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.loginLink}>
-            <Text style={[styles.loginText, { color: theme.textSecondary }]}>
-              New to BazarChowk?{' '}
-              <Text style={{ color: theme.primary, fontWeight: '700' }}>Create account</Text>
-            </Text>
-          </TouchableOpacity>
 
           <Text style={[styles.termsText, { color: theme.textSecondary }]}>
             By continuing, you agree to BazarChowk's{' '}

@@ -62,7 +62,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     CacheModule.register({ isGlobal: true, ttl: 300000 }),
-    BullModule.forRoot({ connection: { host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT || '6379') } }),
+    BullModule.forRoot({ connection: new (require('ioredis').Redis)(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null }) }),
     HealthModule,
     RolesModule,
     SupportModule,

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
@@ -74,7 +74,10 @@ export default function AddProductScreen() {
         body: JSON.stringify(productPayload),
       });
 
-      if (!productRes.ok) throw new Error('Failed to create product');
+      if (!productRes.ok) {
+        const errStr = await productRes.text();
+        throw new Error(`Failed to create product: ${errStr}`);
+      }
       const product = await productRes.json();
 
       const variantPayload = {
@@ -92,7 +95,10 @@ export default function AddProductScreen() {
         },
         body: JSON.stringify(variantPayload),
       });
-      if (!varRes.ok) throw new Error('Failed to create variant');
+      if (!varRes.ok) {
+        const errStr = await varRes.text();
+        throw new Error(`Failed to create variant: ${errStr}`);
+      }
       const variant = await varRes.json();
 
       // Initialize inventory ledger
@@ -104,7 +110,7 @@ export default function AddProductScreen() {
       alert('Product Added Successfully!');
       router.back();
     } catch (e: any) {
-      alert('Error saving product. Ensure valid categoryId.');
+      alert(e.message || 'Error saving product. Ensure valid categoryId.');
     } finally {
       setLoading(false);
     }
@@ -149,7 +155,7 @@ export default function AddProductScreen() {
             {categories.length === 0 && <Text style={{ color: '#94A3B8' }}>Loading categories...</Text>}
           </ScrollView>
 
-          <Text style={styles.label}>Base Price (₹) *</Text>
+          <Text style={styles.label}>Base Price (â‚¹) *</Text>
           <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={basePrice} onChangeText={setBasePrice} />
 
           <Text style={styles.label}>Description</Text>
@@ -185,7 +191,7 @@ export default function AddProductScreen() {
 
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Price (₹) *</Text>
+              <Text style={styles.label}>Price (â‚¹) *</Text>
               <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={variantPrice} onChangeText={setVariantPrice} />
             </View>
             <View style={{ flex: 1 }}>

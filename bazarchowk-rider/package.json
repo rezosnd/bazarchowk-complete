@@ -15,6 +15,7 @@
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.14",
     "expo-location": "^56.0.18",
+    "expo-notifications": "^56.0.18",
     "expo-router": "~56.2.11",
     "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
@@ -36,14 +37,16 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "cross-env": "^10.1.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" expo start",
+    "start:clear": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" expo start -c",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "android": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" expo start --android",
+    "ios": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" expo start --ios",
+    "web": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" expo start --web",
     "lint": "expo lint"
   },
   "private": true

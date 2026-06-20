@@ -13,7 +13,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, password?: string) => Promise<void>;
-  register: (firstName: string, lastName: string, email: string, password?: string) => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password?: string, phone?: string) => Promise<void>;
   guestLogin: (deviceId: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -64,10 +64,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     // ── Register ──────────────────────────────────────────────────────────────
-    register: async (firstName, lastName, email, password) => {
+    register: async (firstName, lastName, email, password, phone) => {
       set({ isLoading: true, error: null });
       try {
-        const response = await AuthService.register({ firstName, lastName, email, password });
+        const response = await AuthService.register({ firstName, lastName, email, password, phone });
         set({ user: response.user, isAuthenticated: true, isLoading: false });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Registration failed';

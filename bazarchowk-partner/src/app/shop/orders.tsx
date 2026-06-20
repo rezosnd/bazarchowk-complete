@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ShopOrdersScreen() {
   const insets = useSafeAreaInsets();
@@ -33,7 +33,7 @@ export default function ShopOrdersScreen() {
   const fetchOrders = async () => {
     try {
       const shopId = await SecureStore.getItemAsync('bazar_shop_id');
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('partner_token');
       if (!shopId || !token) throw new Error('Not authenticated');
       
       const res = await fetch(`${API_BASE}/orders/shop/${shopId}`, {
@@ -53,7 +53,7 @@ export default function ShopOrdersScreen() {
   const updateStatus = async (orderId: string, newStatus: string) => {
     setProcessingId(orderId);
     try {
-      const token = await SecureStore.getItemAsync('bazar_access_token');
+      const token = await SecureStore.getItemAsync('partner_token');
       const res = await fetch(`${API_BASE}/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 
@@ -148,7 +148,7 @@ export default function ShopOrdersScreen() {
                   <Text style={styles.customerName}>{order.customer?.name || 'Customer'}</Text>
                 </View>
                 <View style={styles.amountBox}>
-                  <Text style={styles.amountText}>₹{order.totalAmount}</Text>
+                  <Text style={styles.amountText}>â‚¹{order.totalAmount}</Text>
                 </View>
               </View>
 

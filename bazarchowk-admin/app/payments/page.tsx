@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import api from '@/lib/api';
-
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,8 +12,12 @@ export default function PaymentsPage() {
 
   const fetchPayments = async () => {
     try {
-      setLoading(true);
-      const { data } = await api.get('/payments');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/payments`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+        }
+      });
+      const data = await res.json();
       setPayments(data.data || []);
     } catch (error) {
       console.error('Failed to fetch payments', error);
@@ -29,11 +31,22 @@ export default function PaymentsPage() {
     
     setRefunding(orderId);
     try {
-      await api.post(`/payments/refund/${orderId}`, { reason: 'Admin Action' });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/payments/refund/${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: 'Admin Action' })
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to refund');
+      }
       alert('Refund successful');
       fetchPayments();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to refund');
+      alert(error.message || 'Failed to refund');
     } finally {
       setRefunding(null);
     }

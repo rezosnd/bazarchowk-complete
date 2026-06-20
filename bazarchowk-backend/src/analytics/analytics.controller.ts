@@ -19,6 +19,13 @@ export class AnalyticsController {
     return this.analyticsService.getGlobalRevenue(new Date(startDate), new Date(endDate));
   }
 
+  @Get('dashboard-metrics')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: 'Get main dashboard metrics' })
+  getDashboardMetrics() {
+    return this.analyticsService.getDashboardMetrics();
+  }
+
   @Get('active-users')
   @Roles('SUPER_ADMIN')
   @ApiOperation({ summary: 'Get DAU and MAU' })

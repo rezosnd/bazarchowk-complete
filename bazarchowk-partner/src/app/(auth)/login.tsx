@@ -1,59 +1,70 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function PartnerLoginScreen() {
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-    setLoading(true);
-    setError('');
+  const handleGoogleLogin = async () => {
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) throw new Error('Invalid credentials');
+      const redirectUri = Linking.createURL('auth');
+      const authUrl = `${API_URL}/auth/google?redirectUri=${encodeURIComponent(redirectUri)}&state=partner`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       
-      const data = await res.json();
-      if (data.user?.role?.name !== 'SHOP_OWNER' && data.user?.role?.name !== 'SHOP_STAFF') {
-        throw new Error('Unauthorized: You are not a partner');
+      if (result.type === 'success' && result.url) {
+        const queryStr = result.url.split('?')[1];
+        if (queryStr) {
+          const params = queryStr.split('&');
+          let accessToken = '';
+          let refreshToken = '';
+          params.forEach(param => {
+            const [key, val] = param.split('=');
+            if (key === 'accessToken') accessToken = val;
+            if (key === 'refreshToken') refreshToken = val;
+          });
+          
+          if (accessToken && refreshToken) {
+            await SecureStore.setItemAsync('partner_token', accessToken);
+            await SecureStore.setItemAsync('partner_refresh_token', refreshToken);
+            
+            // Check if profile has phone
+            const profileRes = await fetch(`${API_URL}/users/me`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (profileRes.ok) {
+              const user = await profileRes.json();
+              if (!user.phone) {
+                router.replace('/(auth)/register');
+                return;
+              }
+            }
+            router.replace('/');
+          }
+        }
       }
-      await SecureStore.setItemAsync('partner_token', data.accessToken);
-      if (data.refreshToken) {
-        await SecureStore.setItemAsync('partner_refresh_token', data.refreshToken);
-      }
-      router.replace('/');
     } catch (e: any) {
-      setError(e.message || 'Login failed');
-    } finally {
-      setLoading(false);
+      console.log('Google Auth Error:', e);
+      Alert.alert('Google Auth Error', e.message || 'Something went wrong.');
     }
   };
 
@@ -85,55 +96,11 @@ export default function PartnerLoginScreen() {
 
         <View style={styles.form}>
           <Text style={styles.formTitle}>Welcome Back</Text>
-          <Text style={styles.formSubtitle}>Login to your partner account</Text>
+          <Text style={styles.formSubtitle}>Sign in to your partner account</Text>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <View style={{ marginTop: 8 }}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="partner@example.com"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={(t) => { setEmail(t.trim()); setError(''); }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
-
-            <View style={{ height: 16 }} />
-
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
-                  value={password}
-                  onChangeText={(t) => { setPassword(t); setError(''); }}
-                  secureTextEntry
-                />
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.loginBtn, (!email || password.length < 6) && styles.loginBtnDisabled]}
-            onPress={handleLogin}
-            disabled={loading || !email || password.length < 6}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.loginBtnText}>Login to Dashboard</Text>
-            )}
+          <TouchableOpacity style={styles.googleBtn} activeOpacity={0.7} onPress={handleGoogleLogin}>
+            <Ionicons name="logo-google" size={24} color="#DB4437" />
+            <Text style={styles.googleBtnText}>Continue with Google</Text>
           </TouchableOpacity>
 
           <View style={styles.footerSpacer} />
@@ -200,36 +167,28 @@ const styles = StyleSheet.create({
   },
   formTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, color: '#111827' },
   formSubtitle: { fontSize: 15, lineHeight: 22, marginTop: -4, marginBottom: 8, color: '#6B7280' },
-  errorText: { color: '#EF4444', fontSize: 14, fontWeight: '500', marginBottom: 4 },
-  inputWrapper: { gap: 6 },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  inputContainer: {
+  googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
-  },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, color: '#111827' },
-  loginBtn: {
-    height: 56,
-    backgroundColor: '#00B140',
-    borderRadius: 16,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
-    shadowColor: '#00B140',
+    backgroundColor: '#FFFFFF',
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+    gap: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 2,
+    marginTop: 16,
   },
-  loginBtnDisabled: { backgroundColor: '#A7F3D0', shadowOpacity: 0 },
-  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  googleBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+  },
   footerSpacer: { flex: 1, minHeight: 24 },
   termsText: {
     fontSize: 12,

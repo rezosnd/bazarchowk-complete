@@ -1,0 +1,291 @@
+import React, { useState, useEffect } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+
+export default function RiderRegisterScreen() {
+  const insets = useSafeAreaInsets();
+  
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const token = await SecureStore.getItemAsync('rider_token');
+        if (token) {
+          const res = await fetch(`${API_URL}/users/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const user = await res.json();
+            setFirstName(user.firstName || '');
+            setLastName(user.lastName || '');
+            setEmail(user.email || '');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load profile for completion', e);
+      }
+    }
+    loadProfile();
+  }, []);
+
+  const handleCompleteProfile = async () => {
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || phone.length < 10) {
+      setError('Please fill in all valid details');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const token = await SecureStore.getItemAsync('rider_token');
+      if (!token) throw new Error('Not authenticated');
+      
+      const res = await fetch(`${API_URL}/users/me`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          firstName: firstName.trim(), 
+          lastName: lastName.trim(), 
+          phone: phone.trim() 
+        }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update profile');
+      
+      router.replace('/');
+    } catch (e: any) {
+      setError(e.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <LinearGradient
+          colors={['#00B140', '#00752A']}
+          style={[styles.topHeader, { paddingTop: insets.top + 24 }]}
+        >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../../assets/images/APP-ICON.png')}
+              style={styles.logo}
+              contentFit="contain"
+            />
+          </View>
+          <Text style={styles.headerTitle}>Complete Profile</Text>
+          <Text style={styles.headerSubtitle}>Almost there!</Text>
+        </LinearGradient>
+
+        <View style={styles.form}>
+          <Text style={styles.formTitle}>Welcome to Rider Portal</Text>
+          <Text style={styles.formSubtitle}>Please verify your details and enter your mobile number.</Text>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <View style={{ marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={[styles.inputWrapper, { flex: 1 }]}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                  />
+                </View>
+              </View>
+              <View style={[styles.inputWrapper, { flex: 1 }]}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={lastName}
+                    onChangeText={setLastName}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={{ height: 16 }} />
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <View style={[styles.inputContainer, { backgroundColor: '#F3F4F6' }]}>
+                <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: '#6B7280' }]}
+                  value={email}
+                  editable={false}
+                />
+              </View>
+            </View>
+
+            <View style={{ height: 16 }} />
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Mobile Number</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="call-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="+91 98765 43210"
+                  placeholderTextColor="#9CA3AF"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.loginBtn}
+            onPress={handleCompleteProfile}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.loginBtnText}>Complete Registration</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.footerSpacer} />
+
+          <Text style={styles.termsText}>
+            By continuing, you agree to BazarChowk's{' '}
+            <Text style={{ color: '#00B140', fontWeight: '600' }}>Rider Terms</Text>{' '}
+            and{' '}
+            <Text style={{ color: '#00B140', fontWeight: '600' }}>Privacy Policy</Text>
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  topHeader: {
+    alignItems: 'center',
+    paddingBottom: 48,
+    paddingHorizontal: 24,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  logo: { width: 48, height: 48 },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 15,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  form: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+    backgroundColor: '#FFFFFF',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  formTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, color: '#111827' },
+  formSubtitle: { fontSize: 15, lineHeight: 22, marginTop: -4, marginBottom: 8, color: '#6B7280' },
+  errorText: { color: '#EF4444', fontSize: 14, fontWeight: '500', marginBottom: 4 },
+  inputWrapper: { gap: 6 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#F9FAFB',
+  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16, color: '#111827' },
+  loginBtn: {
+    height: 56,
+    backgroundColor: '#00B140',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    shadowColor: '#00B140',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  footerSpacer: { flex: 1, minHeight: 24 },
+  termsText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    color: '#6B7280',
+    marginBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+});

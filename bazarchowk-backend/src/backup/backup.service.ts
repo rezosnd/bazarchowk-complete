@@ -1,34 +1,21 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { CloudinaryStorageService } from '../cloudinary/cloudinary.service';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as zlib from 'zlib';
-import { pipeline } from 'stream/promises';
 
 const execAsync = promisify(exec);
 
 @Injectable()
 export class BackupService implements OnModuleInit {
   private readonly logger = new Logger(BackupService.name);
-  private readonly s3: S3Client;
-  private readonly bucket: string;
-
-  constructor(private readonly prisma: PrismaService) {
-    // Cloudflare R2 is S3-compatible — same SDK, different endpoint
-    this.bucket = process.env.R2_BUCKET_NAME || 'bazarchowk-backups';
-    this.s3 = new S3Client({
-      region: 'auto',
-      endpoint: process.env.R2_ENDPOINT, // e.g. https://<account_id>.r2.cloudflarestorage.com
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-      },
-    });
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryStorageService,
+  ) {}
 
   onModuleInit() {
     this.logger.log('Backup Service initialized. Daily backup scheduled at 03:00 AM.');
@@ -44,7 +31,7 @@ export class BackupService implements OnModuleInit {
   }
 
   /**
-   * Core backup engine: pg_dump → gzip → upload to Cloudflare R2
+   * Core backup engine: pg_dump → gzip → upload to Cloudinary
    */
   async performBackup(type: 'AUTO' | 'MANUAL', triggeredBy: string | null): Promise<any> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -61,7 +48,7 @@ export class BackupService implements OnModuleInit {
       data: {
         filename,
         storageKey: `db-backups/${filename}`,
-        storageBucket: this.bucket,
+        storageBucket: 'cloudinary',
         status: 'PENDING',
         type,
         triggeredBy,
@@ -78,19 +65,9 @@ export class BackupService implements OnModuleInit {
       const fileBuffer = fs.readFileSync(localPath);
       const fileSizeBytes = BigInt(fileBuffer.length);
 
-      // 3. Upload to Cloudflare R2
-      this.logger.log(`[BACKUP] Uploading ${filename} to R2 bucket: ${this.bucket}`);
-      await this.s3.send(new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: `db-backups/${filename}`,
-        Body: fileBuffer,
-        ContentType: 'application/gzip',
-        Metadata: {
-          'backup-type': type,
-          'triggered-by': triggeredBy || 'scheduler',
-          'timestamp': new Date().toISOString(),
-        }
-      }));
+      // 3. Upload to Cloudinary
+      this.logger.log(`[BACKUP] Uploading ${filename} to Cloudinary...`);
+      await this.cloudinaryService.uploadFile(fileBuffer, 'db-backups', filename, 'raw');
 
       // 4. Update log to SUCCESS
       await this.prisma.backupLog.update({
@@ -122,14 +99,10 @@ export class BackupService implements OnModuleInit {
   }
 
   /**
-   * List all backups stored in R2
+   * List all backups stored in Cloudinary
    */
-  async listBackupsFromR2(): Promise<any> {
-    const response = await this.s3.send(new ListObjectsV2Command({
-      Bucket: this.bucket,
-      Prefix: 'db-backups/',
-    }));
-    return response.Contents || [];
+  async listBackupsFromCloudinary(): Promise<any> {
+    return this.cloudinaryService.listFiles('db-backups');
   }
 
   /**

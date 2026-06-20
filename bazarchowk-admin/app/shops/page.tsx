@@ -13,7 +13,7 @@ interface Shop {
   createdAt: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ShopsAdminPage() {
   const [shops, setShops] = useState<Shop[]>([]);

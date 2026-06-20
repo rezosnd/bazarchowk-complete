@@ -17,7 +17,7 @@ export class ProcessVoiceOrderDto {
   @IsString()
   language?: string;
 
-  @ApiPropertyOptional({ description: 'Optional R2 URL of the audio file for logging' })
+  @ApiPropertyOptional({ description: 'Optional Cloudinary URL of the audio file for logging' })
   @IsOptional()
   @IsString()
   audioUrl?: string;

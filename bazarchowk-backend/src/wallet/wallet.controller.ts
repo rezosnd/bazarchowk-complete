@@ -19,11 +19,29 @@ export class WalletController {
     return this.walletService.getWallet(user.id);
   }
 
-  @Post('deposit')
-  @ApiOperation({ summary: 'Deposit funds into wallet manually (Simulation)' })
-  deposit(@Body() dto: AddFundsDto, @CurrentUser() user: any) {
-    // In production, this would hit Razorpay first, wait for webhook, then credit.
-    // For now, this acts as a direct simulation endpoint.
-    return this.walletService.credit(user.id, dto.amount, TransactionReason.DEPOSIT, 'Manual deposit');
+  @Post('deposit/create-link')
+  @ApiOperation({ summary: 'Create Razorpay payment link for wallet deposit' })
+  createDepositLink(
+    @Body('amount') amount: number,
+    @Body('redirectUri') redirectUri: string,
+    @CurrentUser() user: any
+  ) {
+    return this.walletService.createDepositLink(user.id, amount, redirectUri);
+  }
+
+  @Post('deposit/verify')
+  @ApiOperation({ summary: 'Verify Razorpay payment for wallet deposit' })
+  verifyDeposit(
+    @Body('razorpay_payment_id') razorpayPaymentId: string,
+    @Body('razorpay_order_id') razorpayOrderId: string,
+    @Body('razorpay_signature') razorpaySignature: string,
+    @CurrentUser() user: any
+  ) {
+    return this.walletService.verifyDeposit(
+      user.id,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature
+    );
   }
 }

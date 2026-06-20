@@ -187,6 +187,21 @@ model SubCategory {
   @@unique([categoryId, name])
 }
 
+enum PartnerType {
+  RESTAURANT
+  GROCERY
+  PHARMACY
+  SALON
+  PLUMBER
+  ELECTRICIAN
+  CARPENTER
+  AC_REPAIR
+  CLEANING
+  TUTOR
+  MECHANIC
+  OTHER
+}
+
 model Shop {
   id          String  @id @default(uuid())
   ownerId     String
@@ -195,6 +210,8 @@ model Shop {
   description String?
   logoUrl     String?
   bannerUrl   String?
+  
+  partnerType PartnerType @default(GROCERY)
 
   // Location & Delivery Radius
   address        String

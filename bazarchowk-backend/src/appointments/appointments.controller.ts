@@ -114,4 +114,36 @@ export class AppointmentsController {
   cancelAppointment(@Param('id') id: string, @CurrentUser() user: any) {
     return this.appointmentsService.cancelAppointment(id, user.id);
   }
+
+  // ==================== PARTNER: MANAGE APPOINTMENTS ====================
+
+  @Get('shop/all')
+  @UseGuards(RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Partner: Get all appointments for shop' })
+  getShopAppointments(@CurrentUser() user: any) {
+    return this.appointmentsService.getShopAppointments(user.shopId || user.id);
+  }
+
+  // ==================== ADMIN: PLATFORM APPOINTMENTS ====================
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Admin: Get all appointments across platform' })
+  getAllAppointments() {
+    return this.appointmentsService.getAllAppointments();
+  }
+
+  @Patch('shop/:id/status')
+  @UseGuards(RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Partner: Update appointment status' })
+  updateAppointmentStatus(
+    @Param('id') id: string,
+    @Body('status') status: any,
+    @CurrentUser() user: any
+  ) {
+    return this.appointmentsService.updateAppointmentStatus(id, user.shopId || user.id, status);
+  }
 }

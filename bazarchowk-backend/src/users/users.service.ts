@@ -47,6 +47,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         avatarUrl: true,
         languagePref: true,
         kycStatus: true,

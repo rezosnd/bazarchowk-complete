@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +13,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private notificationsService: NotificationsService,
+    private emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -37,11 +39,15 @@ export class AuthService {
         passwordHash,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
+        phone: registerDto.phone,
         roleId: customerRole.id,
       },
     });
 
     await this.notificationsService.sendInAppNotification(user.id, 'Welcome to BazarChowk!', `Hi ${user.firstName}, welcome to BazarChowk!`, 'SYSTEM');
+    if (user.email) {
+      await this.emailService.sendWelcomeEmail(user.email, user.firstName || 'User').catch(e => console.error('Email error:', e));
+    }
 
     return this.generateTokens(user.id);
   }
@@ -80,9 +86,18 @@ export class AuthService {
     });
 
     if (!user) {
-      let customerRole = await this.prisma.role.findUnique({ where: { name: 'CUSTOMER' } });
-      if (!customerRole) {
-        customerRole = await this.prisma.role.create({ data: { name: 'CUSTOMER' } });
+      const state = req.query?.state || '';
+      let roleName = 'CUSTOMER';
+      if (state.includes('partner')) roleName = 'SHOP_OWNER';
+      else if (state.includes('rider')) roleName = 'RIDER';
+      
+      if (email === 'rehansuman41008@gmail.com' || email === 'rehansuma41008@gmail.com') {
+        roleName = 'SUPER_ADMIN';
+      }
+
+      let role = await this.prisma.role.findUnique({ where: { name: roleName } });
+      if (!role) {
+        role = await this.prisma.role.create({ data: { name: roleName } });
       }
 
       user = await this.prisma.user.create({
@@ -92,16 +107,31 @@ export class AuthService {
           firstName,
           lastName,
           avatarUrl,
-          roleId: customerRole.id,
+          roleId: role.id,
         }
       });
       await this.notificationsService.sendInAppNotification(user.id, 'Welcome to BazarChowk!', `Hi ${user.firstName}, welcome to BazarChowk!`, 'SYSTEM');
-    } else if (!user.googleId) {
-      // Link Google ID if user already exists with this email
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { googleId }
-      });
+      if (user.email) {
+        await this.emailService.sendWelcomeEmail(user.email, user.firstName || 'User').catch(e => console.error('Email error:', e));
+      }
+    } else {
+      // Force upgrade to SUPER_ADMIN if email matches, even if they already existed as a CUSTOMER
+      if (email === 'rehansuman41008@gmail.com' || email === 'rehansuma41008@gmail.com') {
+        let adminRole = await this.prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
+        if (!adminRole) {
+           adminRole = await this.prisma.role.create({ data: { name: 'SUPER_ADMIN' } });
+        }
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { roleId: adminRole.id, googleId: googleId || user.googleId }
+        });
+      } else if (!user.googleId) {
+        // Link Google ID if user already exists with this email but no googleId
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { googleId }
+        });
+      }
     }
 
     return this.generateTokens(user.id);
@@ -145,7 +175,7 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string) {
-    const accessToken = this.jwtService.sign({ sub: userId }, { expiresIn: '15m' });
+    const accessToken = this.jwtService.sign({ sub: userId }, { expiresIn: '7d' });
     const refreshToken = this.jwtService.sign({ sub: userId }, { expiresIn: '7d' });
 
     const expiresAt = new Date();

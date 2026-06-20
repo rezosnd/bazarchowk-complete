@@ -4,9 +4,10 @@ import { AppointmentsController } from './appointments.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ShopsModule } from '../shops/shops.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
-  imports: [PrismaModule, NotificationsModule, ShopsModule],
+  imports: [PrismaModule, NotificationsModule, ShopsModule, RealtimeModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],
   exports: [AppointmentsService],

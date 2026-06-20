@@ -4,11 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import api from '@/services/api';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function ShopServicesScreen() {
   const { shopId } = useLocalSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuthStore();
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
@@ -31,6 +33,12 @@ export default function ShopServicesScreen() {
 
   const bookMutation = useMutation({
     mutationFn: async (slotId: string) => {
+      if (!isAuthenticated) {
+        Alert.alert('Login Required', 'Please login to book an appointment.', [
+          { text: 'OK', onPress: () => router.push('/(auth)/login' as any) }
+        ]);
+        return Promise.reject(new Error('Login Required'));
+      }
       return api.post('/appointments', {
         serviceOfferingId: selectedServiceId,
         providerId: selectedProviderId,

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
 
 const PRIMARY = '#00B140';
 
@@ -18,6 +19,10 @@ export default function ProductDetailScreen() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCartStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  const { cart } = useCartStore();
+  const itemsCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0;
 
   useEffect(() => {
     fetchProduct();
@@ -32,7 +37,7 @@ export default function ProductDetailScreen() {
       }
     } catch (e) {
       console.warn(e);
-      alert('Failed to load product');
+      Alert.alert('Error', 'Failed to load product');
     } finally {
       setLoading(false);
     }
@@ -41,14 +46,20 @@ export default function ProductDetailScreen() {
   const [addingToCart, setAddingToCart] = useState(false);
 
   const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      Alert.alert('Login Required', 'Please login to add items to cart.', [
+        { text: 'OK', onPress: () => router.push('/(auth)/login') }
+      ]);
+      return;
+    }
     if (!selectedVariant) return;
     setAddingToCart(true);
     try {
       await addToCart(selectedVariant.id, quantity);
-      alert(`Added ${quantity}x ${selectedVariant.name} to cart!`);
+      Alert.alert('Success', `Added ${quantity}x ${selectedVariant.name} to cart!`);
       router.back();
     } catch (e: any) {
-      alert(e?.response?.data?.message || e?.message || 'Failed to add to cart. Check stock limits.');
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to add to cart. Check stock limits.');
     } finally {
       setAddingToCart(false);
     }
@@ -73,9 +84,19 @@ export default function ProductDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.backBtn}>
-          <Ionicons name="share-social-outline" size={24} color="#0F172A" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <TouchableOpacity style={styles.backBtn}>
+            <Ionicons name="share-social-outline" size={24} color="#0F172A" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/cart')}>
+            <Ionicons name="cart-outline" size={24} color="#0F172A" />
+            {itemsCount > 0 && (
+              <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: PRIMARY, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -95,7 +116,9 @@ export default function ProductDetailScreen() {
           </View>
           
           <Text style={styles.title}>{product.name}</Text>
-          <Text style={styles.shopName}>Sold by: {product.shop?.name}</Text>
+          <TouchableOpacity onPress={() => router.push(`/shop/${product.shop?.id}`)}>
+            <Text style={styles.shopName}>Sold by: <Text style={{ color: PRIMARY, textDecorationLine: 'underline' }}>{product.shop?.name}</Text></Text>
+          </TouchableOpacity>
           
           <View style={styles.priceRow}>
             <Text style={styles.price}>₹{selectedVariant?.price || product.basePrice}</Text>

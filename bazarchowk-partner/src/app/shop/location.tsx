@@ -6,13 +6,15 @@ import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
 export default function ShopLocationScreen() {
   const insets = useSafeAreaInsets();
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
   const [shopId, setShopId] = useState<string | null>(null);
   const [address, setAddress] = useState('');
@@ -37,6 +39,8 @@ export default function ShopLocationScreen() {
           setAddress(data.address || '');
           setCity(data.city || '');
           setStateName(data.state || '');
+          if (data.latitude) setLatitude(data.latitude.toString());
+          if (data.longitude) setLongitude(data.longitude.toString());
         }
       }
     } catch (e) {
@@ -45,22 +49,27 @@ export default function ShopLocationScreen() {
 
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      alert('Permission to access location was denied');
+      alert('Permission to access location was denied. Please enter coordinates manually.');
       setLoading(false);
       return;
     }
 
-    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-    setLocation(loc);
-    
-    // Reverse geocoding can be done here if needed
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      if (!latitude && !longitude) {
+        setLatitude(loc.coords.latitude.toString());
+        setLongitude(loc.coords.longitude.toString());
+      }
+    } catch (e) {
+      console.warn('GPS Error', e);
+    }
     
     setLoading(false);
   };
 
   const handleSave = async () => {
-    if (!address || !city || !stateName || !location) {
-      alert('Please fill all details and ensure GPS is synced');
+    if (!address || !city || !stateName || !latitude || !longitude) {
+      alert('Please fill all details including exact Latitude and Longitude');
       return;
     }
     if (!shopId) {
@@ -81,8 +90,8 @@ export default function ShopLocationScreen() {
           address,
           city,
           state: stateName,
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
         }),
       });
 
@@ -114,15 +123,15 @@ export default function ShopLocationScreen() {
         ) : (
           <View style={styles.mapPlaceholder}>
             <Ionicons name="location" size={64} color="#00B140" />
-            <Text style={styles.mapText}>Drop pin on your shop</Text>
-            {location && (
+            <Text style={styles.mapText}>Mapbox Location Details</Text>
+            {latitude !== '' && longitude !== '' && (
               <Text style={styles.coords}>
-                Lat: {location.coords.latitude.toFixed(6)}, Lng: {location.coords.longitude.toFixed(6)}
+                Lat: {parseFloat(latitude).toFixed(6)}, Lng: {parseFloat(longitude).toFixed(6)}
               </Text>
             )}
-            <TouchableOpacity style={styles.recenterBtn} onPress={fetchLocation}>
+            <TouchableOpacity style={styles.recenterBtn} onPress={fetchShopAndLocation}>
               <Ionicons name="locate" size={20} color="#00B140" />
-              <Text style={styles.recenterText}>Recenter</Text>
+              <Text style={styles.recenterText}>Fetch GPS</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -163,10 +172,33 @@ export default function ShopLocationScreen() {
           </View>
         </View>
 
+        <View style={styles.row}>
+          <View style={[styles.inputWrap, { flex: 1 }]}>
+            <Text style={styles.label}>Latitude *</Text>
+            <TextInput 
+              style={styles.input} 
+              placeholder="e.g. 25.5941" 
+              keyboardType="numeric"
+              value={latitude}
+              onChangeText={setLatitude}
+            />
+          </View>
+          <View style={[styles.inputWrap, { flex: 1 }]}>
+            <Text style={styles.label}>Longitude *</Text>
+            <TextInput 
+              style={styles.input} 
+              placeholder="e.g. 85.1376" 
+              keyboardType="numeric"
+              value={longitude}
+              onChangeText={setLongitude}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity 
-          style={[styles.saveBtn, (!location || !address) && { opacity: 0.5 }]} 
+          style={[styles.saveBtn, (!latitude || !longitude || !address) && { opacity: 0.5 }]} 
           onPress={handleSave}
-          disabled={saving || !location || !address}
+          disabled={saving || !latitude || !longitude || !address}
         >
           {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Confirm Location</Text>}
         </TouchableOpacity>

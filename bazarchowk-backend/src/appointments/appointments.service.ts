@@ -4,6 +4,7 @@ import { CreateAppointmentDto, CreateTimeSlotDto, UpdateSlotCapacityDto } from '
 import { NotificationsService } from '../notifications/notifications.service';
 import { ShopsService } from '../shops/shops.service';
 import { AppointmentStatus } from '@prisma/client';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Injectable()
 export class AppointmentsService {
@@ -13,6 +14,7 @@ export class AppointmentsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly shopsService: ShopsService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   // ==================== PARTNER: SERVICE OFFERINGS ====================
@@ -202,6 +204,13 @@ export class AppointmentsService {
         );
       }
 
+      this.realtime.sendToShop(appointment.provider.shopId, 'new_appointment', {
+        appointmentId: appointment.id,
+        serviceName: serviceOffering.name,
+        providerName: appointment.provider.name,
+        time: timeSlot.startTime
+      });
+
       return {
         ...appointment,
         slotAvailability: {
@@ -244,10 +253,59 @@ export class AppointmentsService {
         }
       });
 
-      return tx.appointment.update({
+      const updated = await tx.appointment.update({
         where: { id: appointmentId },
         data: { status: AppointmentStatus.CANCELLED },
+        include: { provider: true, serviceOffering: true }
       });
+
+      this.realtime.sendToShop(updated.provider.shopId, 'appointment_cancelled', {
+        appointmentId: updated.id,
+        serviceName: updated.serviceOffering.name,
+        providerName: updated.provider.name
+      });
+
+      return updated;
+    });
+  }
+
+  async getShopAppointments(shopId: string) {
+    return this.prisma.appointment.findMany({
+      where: { provider: { shopId } },
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        provider: true,
+        serviceOffering: true,
+        timeSlot: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getAllAppointments() {
+    return this.prisma.appointment.findMany({
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        provider: { include: { shop: { select: { name: true } } } },
+        serviceOffering: true,
+        timeSlot: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async updateAppointmentStatus(appointmentId: string, shopId: string, status: AppointmentStatus) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { provider: true }
+    });
+
+    if (!appointment) throw new NotFoundException('Appointment not found');
+    if (appointment.provider.shopId !== shopId) throw new BadRequestException('Not your appointment');
+
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status }
     });
   }
 }

@@ -2,13 +2,13 @@ import { io, Socket } from 'socket.io-client';
 
 class SocketService {
   private socket: Socket | null = null;
-  private url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private url = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
   connect() {
     if (this.socket?.connected) return;
 
     // Admin assumes token is stored in localStorage
-    const token = typeof window !== 'undefined' ? localStorage.getItem('bazar_token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
     if (!token) return;
 
     this.socket = io(`${this.url}/realtime`, {
