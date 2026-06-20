@@ -27,15 +27,16 @@ export class PaymentsService {
     }
   }
 
-  async createRazorpayOrder(userId: string, dto: CreatePaymentDto) {
+  async createPaymentLink(userId: string, dto: CreatePaymentDto) {
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
+      include: { customer: true }
     });
 
     if (!order) throw new NotFoundException('Order not found');
     if (order.customerId !== userId) throw new BadRequestException('Not your order');
     if (order.paymentMethod !== PaymentMethod.RAZORPAY) {
-      throw new BadRequestException('Order is not set to Razorpay payment method');
+      throw new BadRequestException('Order is not set to Razorpay');
     }
     if (order.paymentStatus === PaymentStatus.PAID) {
       throw new BadRequestException('Order is already paid');
@@ -46,38 +47,49 @@ export class PaymentsService {
     }
 
     try {
-      // Amount is in smallest currency unit (paise)
       const amountInPaise = Math.round(order.totalAmount * 100);
 
-      const razorpayOrder = await this.razorpay.orders.create({
+      // Create Payment Link
+      const paymentLink = await this.razorpay.paymentLink.create({
         amount: amountInPaise,
         currency: 'INR',
-        receipt: `rcpt_\${order.orderNumber}`,
+        accept_partial: false,
+        reference_id: `ref_${order.orderNumber}`,
+        description: `Payment for BazarChowk Order ${order.orderNumber}`,
+        customer: {
+          name: order.customer.name || 'Customer',
+          email: order.customer.email || 'customer@bazarchowk.com',
+          contact: order.customer.phone || '9999999999'
+        },
+        notify: {
+          sms: true,
+          email: true
+        },
+        reminder_enable: true,
       });
 
       // Upsert payment tracking record
       const payment = await this.prisma.payment.upsert({
         where: { orderId: order.id },
         update: {
-          razorpayOrderId: razorpayOrder.id,
+          razorpayOrderId: paymentLink.id, // storing link id here
           amount: order.totalAmount,
         },
         create: {
           orderId: order.id,
-          razorpayOrderId: razorpayOrder.id,
+          razorpayOrderId: paymentLink.id,
           amount: order.totalAmount,
         },
       });
 
       return {
-        key: process.env.RAZORPAY_KEY_ID,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        orderId: razorpayOrder.id,
-        internalPaymentId: payment.id,
+        paymentLinkId: paymentLink.id,
+        shortUrl: paymentLink.short_url,
+        status: paymentLink.status,
+        orderId: order.id,
       };
     } catch (error) {
-      this.logger.error('Failed to create Razorpay order', error);
+      this.logger.error('Failed to create Razorpay Payment Link', error);
       throw new BadRequestException('Payment gateway error');
     }
   }
@@ -140,10 +152,162 @@ export class PaymentsService {
     await this.notifications.sendInAppNotification(
       payment.order.shop.ownerId,
       'Payment Received',
-      `Online payment of ₹\${payment.amount} received for order \${payment.order.orderNumber}`,
+      `Online payment of ₹${payment.amount} received for order ${payment.order.orderNumber}`,
       'PAYMENT'
     );
 
     return { success: true, message: 'Payment verified successfully' };
+  }
+
+  async handleWebhook(signature: string, payload: any) {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+    const generatedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex');
+
+    if (generatedSignature !== signature) {
+      throw new BadRequestException('Invalid webhook signature');
+    }
+
+    const event = payload.event;
+    if (event === 'payment.captured') {
+      const razorpayPaymentId = payload.payload.payment.entity.id;
+      const razorpayOrderId = payload.payload.payment.entity.order_id;
+      
+      const payment = await this.prisma.payment.findUnique({
+        where: { razorpayOrderId },
+      });
+
+      if (payment && payment.status !== PaymentStatus.PAID) {
+        await this.prisma.$transaction([
+          this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              razorpayPaymentId,
+              status: PaymentStatus.PAID,
+            },
+          }),
+          this.prisma.order.update({
+            where: { id: payment.orderId },
+            data: { paymentStatus: PaymentStatus.PAID },
+          }),
+        ]);
+        this.logger.log(`Payment captured via webhook for order ${payment.orderId}`);
+      }
+    } else if (event === 'payment.failed') {
+       const razorpayOrderId = payload.payload.payment.entity.order_id;
+       const payment = await this.prisma.payment.findUnique({
+        where: { razorpayOrderId },
+      });
+      if (payment && payment.status !== PaymentStatus.FAILED) {
+        await this.prisma.$transaction([
+          this.prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: PaymentStatus.FAILED },
+          }),
+          this.prisma.order.update({
+            where: { id: payment.orderId },
+            data: { paymentStatus: PaymentStatus.FAILED },
+          }),
+        ]);
+        this.logger.log(`Payment failed via webhook for order ${payment.orderId}`);
+      }
+    }
+    return { received: true };
+  }
+
+  async refundPayment(orderId: string, adminId: string, reason: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true }
+    });
+
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.paymentStatus !== PaymentStatus.PAID) {
+      throw new BadRequestException('Order is not paid, cannot refund');
+    }
+
+    if (order.paymentMethod === PaymentMethod.WALLET) {
+      // Refund to wallet
+      await this.prisma.$transaction(async (prisma) => {
+        const wallet = await prisma.wallet.findUnique({ where: { userId: order.customerId } });
+        if (!wallet) throw new NotFoundException('Wallet not found for customer');
+        
+        const updatedWallet = await prisma.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: { increment: order.totalAmount } }
+        });
+        await prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'CREDIT',
+            amount: order.totalAmount,
+            reason: 'REFUND',
+            description: `Refund for order ${order.orderNumber}`,
+            referenceId: order.id,
+            balanceAfter: updatedWallet.balance,
+          }
+        });
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { paymentStatus: PaymentStatus.REFUNDED, status: 'CANCELLED' }
+        });
+      });
+      return { success: true, method: 'WALLET' };
+    } else if (order.paymentMethod === PaymentMethod.RAZORPAY) {
+      if (!this.razorpay) throw new BadRequestException('Razorpay not configured');
+      if (!order.payment || !order.payment.razorpayPaymentId) {
+        throw new BadRequestException('No Razorpay payment captured for this order');
+      }
+
+      try {
+        const refund = await this.razorpay.payments.refund(order.payment.razorpayPaymentId, {
+          amount: Math.round(order.totalAmount * 100),
+          notes: { reason }
+        });
+
+        await this.prisma.$transaction([
+          this.prisma.payment.update({
+            where: { id: order.payment.id },
+            data: { status: PaymentStatus.REFUNDED }
+          }),
+          this.prisma.order.update({
+            where: { id: order.id },
+            data: { paymentStatus: PaymentStatus.REFUNDED, status: 'CANCELLED' }
+          })
+        ]);
+
+        return { success: true, method: 'RAZORPAY', refundId: refund.id };
+      } catch (err) {
+        this.logger.error('Razorpay refund failed', err);
+        throw new BadRequestException('Failed to process Razorpay refund');
+      }
+    } else {
+      throw new BadRequestException('Cannot refund this payment method online');
+    }
+  }
+
+  async getAllPayments(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        skip,
+        take: limit,
+        include: {
+          order: {
+            select: {
+              orderNumber: true,
+              customer: { select: { name: true, phone: true } },
+              shop: { select: { name: true } }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.payment.count()
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 }

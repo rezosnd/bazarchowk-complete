@@ -15,6 +15,30 @@ export class AppointmentsService {
     private readonly shopsService: ShopsService,
   ) {}
 
+  // ==================== PARTNER: SERVICE OFFERINGS ====================
+
+  async createServiceOffering(shopId: string, data: { name: string; description?: string; price: number; durationMin: number }) {
+    return this.prisma.serviceOffering.create({
+      data: { shopId, ...data }
+    });
+  }
+
+  async getShopServices(shopId: string) {
+    return this.prisma.serviceOffering.findMany({ where: { shopId, isActive: true } });
+  }
+
+  // ==================== PARTNER: PROVIDERS ====================
+
+  async createProvider(shopId: string, data: { name: string; specialty?: string; userId?: string }) {
+    return this.prisma.provider.create({
+      data: { shopId, ...data }
+    });
+  }
+
+  async getShopProviders(shopId: string) {
+    return this.prisma.provider.findMany({ where: { shopId, isActive: true } });
+  }
+
   // ==================== PARTNER: SLOT MANAGEMENT ====================
 
   /**

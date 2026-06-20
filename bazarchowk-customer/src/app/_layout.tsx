@@ -25,12 +25,16 @@ const queryClient = new QueryClient({
   },
 });
 
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+
 // ─── Root Layout ──────────────────────────────────────────────────────────────
 export default function RootLayout() {
-  // Read initialised flag directly from store — avoids duplicate useState
-  // which conflicts with reactCompiler in Expo SDK 56 + Zustand
   const isInitialized = useAuthStore((s) => s.isInitialized);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const initialize     = useAuthStore((s) => s.initialize);
+
+  // Register push notifications
+  usePushNotifications();
 
   useEffect(() => {
     // Drop native splash instantly; our animated JS overlay is already visible
@@ -38,6 +42,16 @@ export default function RootLayout() {
     // Kick off auth/store initialisation; store sets isInitialized when done
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    import('@/services/socket').then(({ socketService }) => {
+      if (isAuthenticated) {
+        socketService.connect();
+      } else {
+        socketService.disconnect();
+      }
+    });
+  }, [isAuthenticated]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

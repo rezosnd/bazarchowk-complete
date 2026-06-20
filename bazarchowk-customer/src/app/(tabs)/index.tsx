@@ -34,6 +34,7 @@ const LOGO_SRC = require('@/assets/images/APP-ICON.png');
 
 import { useQuery } from '@tanstack/react-query';
 import { HomeService } from '@/services/home.service';
+import api from '@/services/api';
 
 // Reusing some placeholder images just in case backend data lacks images initially
 const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
@@ -48,7 +49,15 @@ import { useCartStore } from '@/store/cart.store';
 function HomeHeader() {
   const { t } = useTranslation();
   const { cart } = useCartStore();
+  const { data: notifications = [] } = useQuery({ 
+    queryKey: ['notifications'], 
+    queryFn: async () => {
+      const res = await api.get('/notifications');
+      return res.data;
+    } 
+  });
   
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
   const itemsCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0;
   
   const scale = useSharedValue(1);
@@ -83,9 +92,11 @@ function HomeHeader() {
       <View style={styles.headerRight}>
         <LanguageSelector />
 
-        <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={() => router.push('/notifications')}>
           <Ionicons name="notifications-outline" size={26} color={TEXT_MAIN} />
-          <View style={styles.badge}><Text style={styles.badgeText}>3</Text></View>
+          {unreadCount > 0 && (
+            <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/cart')}>

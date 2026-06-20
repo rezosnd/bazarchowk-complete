@@ -14,6 +14,46 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  // ==================== PARTNER: SERVICE OFFERINGS ====================
+
+  @Post('services')
+  @UseGuards(RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Partner: Create a new service offering' })
+  createService(
+    @Body() data: { name: string; description?: string; price: number; durationMin: number },
+    @CurrentUser() user: any
+  ) {
+    // Note: Assuming `user.shopId` is attached to token. 
+    // In real app, fetch shopId from user's shop
+    return this.appointmentsService.createServiceOffering(user.shopId || user.id, data);
+  }
+
+  @Get('services/:shopId')
+  @ApiOperation({ summary: 'Get all active services for a shop' })
+  getShopServices(@Param('shopId') shopId: string) {
+    return this.appointmentsService.getShopServices(shopId);
+  }
+
+  // ==================== PARTNER: PROVIDERS ====================
+
+  @Post('providers')
+  @UseGuards(RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Partner: Add a new provider (staff member)' })
+  createProvider(
+    @Body() data: { name: string; specialty?: string; userId?: string },
+    @CurrentUser() user: any
+  ) {
+    return this.appointmentsService.createProvider(user.shopId || user.id, data);
+  }
+
+  @Get('providers/:shopId')
+  @ApiOperation({ summary: 'Get all active providers for a shop' })
+  getShopProviders(@Param('shopId') shopId: string) {
+    return this.appointmentsService.getShopProviders(shopId);
+  }
+
   // ==================== PARTNER: SLOT MANAGEMENT ====================
 
   @Post('slots/create')

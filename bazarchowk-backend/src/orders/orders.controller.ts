@@ -43,6 +43,12 @@ export class OrdersController {
     return this.ordersService.getAllOrders();
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a single order by ID' })
+  getOrderById(@Param('id') id: string) {
+    return this.ordersService.getOrderById(id);
+  }
+
   @Patch(':id/status')
   @UseGuards(RolesGuard)
   @Roles('SHOP_OWNER', 'ADMIN', 'DELIVERY_PARTNER')

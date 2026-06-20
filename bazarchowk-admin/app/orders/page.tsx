@@ -32,8 +32,12 @@ export default function OrdersAdminPage() {
   const fetchGlobalOrders = async () => {
     setLoading(true);
     try {
-      // Admins likely have a global orders endpoint or use shop fetching mapped globally.
-      const res = await fetch(`${API_BASE}/orders/global`); // Mock global endpoint assumption
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '';
+      const res = await fetch(`${API_BASE}/orders/global`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -54,6 +58,30 @@ export default function OrdersAdminPage() {
       case 'DELIVERED': return 'bg-green-50 text-green-700 border-green-200';
       case 'CANCELLED': return 'bg-red-50 text-red-700 border-red-200';
       default: return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+
+  const handleRefund = async (orderId: string) => {
+    if (!confirm('Are you sure you want to refund this order?')) return;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '';
+      const res = await fetch(`${API_BASE}/payments/refund/${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: 'Admin requested refund' })
+      });
+      if (res.ok) {
+        alert('Refund processed successfully');
+        fetchGlobalOrders();
+      } else {
+        const error = await res.json();
+        alert(error.message || 'Refund failed');
+      }
+    } catch (e) {
+      alert('Error processing refund');
     }
   };
 
@@ -78,7 +106,7 @@ export default function OrdersAdminPage() {
                 <th scope="col" className="px-6 py-4 font-semibold">Customer & Shop</th>
                 <th scope="col" className="px-6 py-4 font-semibold">Items</th>
                 <th scope="col" className="px-6 py-4 font-semibold">Amount</th>
-                <th scope="col" className="px-6 py-4 font-semibold text-right">Status</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-right">Status & Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +118,7 @@ export default function OrdersAdminPage() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400">No recent orders found.</td>
                 </tr>
-              ) : orders.map((order) => (
+              ) : orders.map((order: any) => (
                 <tr key={order.id} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-mono text-xs font-bold text-green-600 mb-0.5">{order.orderNumber}</div>
@@ -102,7 +130,7 @@ export default function OrdersAdminPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="max-w-[200px] text-xs text-gray-600 truncate">
-                      {order.items?.map(item => `${item.quantity}x ${item.productVariant?.name}`).join(', ')}
+                      {order.items?.map((item: any) => `${item.quantity}x ${item.productVariant?.name}`).join(', ')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -110,9 +138,19 @@ export default function OrdersAdminPage() {
                     <div className="text-xs text-gray-500 mt-0.5">{order.paymentMethod}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
+                      {order.paymentStatus === 'PAID' && order.status !== 'DELIVERED' && (
+                        <button 
+                          onClick={() => handleRefund(order.id)}
+                          className="text-xs text-red-600 hover:text-red-800 font-bold underline"
+                        >
+                          Process Refund
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

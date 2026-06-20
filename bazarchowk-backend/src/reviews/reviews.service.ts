@@ -104,4 +104,32 @@ export class ReviewsService {
 
     return { averageRating, totalReviews: reviews.length, reviews };
   }
+
+  async getAllReviews() {
+    return this.prisma.review.findMany({
+      include: { 
+        user: { select: { id: true, firstName: true, lastName: true } },
+        shop: { select: { name: true } },
+        product: { select: { name: true, images: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getMyReviews(userId: string) {
+    return this.prisma.review.findMany({
+      where: { userId },
+      include: {
+        shop: { select: { id: true, name: true, logoUrl: true } },
+        product: { select: { id: true, name: true, images: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteReview(id: string) {
+    const review = await this.prisma.review.findUnique({ where: { id } });
+    if (!review) throw new NotFoundException('Review not found');
+    return this.prisma.review.delete({ where: { id } });
+  }
 }

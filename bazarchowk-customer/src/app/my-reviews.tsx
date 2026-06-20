@@ -1,0 +1,125 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import api from '@/services/api';
+import { Image } from 'expo-image';
+
+const PRIMARY = '#00B140';
+
+export default function MyReviewsScreen() {
+  const insets = useSafeAreaInsets();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMyReviews();
+  }, []);
+
+  const fetchMyReviews = async () => {
+    try {
+      const { data } = await api.get('/reviews/me');
+      setReviews(data);
+    } catch (e) {
+      console.warn('Failed to fetch my reviews', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
+  }
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={styles.title}>My Reviews</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {reviews.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="star-outline" size={64} color="#CBD5E1" />
+            <Text style={styles.emptyText}>No reviews written</Text>
+            <Text style={styles.emptySub}>You haven't reviewed any shops or products yet.</Text>
+          </View>
+        ) : (
+          reviews.map((review: any) => {
+            const isProduct = !!review.product;
+            const targetName = isProduct ? review.product.name : review.shop?.name;
+            const targetImg = isProduct 
+              ? (review.product.images?.[0]?.imageUrl)
+              : (review.shop?.logoUrl);
+
+            return (
+              <View key={review.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  {targetImg ? (
+                    <Image source={{ uri: targetImg }} style={styles.targetImg} contentFit="cover" />
+                  ) : (
+                    <View style={[styles.targetImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                      <Ionicons name={isProduct ? "cube" : "storefront"} size={24} color="#94A3B8" />
+                    </View>
+                  )}
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.targetType}>{isProduct ? 'Product Review' : 'Shop Review'}</Text>
+                    <Text style={styles.targetName} numberOfLines={1}>{targetName}</Text>
+                  </View>
+                  <Text style={styles.date}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.starsRow}>
+                  {[...Array(5)].map((_, i) => (
+                    <Ionicons key={i} name={i < review.rating ? "star" : "star-outline"} size={16} color="#F59E0B" />
+                  ))}
+                  <Text style={styles.ratingText}>{review.rating}.0</Text>
+                </View>
+                
+                {review.comment && (
+                  <Text style={styles.comment}>{review.comment}</Text>
+                )}
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0',
+  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  scroll: { padding: 16, paddingBottom: 100 },
+  
+  emptyState: { alignItems: 'center', marginTop: 80, padding: 32, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginTop: 16 },
+  emptySub: { fontSize: 14, color: '#64748B', textAlign: 'center', marginTop: 8 },
+
+  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  targetImg: { width: 48, height: 48, borderRadius: 8, backgroundColor: '#F1F5F9' },
+  targetType: { fontSize: 12, fontWeight: '600', color: '#64748B', textTransform: 'uppercase' },
+  targetName: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginTop: 2 },
+  date: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+  
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  
+  starsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: 8 },
+  ratingText: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginLeft: 6 },
+  comment: { fontSize: 15, color: '#475569', lineHeight: 22 },
+});

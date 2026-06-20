@@ -65,11 +65,17 @@ export default function ShopProductsScreen() {
         ) : (
           products.map((product) => {
             const totalStock = product.variants?.reduce((sum: number, v: any) => sum + v.stock, 0) || 0;
-            const primaryImg = product.images?.[0]?.imageUrl || 'https://via.placeholder.com/100';
+            const primaryImg = product.images?.[0]?.imageUrl;
 
             return (
               <TouchableOpacity key={product.id} style={styles.card} activeOpacity={0.7}>
-                <Image source={{ uri: primaryImg }} style={styles.image} contentFit="cover" />
+                {primaryImg ? (
+                  <Image source={{ uri: primaryImg }} style={styles.image} contentFit="cover" />
+                ) : (
+                  <View style={[styles.image, { alignItems: 'center', justifyContent: 'center' }]}>
+                    <Ionicons name="cube" size={24} color="#94A3B8" />
+                  </View>
+                )}
                 <View style={styles.info}>
                   <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
                   <Text style={styles.price}>₹{product.basePrice}</Text>

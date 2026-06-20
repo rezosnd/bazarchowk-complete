@@ -102,11 +102,17 @@ export default function CartScreen() {
         {items.map((item: any) => {
           const variant = item.productVariant;
           const product = variant.product;
-          const image = product.images?.[0]?.imageUrl || 'https://via.placeholder.com/100';
+          const image = product.images?.[0]?.imageUrl;
 
           return (
             <View key={item.id} style={styles.itemCard}>
-              <Image source={{ uri: image }} style={styles.itemImg} contentFit="cover" />
+              {image ? (
+                <Image source={{ uri: image }} style={styles.itemImg} contentFit="cover" />
+              ) : (
+                <View style={[styles.itemImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="cube" size={24} color="#94A3B8" />
+                </View>
+              )}
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={1}>{product.name}</Text>
                 <Text style={styles.itemVariant}>{variant.name}</Text>

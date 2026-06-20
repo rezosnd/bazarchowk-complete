@@ -104,18 +104,31 @@ export default function SearchScreen() {
               <View style={styles.resultSection}>
                 <Text style={styles.sectionTitle}>Shops</Text>
                 {results.shops.map((shop: any) => (
-                  <TouchableOpacity key={shop.id} style={styles.shopCard} activeOpacity={0.7}>
-                    <Image source={{ uri: shop.logoUrl || 'https://via.placeholder.com/64' }} style={styles.shopImg} />
+                  <TouchableOpacity 
+                    key={shop.id} 
+                    style={styles.shopCard} 
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/services/${shop.id}` as any)}
+                  >
+                    {shop.logoUrl ? (
+                      <Image source={{ uri: shop.logoUrl }} style={styles.shopImg} />
+                    ) : (
+                      <View style={[styles.shopImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="storefront" size={24} color="#94A3B8" />
+                      </View>
+                    )}
                     <View style={styles.shopInfo}>
                       <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
                       <View style={styles.shopMetaRow}>
                         <Ionicons name="location" size={12} color="#64748B" />
                         <Text style={styles.shopMeta}>{shop.city || 'Local'}</Text>
                         <Text style={styles.shopMetaDot}>•</Text>
-                        <Text style={styles.shopMeta}>{shop.deliveryRadius}km Delivery</Text>
+                        <Text style={styles.shopMeta}>{shop.deliveryRadius}km</Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
+                    <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                      <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: '700' }}>Book</Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -126,7 +139,7 @@ export default function SearchScreen() {
               <View style={styles.resultSection}>
                 <Text style={styles.sectionTitle}>Products</Text>
                 {results.products.map((product: any) => {
-                  const image = product.images?.[0]?.imageUrl || 'https://via.placeholder.com/64';
+                  const image = product.images?.[0]?.imageUrl;
                   const variant = product.variants?.[0];
                   
                   return (
@@ -134,9 +147,15 @@ export default function SearchScreen() {
                       key={product.id} 
                       style={styles.productCard} 
                       activeOpacity={0.7}
-                      onPress={() => router.push(`/product/\${product.id}` as any)}
+                      onPress={() => router.push(`/product/${product.id}` as any)}
                     >
-                      <Image source={{ uri: image }} style={styles.productImg} />
+                      {image ? (
+                        <Image source={{ uri: image }} style={styles.productImg} />
+                      ) : (
+                        <View style={[styles.productImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                          <Ionicons name="cube" size={24} color="#94A3B8" />
+                        </View>
+                      )}
                       <View style={styles.productInfo}>
                         <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
                         <Text style={styles.productShop} numberOfLines={1}>by {product.shop?.name}</Text>

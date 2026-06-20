@@ -134,6 +134,10 @@ model Notification {
   title   String
   message String
   type    String  @default("SYSTEM") // e.g., 'ORDER', 'PROMO', 'SYSTEM'
+  
+  imageUrl String?
+  linkUrl  String?
+  
   isRead  Boolean @default(false)
 
   createdAt DateTime @default(now())

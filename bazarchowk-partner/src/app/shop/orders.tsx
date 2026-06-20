@@ -15,6 +15,19 @@ export default function ShopOrdersScreen() {
 
   useEffect(() => {
     fetchOrders();
+
+    import('../../services/socket').then(({ socketService }) => {
+      socketService.on('new_order', (data) => {
+        // Refresh orders immediately to get full details
+        fetchOrders();
+      });
+    });
+
+    return () => {
+      import('../../services/socket').then(({ socketService }) => {
+        socketService.off('new_order');
+      });
+    };
   }, []);
 
   const fetchOrders = async () => {

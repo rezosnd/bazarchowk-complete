@@ -66,14 +66,27 @@ export default function OrdersScreen() {
                   <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
                   <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString()}</Text>
                 </View>
-                <View style={[
-                  styles.statusBadge, 
-                  order.status === 'DELIVERED' ? styles.statusSuccess : styles.statusPending
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    order.status === 'DELIVERED' ? styles.statusTextSuccess : styles.statusTextPending
-                  ]}>{order.status}</Text>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <View style={[
+                    styles.statusBadge, 
+                    order.status === 'DELIVERED' ? styles.statusSuccess : styles.statusPending
+                  ]}>
+                    <Text style={[
+                      styles.statusText,
+                      order.status === 'DELIVERED' ? styles.statusTextSuccess : styles.statusTextPending
+                    ]}>{order.status}</Text>
+                  </View>
+                  
+                  {order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'FAILED' && (
+                    <View style={[styles.statusBadge, { backgroundColor: '#FEE2E2' }]}>
+                      <Text style={[styles.statusText, { color: '#DC2626' }]}>Payment Failed</Text>
+                    </View>
+                  )}
+                  {order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING' && (
+                    <View style={[styles.statusBadge, { backgroundColor: '#F3F4F6' }]}>
+                      <Text style={[styles.statusText, { color: '#6B7280' }]}>Payment Pending</Text>
+                    </View>
+                  )}
                 </View>
               </View>
 

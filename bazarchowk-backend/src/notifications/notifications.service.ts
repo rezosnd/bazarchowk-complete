@@ -101,9 +101,8 @@ export class NotificationsService {
 
     try {
       const response = await admin.messaging().sendEach(messages);
-      this.logger.log(`FCM Push sent. Success: \${response.successCount}, Failures: \${response.failureCount}`);
+      this.logger.log(`FCM Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
 
-      // Optionally cleanup failed tokens (e.g., Unregistered)
       response.responses.forEach((res: any, idx: number) => {
         if (!res.success && res.error?.code === 'messaging/registration-token-not-registered') {
           this.removeDeviceToken(tokens[idx].token);
@@ -112,6 +111,104 @@ export class NotificationsService {
     } catch (error) {
       this.logger.error('Error sending FCM push', error);
     }
+  }
+
+  /**
+   * Broadcasts a notification to a specific target audience (Admin capability)
+   */
+  async sendBroadcastNotification(
+    adminId: string,
+    targetAudience: 'ALL' | 'CUSTOMER' | 'PARTNER' | 'RIDER',
+    title: string,
+    message: string,
+    imageUrl?: string,
+    linkUrl?: string
+  ) {
+    let userQuery = {};
+    if (targetAudience !== 'ALL') {
+      userQuery = { role: { name: targetAudience } };
+    }
+
+    // 1. Find all matching users with their names for personalization
+    const users = await this.prisma.user.findMany({
+      where: userQuery,
+      select: { id: true, firstName: true, lastName: true }
+    });
+
+    if (users.length === 0) return { success: true, count: 0 };
+
+    const parseTemplate = (text: string, user: any) => {
+      let parsed = text;
+      const firstName = user.firstName || 'User';
+      const lastName = user.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      
+      parsed = parsed.replace(/{firstName}/gi, firstName);
+      parsed = parsed.replace(/{lastName}/gi, lastName);
+      parsed = parsed.replace(/{name}/gi, fullName);
+      return parsed;
+    };
+
+    // 2. Create In-App notifications in bulk (Personalized)
+    const notificationData = users.map(user => ({
+      userId: user.id,
+      title: parseTemplate(title, user),
+      message: parseTemplate(message, user),
+      type: 'BROADCAST',
+      imageUrl: imageUrl || null,
+      linkUrl: linkUrl || null,
+    }));
+
+    await this.prisma.notification.createMany({
+      data: notificationData,
+    });
+
+    // 3. Send Push Notifications via FCM (Personalized)
+    if (this.firebaseInitialized) {
+      const userIds = users.map(u => u.id);
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { userId: { in: userIds } },
+        select: { token: true, userId: true }
+      });
+
+      if (tokens.length > 0) {
+        // Send in batches of 500 (FCM limit)
+        const batchSize = 500;
+        for (let i = 0; i < tokens.length; i += batchSize) {
+          const batch = tokens.slice(i, i + batchSize);
+          const messages = batch.map(t => {
+            const user = users.find(u => u.id === t.userId);
+            const personalizedTitle = user ? parseTemplate(title, user) : title;
+            const personalizedMessage = user ? parseTemplate(message, user) : message;
+
+            return {
+              notification: { 
+                title: personalizedTitle, 
+                body: personalizedMessage,
+                ...(imageUrl ? { imageUrl } : {}) 
+              },
+              token: t.token,
+              data: {
+                type: 'BROADCAST',
+                ...(imageUrl ? { imageUrl } : {}),
+                ...(linkUrl ? { linkUrl } : {})
+              }
+            };
+          });
+
+          try {
+            const response = await admin.messaging().sendEach(messages);
+            this.logger.log(`Broadcast chunk sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+          } catch (e) {
+            this.logger.error('Failed to send broadcast FCM batch', e);
+          }
+        }
+      }
+    } else {
+      this.logger.log(`[MOCK BROADCAST] To ${users.length} users | Title: ${title}`);
+    }
+
+    return { success: true, count: userIds.length };
   }
 
   async getUserNotifications(userId: string) {

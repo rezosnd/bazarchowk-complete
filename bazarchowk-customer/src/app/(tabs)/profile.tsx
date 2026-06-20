@@ -17,8 +17,11 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const MENU_ITEMS = [
+    { id: 'orders', icon: 'receipt-outline', label: 'My Orders' },
+    { id: 'appointments', icon: 'calendar-outline', label: 'My Appointments' },
     { id: 'addresses', icon: 'location-outline', label: t('profile.savedAddresses') },
     { id: 'wallet', icon: 'wallet-outline', label: 'BazarChowk Wallet' },
+    { id: 'my-reviews', icon: 'star-outline', label: 'My Reviews' },
     { id: 'notifications', icon: 'notifications-outline', label: t('profile.notifications') },
     { id: 'support', icon: 'headset-outline', label: t('profile.help') },
     { id: 'about', icon: 'information-circle-outline', label: t('profile.about') },
@@ -81,8 +84,11 @@ export default function ProfileScreen() {
               style={styles.menuItem} 
               activeOpacity={0.7}
               onPress={() => {
+                if (item.id === 'orders') router.push('/orders' as any);
+                if (item.id === 'appointments') router.push('/appointments');
                 if (item.id === 'addresses') router.push('/addresses');
                 if (item.id === 'wallet') router.push('/wallet' as any);
+                if (item.id === 'my-reviews') router.push('/my-reviews' as any);
               }}
             >
               <View style={styles.menuIconWrap}>

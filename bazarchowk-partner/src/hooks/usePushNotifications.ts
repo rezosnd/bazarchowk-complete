@@ -1,0 +1,110 @@
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:3000'; // Fallback
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+export function usePushNotifications() {
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    async function initPush() {
+      const token = await SecureStore.getItemAsync('partner_token') || await SecureStore.getItemAsync('bazar_access_token');
+      if (!token) return;
+
+      const pushToken = await registerForPushNotificationsAsync();
+      if (pushToken) {
+        fetch(`${API_BASE}/notifications/device`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ token: pushToken, deviceOs: Platform.OS })
+        }).catch(err => console.log('Failed to register device token', err));
+      }
+    }
+    initPush();
+
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      // In-app alert or refresh logic can go here
+      console.log('Received Push Notification:', notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      // Handle user tapping on notification
+      console.log('Tapped Push Notification:', response);
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#00B140',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      console.log('Failed to get push token for push notification!');
+      return;
+    }
+
+    try {
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
+
+      if (!projectId) {
+         // Using standard FCM fallback if EAS is not configured
+         token = (await Notifications.getDevicePushTokenAsync()).data;
+      } else {
+        token = (
+          await Notifications.getExpoPushTokenAsync({
+            projectId,
+          })
+        ).data;
+      }
+    } catch (e: any) {
+      console.warn('Failed to get push token. Note: Push Notifications do not work in Expo Go in SDK 53+. Use a development build.', e.message);
+      return null;
+    }
+  } else {
+    console.log('Must use physical device for Push Notifications');
+  }
+
+  return token;
+}

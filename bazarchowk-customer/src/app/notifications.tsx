@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Image } from 'expo-image';
 import api from '@/services/api';
 
 const PRIMARY = '#00B140';
@@ -98,7 +99,28 @@ export default function NotificationsScreen() {
               <View style={styles.content}>
                 <Text style={[styles.notifTitle, !notif.isRead && styles.textUnread]}>{notif.title}</Text>
                 <Text style={styles.notifMessage} numberOfLines={3}>{notif.message}</Text>
-                <Text style={styles.time}>{new Date(notif.createdAt).toLocaleString()}</Text>
+                
+                {notif.imageUrl && (
+                  <Image source={{ uri: notif.imageUrl }} style={styles.richImg} contentFit="cover" />
+                )}
+
+                {notif.linkUrl ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Text style={[styles.time, { marginTop: 0 }]}>{new Date(notif.createdAt).toLocaleString()}</Text>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        markAsRead(notif.id);
+                        router.push(notif.linkUrl as any);
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    >
+                      <Text style={{ color: PRIMARY, fontWeight: '700', fontSize: 13, marginRight: 2 }}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <Text style={styles.time}>{new Date(notif.createdAt).toLocaleString()}</Text>
+                )}
               </View>
 
               {!notif.isRead && <View style={styles.unreadDot} />}
@@ -143,5 +165,6 @@ const styles = StyleSheet.create({
   textUnread: { color: '#0F172A', fontWeight: '800' },
   notifMessage: { fontSize: 14, color: '#475569', lineHeight: 20 },
   time: { fontSize: 12, color: '#94A3B8', marginTop: 8, fontWeight: '500' },
+  richImg: { width: '100%', height: 140, borderRadius: 12, marginTop: 12, backgroundColor: '#F1F5F9' },
   unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: PRIMARY, marginTop: 6 },
 });

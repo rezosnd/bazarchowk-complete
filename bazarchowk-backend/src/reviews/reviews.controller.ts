@@ -18,6 +18,14 @@ export class ReviewsController {
     return this.reviewsService.createReview(user.id, dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all reviews written by the current user' })
+  getMyReviews(@CurrentUser() user: any) {
+    return this.reviewsService.getMyReviews(user.id);
+  }
+
   @Get('shop/:shopId')
   @ApiOperation({ summary: 'Get all reviews for a shop' })
   getShopReviews(@Param('shopId') shopId: string) {
@@ -28,5 +36,21 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Get all reviews for a product' })
   getProductReviews(@Param('productId') productId: string) {
     return this.reviewsService.getProductReviews(productId);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin only: Get all reviews' })
+  getAllReviews() {
+    return this.reviewsService.getAllReviews();
+  }
+
+  @Post(':id/delete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin only: Delete a review' })
+  deleteReview(@Param('id') id: string) {
+    return this.reviewsService.deleteReview(id);
   }
 }

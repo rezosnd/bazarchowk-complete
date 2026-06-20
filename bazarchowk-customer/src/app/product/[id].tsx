@@ -64,7 +64,7 @@ export default function ProductDetailScreen() {
 
   const primaryImage = product.images?.find((img: any) => img.isPrimary)?.imageUrl 
     || product.images?.[0]?.imageUrl 
-    || 'https://via.placeholder.com/400';
+    || null;
 
   return (
     <View style={styles.container}>
@@ -81,7 +81,11 @@ export default function ProductDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         {/* Image Gallery */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: primaryImage }} style={styles.mainImage} contentFit="contain" />
+          {primaryImage ? (
+            <Image source={{ uri: primaryImage }} style={styles.mainImage} contentFit="contain" />
+          ) : (
+            <Ionicons name="cube" size={64} color="#94A3B8" />
+          )}
         </View>
 
         {/* Product Info */}
@@ -133,6 +137,46 @@ export default function ProductDetailScreen() {
           <View style={styles.descriptionContainer}>
             <Text style={styles.sectionTitle}>Description</Text>
             <Text style={styles.description}>{product.description}</Text>
+          </View>
+
+          {/* Reviews Section */}
+          <View style={styles.reviewsContainer}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+              <TouchableOpacity onPress={() => router.push(`/product/${id}/reviews`)}>
+                <Text style={{ color: PRIMARY, fontWeight: '700' }}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {product.reviews && product.reviews.length > 0 ? (
+              product.reviews.slice(0, 3).map((review: any) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View style={styles.reviewAvatar}>
+                      <Text style={styles.reviewAvatarText}>{review.user?.firstName?.[0] || 'A'}</Text>
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.reviewName}>{review.user?.firstName} {review.user?.lastName}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                        {[...Array(5)].map((_, i) => (
+                          <Ionicons key={i} name={i < review.rating ? "star" : "star-outline"} size={14} color="#F59E0B" />
+                        ))}
+                      </View>
+                    </View>
+                    <Text style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  {review.comment && (
+                    <Text style={styles.reviewComment}>{review.comment}</Text>
+                  )}
+                </View>
+              ))
+            ) : (
+              <View style={styles.noReviewsBox}>
+                <Ionicons name="chatbubble-ellipses-outline" size={32} color="#CBD5E1" />
+                <Text style={styles.noReviewsText}>No reviews yet.</Text>
+                <Text style={styles.noReviewsSub}>Be the first to review this product after purchase!</Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -232,4 +276,15 @@ const styles = StyleSheet.create({
     shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   addToCartText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+
+  reviewsContainer: { marginTop: 32 },
+  reviewCard: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+  reviewAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
+  reviewName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  reviewDate: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+  reviewComment: { fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 20 },
+  noReviewsBox: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#F8FAFC', borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', borderStyle: 'dashed' },
+  noReviewsText: { fontSize: 15, fontWeight: '700', color: '#64748B', marginTop: 12 },
+  noReviewsSub: { fontSize: 13, color: '#94A3B8', marginTop: 4 },
 });

@@ -15,6 +15,18 @@ export default function RiderOrdersScreen() {
 
   useEffect(() => {
     fetchAvailableDeliveries();
+
+    import('../../services/socket').then(({ socketService }) => {
+      socketService.on('new_delivery', () => {
+        fetchAvailableDeliveries();
+      });
+    });
+
+    return () => {
+      import('../../services/socket').then(({ socketService }) => {
+        socketService.off('new_delivery');
+      });
+    };
   }, []);
 
   const fetchAvailableDeliveries = async () => {
@@ -42,7 +54,8 @@ export default function RiderOrdersScreen() {
       // But API expects { deliveryPartnerId } in body. Wait, the backend decorator might just need any string or it extracts it. 
       // Actually if we look at backend, it takes `@Body('deliveryPartnerId') partnerId: string`. We will pass a dummy or actual user ID.
       // Better yet, in a real app, we'd decode the JWT to get the ID.
-      const userId = await SecureStore.getItemAsync('bazar_user_id') || 'temp-id'; 
+      const userId = await SecureStore.getItemAsync('bazar_user_id'); 
+      if (!userId) throw new Error('Not authenticated');
 
       const res = await fetch(`${API_BASE}/delivery/${deliveryId}/assign`, {
         method: 'PATCH',
@@ -75,9 +88,14 @@ export default function RiderOrdersScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Available Orders</Text>
-        <TouchableOpacity onPress={fetchAvailableDeliveries}>
-          <Ionicons name="refresh" size={24} color="#00B140" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.push('/notifications')}>
+            <Ionicons name="notifications-outline" size={24} color="#64748B" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={fetchAvailableDeliveries}>
+            <Ionicons name="refresh" size={24} color="#00B140" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

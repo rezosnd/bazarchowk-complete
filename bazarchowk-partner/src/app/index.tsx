@@ -49,6 +49,8 @@ export default function PartnerDashboard() {
     { title: 'Shop Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#10B981', bgColor: '#D1FAE5' },
     { title: 'Timings', icon: 'time-outline', route: '/shop/timings', color: '#EC4899', bgColor: '#FCE7F3' },
     { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
+    { title: 'Appointments', icon: 'calendar-outline', route: '/services', color: '#0EA5E9', bgColor: '#E0F2FE' },
+    { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' },
   ];
 
   if (loading) {
@@ -69,6 +71,9 @@ export default function PartnerDashboard() {
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.shopName} numberOfLines={1}>{shopName}</Text>
         </View>
+        <TouchableOpacity style={[styles.logoutBtn, { marginRight: 8, backgroundColor: '#F1F5F9' }]} onPress={() => router.push('/notifications')}>
+          <Ionicons name="notifications-outline" size={24} color="#64748B" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.logoutBtn} onPress={async () => {
           await SecureStore.deleteItemAsync('partner_token');
           await SecureStore.deleteItemAsync('bazar_shop_id');

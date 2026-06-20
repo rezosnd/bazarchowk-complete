@@ -1,65 +1,107 @@
-import Image from "next/image";
+"use client";
+import React, { useEffect, useState } from "react";
+import { socketService } from "@/lib/socket";
+import { FiActivity, FiDollarSign, FiShoppingBag, FiTruck } from "react-icons/fi";
 
-export default function Home() {
+export default function AdminDashboard() {
+  const [liveOrders, setLiveOrders] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 45200,
+    totalOrders: 154,
+    activeRiders: 28,
+  });
+
+  useEffect(() => {
+    socketService.connect();
+
+    socketService.on("new_platform_order", (data) => {
+      setLiveOrders((prev) => [data, ...prev].slice(0, 10)); // Keep last 10
+      setMetrics((prev) => ({
+        ...prev,
+        totalOrders: prev.totalOrders + 1,
+        totalRevenue: prev.totalRevenue + data.totalAmount,
+      }));
+    });
+
+    return () => {
+      socketService.off("new_platform_order");
+      socketService.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Platform Overview</h1>
+          <p className="text-gray-500 mt-1">Real-time command center</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-200">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+          <span>Live WebSocket Connected</span>
         </div>
-      </main>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><FiDollarSign size={24} /></div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Total Revenue (Today)</p>
+            <h3 className="text-2xl font-bold text-gray-900">₹{metrics.totalRevenue.toLocaleString()}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><FiShoppingBag size={24} /></div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Orders Processed</p>
+            <h3 className="text-2xl font-bold text-gray-900">{metrics.totalOrders}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><FiTruck size={24} /></div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Active Riders</p>
+            <h3 className="text-2xl font-bold text-gray-900">{metrics.activeRiders}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <FiActivity className="text-blue-500" /> Live Order Stream
+          </h2>
+        </div>
+        <div className="p-6">
+          {liveOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 mb-4">
+                <FiActivity size={24} className="text-gray-400" />
+              </div>
+              <h3 className="text-sm font-medium text-gray-900">Waiting for orders</h3>
+              <p className="text-sm text-gray-500 mt-1">Live orders will appear here automatically.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {liveOrders.map((order, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div>
+                    <p className="font-bold text-gray-900">Order #{order.orderId.split('-')[0]}</p>
+                    <p className="text-sm text-gray-500">Shop ID: {order.shopId.split('-')[0]}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">₹{order.totalAmount}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.timestamp).toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

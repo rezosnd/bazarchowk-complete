@@ -151,9 +151,24 @@ export class OrdersService {
     await this.notifications.sendInAppNotification(
       order.shop.ownerId,
       'New Order Received',
-      `You have a new order (\${order.orderNumber}) for ₹\${order.totalAmount}`,
+      `You have a new order (${order.orderNumber}) for ₹${order.totalAmount}`,
       'ORDER'
     );
+
+    // Realtime broadcast to the specific shop's connected devices
+    this.realtime.sendToShop(order.shopId, 'new_order', {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount
+    });
+
+    // Realtime broadcast to admins for global dashboard
+    this.realtime.sendToAdmins('new_platform_order', {
+      orderId: order.id,
+      shopId: order.shopId,
+      totalAmount: order.totalAmount,
+      timestamp: new Date()
+    });
 
     return order;
   }
@@ -185,6 +200,21 @@ export class OrdersService {
       orderBy: { createdAt: 'desc' },
       take: 100
     });
+  }
+
+  async getOrderById(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { 
+        shop: true, 
+        customer: true, 
+        deliveryAddress: true,
+        items: { include: { productVariant: true } },
+        statusHistory: { orderBy: { createdAt: 'desc' } }
+      }
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
   }
 
   async updateOrderStatus(orderId: string, userId: string, dto: UpdateOrderStatusDto) {
@@ -222,8 +252,13 @@ export class OrdersService {
         // Ensure we don't create duplicate delivery rows if they toggle status
         const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
         if (!existingDelivery) {
-          await this.prisma.delivery.create({
+          const newDel = await this.prisma.delivery.create({
             data: { orderId } // status defaults to UNASSIGNED
+          });
+          // Alert all available riders
+          this.realtime.sendToAllRiders('new_delivery', {
+            deliveryId: newDel.id,
+            orderId: newDel.orderId
           });
         }
       }
@@ -237,7 +272,10 @@ export class OrdersService {
       );
 
       // Realtime websocket broadcast
-      this.realtime.broadcastOrderStatus(order.id, dto.status);
+      this.realtime.sendToUser(order.customerId, 'order_status_update', {
+        orderId: order.id,
+        status: dto.status
+      });
     }
 
     return updated;

@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import api from '@/services/api';
+import { useCartStore } from '@/store/cart.store';
 
 const PRIMARY = '#00B140';
 
@@ -49,7 +51,6 @@ export default function CheckoutScreen() {
       alert('Missing shop ID');
       return;
     }
-
     setPlacingOrder(true);
     try {
       const res = await api.post('/orders', {
@@ -58,8 +59,22 @@ export default function CheckoutScreen() {
         paymentMethod,
       });
 
-      // Clear the local cart or redirect to success
-      alert(`Order Placed Successfully! ID: ${res.data.orderNumber}`);
+      const orderId = res.data.id;
+
+      if (paymentMethod === 'RAZORPAY') {
+        // 1. Generate Payment Link
+        const paymentRes = await api.post('/payments/create', { orderId });
+        const { shortUrl } = paymentRes.data;
+
+        // 2. Open Secure WebBrowser for Payment
+        await WebBrowser.openBrowserAsync(shortUrl);
+        // Once the user closes the browser, we assume they completed it or aborted. 
+        // Our webhook will catch the actual status.
+      }
+
+      // Clear the local cart
+      await useCartStore.getState().fetchCart();
+      alert(paymentMethod === 'RAZORPAY' ? 'Checkout completed. Check orders for status.' : `Order Placed Successfully! ID: ${res.data.orderNumber}`);
       router.replace('/(tabs)/orders'); // Assume orders tab exists
     } catch (error: any) {
       alert(error?.message || 'Failed to place order');

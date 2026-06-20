@@ -48,11 +48,22 @@ export class DeliveryService {
       return d;
     });
 
-    // Notify Shop Owner
+    // Notify Shop Owner correctly by traversing shop
+    const shop = await this.prisma.shop.findUnique({ where: { id: updatedDelivery.order.shopId } });
+    if (shop) {
+      await this.notifications.sendInAppNotification(
+        shop.ownerId,
+        'Rider Assigned',
+        `A rider has been assigned to Order ${updatedDelivery.order.orderNumber}`,
+        'DELIVERY'
+      );
+    }
+
+    // Notify Customer too!
     await this.notifications.sendInAppNotification(
-      updatedDelivery.order.shopId, // Technically need to traverse to ownerId, assuming shopId for simplicity here or if extended
+      updatedDelivery.order.customerId,
       'Rider Assigned',
-      `A rider has been assigned to Order \${updatedDelivery.order.orderNumber}`,
+      `A delivery partner has been assigned to your order.`,
       'DELIVERY'
     );
 
@@ -88,7 +99,10 @@ export class DeliveryService {
         data: { status: orderStatus }
       });
       
-      this.realtime.broadcastOrderStatus(delivery.orderId, orderStatus);
+      this.realtime.sendToUser(delivery.order.customerId, 'order_status_update', {
+        orderId: delivery.orderId,
+        status: orderStatus
+      });
 
       await this.notifications.sendInAppNotification(
         delivery.order.customerId,
