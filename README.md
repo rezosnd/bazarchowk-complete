@@ -1,76 +1,65 @@
-# BazarChowk Platform (bazarchowk.com)
+# 🌈 BazarChowk Platform (bazarchowk.com)
 
-BazarChowk is a hyperlocal commerce and services platform designed for small cities and neighborhoods.  
-It connects **customers**, **shop partners**, **delivery riders**, and **admins** in one ecosystem so people can discover nearby stores/services, place orders, and get deliveries with real-time updates.
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Hyperlocal%20Commerce-ff6b35?style=for-the-badge" alt="Platform Badge" />
+  <img src="https://img.shields.io/badge/Architecture-Monorepo-4c6fff?style=for-the-badge" alt="Architecture Badge" />
+  <img src="https://img.shields.io/badge/Apps-5%20Core%20Apps-00b894?style=for-the-badge" alt="Apps Badge" />
+</p>
 
-This repository is a complete multi-app codebase that powers the BazarChowk experience.
+BazarChowk is a **hyperlocal commerce + services platform** built for small cities and neighborhoods.  
+It connects **customers**, **shop partners**, **delivery riders**, and **admins** in one ecosystem to discover nearby stores/services, place orders, and get live delivery updates.
 
----
-
-## What BazarChowk Does
-
-BazarChowk combines multiple workflows in one platform:
-
-- **Local shopping:** browse categories, shops, and products from nearby markets.
-- **Order management:** add to cart, checkout, track order status, and view history.
-- **Service bookings:** appointment and service flows beyond standard product delivery.
-- **Payments and wallets:** online payments, transaction tracking, and wallet support.
-- **Partner operations:** onboarding, inventory, products, documents, timings, and order handling.
-- **Rider operations:** delivery assignment, status updates, and order fulfillment.
-- **Admin control:** analytics, categories, shops, products, inventory, orders, and notifications.
-- **AI-assisted flows:** modules for AI assistant and voice-order related features.
+This repository is the complete multi-app codebase that powers the BazarChowk experience.
 
 ---
 
-## Platform Architecture
+## ✨ What BazarChowk Does
 
-BazarChowk is a monorepo with 5 main applications:
+- 🛍️ **Local shopping:** browse categories, shops, and products from nearby markets.
+- 🧾 **Order management:** add to cart, checkout, track status, and view history.
+- 🧰 **Service bookings:** appointment and service flows beyond standard delivery.
+- 💳 **Payments & wallets:** online payments, transaction tracking, and wallet support.
+- 🏪 **Partner operations:** onboarding, inventory, products, documents, timings, and order handling.
+- 🛵 **Rider operations:** delivery assignment, status updates, and order fulfillment.
+- 📊 **Admin control:** analytics, categories, shops, products, inventory, orders, and notifications.
+- 🤖 **AI-assisted flows:** AI assistant and voice-order related modules.
 
-### 1) `bazarchowk-backend` (NestJS + Prisma + PostgreSQL + Redis)
-Central API and business logic layer.
+---
 
-Key responsibilities:
-- Authentication, authorization, user profiles
+## 🧱 Platform Architecture
+
+BazarChowk is a monorepo with **5 main applications**:
+
+| App | Stack | Purpose |
+|---|---|---|
+| `bazarchowk-backend` | NestJS + Prisma + PostgreSQL + Redis | Central API and business logic |
+| `bazarchowk-customer` | Expo / React Native + Expo Router | Customer browsing, ordering, wallet, profile |
+| `bazarchowk-partner` | Expo / React Native + Expo Router | Merchant onboarding and store operations |
+| `bazarchowk-rider` | Expo / React Native + Expo Router | Rider delivery workflow and profile actions |
+| `bazarchowk-admin` | Next.js | Admin dashboards, controls, and supervision |
+
+### 🔐 Backend responsibilities (`bazarchowk-backend`)
+- Authentication, authorization, and user profiles
 - Product/catalog and inventory management
-- Cart, order lifecycle, delivery workflows
-- Payments, billing, settlement, commissions, finance
-- Notifications, analytics, support, fraud/security, monitoring
+- Cart, order lifecycle, and delivery workflows
+- Payments, billing, settlement, commissions, and finance
+- Notifications, analytics, support, fraud/security, and monitoring
 - Real-time communication with Socket.IO
 - API documentation via Swagger at `/api/docs`
 
-### 2) `bazarchowk-customer` (Expo / React Native + Expo Router)
-Customer-facing app for browsing, ordering, wallet, profile, reviews, and notifications.
+---
 
-### 3) `bazarchowk-partner` (Expo / React Native + Expo Router)
-Merchant/partner app for onboarding and operating stores:
-- products
-- inventory
-- orders
-- shop timings/location/documents/reviews
+## 🧪 Technology Stack
 
-### 4) `bazarchowk-rider` (Expo / React Native + Expo Router)
-Delivery-rider app for delivery workflows, notifications, and profile/account actions.
-
-### 5) `bazarchowk-admin` (Next.js)
-Admin panel for business operations:
-- dashboards and analytics
-- category/shop/product/inventory management
-- order and payment supervision
-- appointments and notification controls
+- **Backend:** NestJS, Prisma, PostgreSQL, Redis (BullMQ), Swagger  
+- **Frontend (Admin):** Next.js, React  
+- **Mobile Apps:** Expo, React Native, Expo Router  
+- **Realtime:** Socket.IO  
+- **Integrations:** Razorpay, Cloudinary, Firebase Admin, Nodemailer
 
 ---
 
-## Technology Stack
-
-- **Backend:** NestJS, Prisma, PostgreSQL, Redis (BullMQ), Swagger
-- **Frontend (Admin):** Next.js, React
-- **Mobile Apps:** Expo, React Native, Expo Router
-- **Realtime:** Socket.IO
-- **Payments & integrations:** Razorpay, Cloudinary, Firebase Admin, Nodemailer
-
----
-
-## Repository Structure
+## 🗂️ Repository Structure
 
 ```text
 bazarchowk-complete/
@@ -83,7 +72,7 @@ bazarchowk-complete/
 
 ---
 
-## How the System Works (High-level)
+## 🔄 How the System Works (High-level)
 
 1. Customer app requests products/services from nearby shops.
 2. Backend validates user, market context, inventory, offers, and pricing.
@@ -95,11 +84,11 @@ bazarchowk-complete/
 
 ---
 
-## Local Development Setup
+## 🚀 Local Development Setup
 
 > Run each app independently in its own terminal.
 
-### Prerequisites
+### ✅ Prerequisites
 
 - Node.js (LTS recommended)
 - npm
@@ -154,7 +143,7 @@ npm run dev
 
 ---
 
-## Environment Notes
+## ⚙️ Environment Notes
 
 At minimum, the backend expects infrastructure values such as:
 - `DATABASE_URL` (PostgreSQL)
@@ -165,7 +154,7 @@ Admin and apps typically use API base URL variables (for example `NEXT_PUBLIC_AP
 
 ---
 
-## Landing Page / Website Positioning Copy (bazarchowk.com)
+## 📣 Landing Page / Website Positioning Copy (bazarchowk.com)
 
 If you are writing content for **bazarchowk.com**, a concise positioning statement can be:
 
@@ -179,6 +168,6 @@ Suggested value points for landing sections:
 
 ---
 
-## Status
+## 📌 Status
 
 This repository contains production-oriented modules across commerce, logistics, finance, communication, and platform operations, organized for multi-role execution (customer, partner, rider, admin).
