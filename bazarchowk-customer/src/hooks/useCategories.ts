@@ -6,10 +6,10 @@ const CATEGORY_KEYS = {
   detail: (id: string) => ['categories', id] as const,
 };
 
-export function useCategories() {
+export function useCategories(city?: string) {
   return useQuery({
-    queryKey: CATEGORY_KEYS.all,
-    queryFn: CategoryService.getAll,
+    queryKey: [...CATEGORY_KEYS.all, city],
+    queryFn: () => CategoryService.getAll(city),
   });
 }
 

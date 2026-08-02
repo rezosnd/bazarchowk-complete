@@ -15,7 +15,8 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/APP-ICON.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.veritasco.bazarchowkrider"
     },
     "web": {
       "output": "static",

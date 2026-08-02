@@ -31,16 +31,59 @@ export class CategoriesService {
     return category;
   }
 
-  async findAllCategories() {
-    const cached = await this.cacheManager.get('all_categories');
+  async findAllCategories(city?: string) {
+    const cacheKey = city ? `all_categories_\${city.toLowerCase()}` : 'all_categories';
+    const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;
 
+    let whereClause: any = { isActive: true };
+    if (city) {
+      // Find categories that either have active products in this city
+      // OR are service-based categories (we'll just return all active categories for now to not break service categories, but ideally we link service offerings to categories)
+      whereClause = {
+        isActive: true,
+        // Uncomment below to STRICTLY filter by product availability. 
+        // We leave it relaxed for now so Service Categories (which have no products) don't disappear.
+        /*
+        products: {
+          some: {
+            shop: { city: { equals: city, mode: 'insensitive' }, isActive: true }
+          }
+        }
+        */
+      };
+    }
+
     const categories = await this.prisma.category.findMany({
-      include: { subCategories: true },
+      where: whereClause,
+      include: { subCategories: { where: { isActive: true }, orderBy: { name: 'asc' } } },
       orderBy: { name: 'asc' },
     });
     
-    await this.cacheManager.set('all_categories', categories, 3600000); // Cache for 1 hour
+    // Inject dynamic service categories based on active shops in the city
+    if (city) {
+      const activePartnerTypes = await this.prisma.shop.findMany({
+        where: { city: { equals: city, mode: 'insensitive' }, isActive: true, hasServices: true },
+        select: { partnerType: true },
+        distinct: ['partnerType']
+      });
+
+      const typeMap: Record<string, any> = {
+        SALON: { id: 'dyn-salon', name: 'Beauty & Salon', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3133/3133276.png', subCategories: [{ id: 'sub-salon', name: 'Salon Services' }] },
+        PLUMBER: { id: 'dyn-plumber', name: 'Plumbing', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png', subCategories: [{ id: 'sub-plumber', name: 'Plumber' }] },
+        ELECTRICIAN: { id: 'dyn-elec', name: 'Electrician', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063810.png', subCategories: [{ id: 'sub-elec', name: 'Electrician' }] },
+        CLEANING: { id: 'dyn-clean', name: 'Cleaning', iconUrl: 'https://cdn-icons-png.flaticon.com/512/2954/2954893.png', subCategories: [{ id: 'sub-clean', name: 'Cleaning' }] }
+      };
+
+      for (const shop of activePartnerTypes) {
+        const dynCat = typeMap[shop.partnerType];
+        if (dynCat && !categories.find(c => c.name === dynCat.name)) {
+          categories.push(dynCat as any);
+        }
+      }
+    }
+
+    await this.cacheManager.set(cacheKey, categories, 3600000); // Cache for 1 hour
     return categories;
   }
 

@@ -64,8 +64,6 @@ function GridCard({ item, index }: { item: any; index: number }) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
-import { CATEGORIES } from '@/data/categories';
-
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -84,6 +82,8 @@ export default function CategoriesScreen() {
   const displayLocation = defaultAddress 
     ? `${defaultAddress.title || defaultAddress.type || 'Home'} - ${defaultAddress.addressLine1}, ${defaultAddress.city}`
     : t('header.location', { defaultValue: 'Select Location' });
+
+  const { data: dynamicCategories = [], isLoading: isLoadingCategories } = useCategories(defaultAddress?.city);
 
   return (
     <View style={styles.container}>
@@ -147,21 +147,33 @@ export default function CategoriesScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {CATEGORIES.map((category) => (
-            <View key={category.id} style={styles.sectionMargin}>
-              <SectionHeader 
-                title={category.name} 
-                subtitle={`Explore ${category.name}`} 
-                emoji="✨" 
-              />
-              
-              <View style={styles.grid2Col}>
-                {category.subcategories.map((sub, idx) => (
-                  <GridCard key={sub.id} item={{ id: sub.id, name: sub.name, description: '' } as any} index={idx} />
-                ))}
-              </View>
+          {isLoadingCategories ? (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <ActivityIndicator size="large" color={PRIMARY} />
+              <Text style={{ marginTop: 10, color: '#64748B' }}>Loading categories in {defaultAddress?.city || 'your area'}...</Text>
             </View>
-          ))}
+          ) : dynamicCategories?.length === 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Ionicons name="location-outline" size={48} color="#CBD5E1" />
+              <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>No categories available in your area yet.</Text>
+            </View>
+          ) : (
+            dynamicCategories?.map((category: any) => (
+              <View key={category.id} style={styles.sectionMargin}>
+                <SectionHeader 
+                  title={category.name} 
+                  subtitle={`Explore ${category.name}`} 
+                  emoji="✨" 
+                />
+                
+                <View style={styles.grid2Col}>
+                  {category.subCategories?.map((sub: any, idx: number) => (
+                    <GridCard key={sub.id} item={sub} index={idx} />
+                  ))}
+                </View>
+              </View>
+            ))
+          )}
 
         </View>
       </ScrollView>

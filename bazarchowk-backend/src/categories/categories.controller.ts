@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -16,10 +16,10 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
   @Get()
-  @ApiOperation({ summary: 'Get all categories with subcategories' })
+  @ApiOperation({ summary: 'Get all categories with subcategories (optionally filtered by city)' })
   @ApiResponse({ status: 200, description: 'List of categories' })
-  findAllCategories() {
-    return this.categoriesService.findAllCategories();
+  findAllCategories(@Query('city') city?: string) {
+    return this.categoriesService.findAllCategories(city);
   }
 
   @Get(':id')

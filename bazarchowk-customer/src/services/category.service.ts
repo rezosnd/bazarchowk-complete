@@ -23,9 +23,10 @@ export interface Category {
 }
 
 export const CategoryService = {
-  async getAll(): Promise<Category[]> {
+  async getAll(city?: string): Promise<Category[]> {
     try {
-      const { data } = await api.get<Category[]>('/categories');
+      const url = city ? `/categories?city=\${encodeURIComponent(city)}` : '/categories';
+      const { data } = await api.get<Category[]>(url);
       return data;
     } catch (error) {
       throw parseApiError(error);
