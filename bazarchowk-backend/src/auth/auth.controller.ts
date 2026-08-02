@@ -104,7 +104,10 @@ export class AuthController {
     
     // Redirect to Admin Panel if state indicates admin login
     if (req.query.state === 'admin') {
-      const adminUrl = process.env.ADMIN_URL || 'http://localhost:3000';
+      const defaultAdminUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://admin.bazarchowk.com' 
+        : 'http://localhost:3000';
+      const adminUrl = process.env.ADMIN_URL || defaultAdminUrl;
       return res.redirect(`${adminUrl}/login?token=${tokens.accessToken}`);
     }
     
