@@ -52,25 +52,18 @@ export default function AddAddressScreen() {
       setLongitude(lng);
       setRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 });
 
-      // Reverse Geocode using Mapbox
+      // Reverse Geocode using Nominatim
       try {
-        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
         const data = await res.json();
-        if (data.features && data.features.length > 0) {
-          const place = data.features[0];
-          setAddressLine1(place.place_name.split(',')[0]);
-          
-          const context = place.context || [];
-          const cityObj = context.find((c: any) => c.id.startsWith('place'));
-          const stateObj = context.find((c: any) => c.id.startsWith('region'));
-          const pinObj = context.find((c: any) => c.id.startsWith('postcode'));
-          
-          if (cityObj) setCity(cityObj.text);
-          if (stateObj) setState(stateObj.text);
-          if (pinObj) setPincode(pinObj.text);
+        if (data && data.address) {
+          setAddressLine1(data.address.road || data.address.suburb || data.address.village || data.display_name.split(',')[0]);
+          if (data.address.city || data.address.town || data.address.county) setCity(data.address.city || data.address.town || data.address.county);
+          if (data.address.state) setState(data.address.state);
+          if (data.address.postcode) setPincode(data.address.postcode);
         }
       } catch (err) {
-        console.warn('Mapbox Reverse Geocode Failed', err);
+        console.warn('Nominatim Reverse Geocode Failed', err);
       }
       
     } catch (error) {
@@ -88,10 +81,10 @@ export default function AddAddressScreen() {
     setLocationLoading(true);
     try {
       const query = encodeURIComponent(`${addressLine1}, ${city}, ${state}`);
-      const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${MAPBOX_TOKEN}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&addressdetails=1&limit=1`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
       const data = await res.json();
-      if (data.features && data.features.length > 0) {
-        const coords = data.features[0].center; // [lng, lat]
+      if (Array.isArray(data) && data.length > 0) {
+        const coords = [parseFloat(data[0].lon), parseFloat(data[0].lat)]; // [lng, lat]
         setLongitude(coords[0]);
         setLatitude(coords[1]);
         setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
@@ -107,10 +100,10 @@ export default function AddAddressScreen() {
         
         alert('Map successfully moved to your searched address!');
       } else {
-        alert('Mapbox could not find coordinates for this address.');
+        alert('Nominatim could not find coordinates for this address.');
       }
     } catch (e) {
-      alert('Mapbox Geocoding failed.');
+      alert('Nominatim Geocoding failed.');
     } finally {
       setLocationLoading(false);
     }
@@ -131,10 +124,14 @@ export default function AddAddressScreen() {
     searchTimeout.current = setTimeout(async () => {
       try {
         const query = encodeURIComponent(text);
-        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?autocomplete=true&country=in&access_token=${MAPBOX_TOKEN}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&addressdetails=1&limit=5&countrycodes=in`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
         const data = await res.json();
-        if (data.features) {
-          setMapSuggestions(data.features);
+        if (Array.isArray(data)) {
+          setMapSuggestions(data.map((item: any) => ({
+             text: item.display_name.split(',')[0],
+             place_name: item.display_name,
+             center: [parseFloat(item.lon), parseFloat(item.lat)]
+          })));
         }
       } catch (e) {
         console.warn('Autocomplete error', e);
@@ -219,7 +216,7 @@ export default function AddAddressScreen() {
               <View>
                 <Text style={{ color: '#EF4444', fontSize: 12 }}>Location not synced</Text>
                 <TouchableOpacity onPress={geocodeAddressFallback} style={{ marginTop: 4 }}>
-                  <Text style={{ color: theme.primary, fontSize: 12, fontWeight: 'bold' }}>Mapbox Fallback (Type address below & tap here)</Text>
+                  <Text style={{ color: theme.primary, fontSize: 12, fontWeight: 'bold' }}>Geocode Fallback (Type address below & tap here)</Text>
                 </TouchableOpacity>
               </View>
             )}
