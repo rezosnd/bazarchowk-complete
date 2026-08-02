@@ -8,6 +8,10 @@ import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from
 import { BlurView } from 'expo-blur';
 import { useTranslation } from 'react-i18next';
 import { useCategories } from '@/hooks';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/services/api';
+import { useAuthStore } from '@/store';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 const { width: W } = Dimensions.get('window');
 const PADDING_H = 20;
@@ -65,6 +69,21 @@ import { CATEGORIES } from '@/data/categories';
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuthStore();
+
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const res = await api.get('/addresses');
+      return res.data;
+    },
+    enabled: isAuthenticated
+  });
+
+  const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+  const displayLocation = defaultAddress 
+    ? `${defaultAddress.title || defaultAddress.type || 'Home'} - ${defaultAddress.addressLine1}, ${defaultAddress.city}`
+    : t('header.location', { defaultValue: 'Select Location' });
 
   return (
     <View style={styles.container}>
@@ -80,16 +99,19 @@ export default function CategoriesScreen() {
 
           <View style={[styles.headerInner, { paddingTop: insets.top + 12 }]}>
             <View style={styles.locationRow}>
-              <View>
+              <View style={{ flex: 1, marginRight: 16 }}>
                 <Text style={styles.locationLabel}>Delivering to</Text>
                 <View style={styles.locationValueRow}>
-                  <Text style={styles.locationValue} numberOfLines={1}>Current Location</Text>
+                  <Text style={styles.locationValue} numberOfLines={1}>{displayLocation}</Text>
                   <Ionicons name="chevron-down" size={16} color="#0F172A" />
                 </View>
               </View>
-              <TouchableOpacity style={styles.profileBtn}>
-                <Ionicons name="person-circle-outline" size={32} color="#0F172A" />
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <LanguageSelector />
+                <TouchableOpacity style={styles.profileBtn}>
+                  <Ionicons name="person-circle-outline" size={32} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.searchBar}>

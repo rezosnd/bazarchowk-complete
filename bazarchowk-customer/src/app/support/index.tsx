@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,11 +36,11 @@ export default function SupportIndexScreen() {
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'OPEN': return { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'alert-circle' };
-      case 'IN_PROGRESS': return { bg: 'bg-amber-100', text: 'text-amber-700', icon: 'clock' };
-      case 'RESOLVED': return { bg: 'bg-blue-100', text: 'text-blue-700', icon: 'check-circle' };
-      case 'CLOSED': return { bg: 'bg-gray-100', text: 'text-gray-600', icon: 'lock' };
-      default: return { bg: 'bg-gray-100', text: 'text-gray-600', icon: 'info' };
+      case 'OPEN': return { bg: '#D1FAE5', text: '#047857', icon: 'alert-circle' };
+      case 'IN_PROGRESS': return { bg: '#FEF3C7', text: '#B45309', icon: 'clock' };
+      case 'RESOLVED': return { bg: '#DBEAFE', text: '#1D4ED8', icon: 'check-circle' };
+      case 'CLOSED': return { bg: '#F3F4F6', text: '#4B5563', icon: 'lock' };
+      default: return { bg: '#F3F4F6', text: '#4B5563', icon: 'info' };
     }
   };
 
@@ -59,32 +59,32 @@ export default function SupportIndexScreen() {
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => router.push(`/support/${item.id}` as any)}
-        className="bg-white rounded-3xl p-5 mb-4 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100"
+        style={styles.card}
       >
-        <View className="flex-row justify-between items-start mb-3">
-          <View className={`flex-row items-center px-2.5 py-1 rounded-lg ${status.bg}`}>
-            <Feather name={status.icon as any} size={12} color={status.text.replace('text-', '')} />
-            <Text className={`text-[10px] font-black uppercase ml-1 tracking-wider ${status.text}`}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.badge, { backgroundColor: status.bg }]}>
+            <Feather name={status.icon as any} size={12} color={status.text} />
+            <Text style={[styles.badgeText, { color: status.text }]}>
               {item.status.replace('_', ' ')}
             </Text>
           </View>
-          <Text className="text-gray-400 font-bold text-xs">#{item.ticketNumber}</Text>
+          <Text style={styles.ticketId}>#{item.ticketNumber}</Text>
         </View>
         
-        <Text className="text-[17px] font-extrabold text-gray-900 mb-4 tracking-tight leading-6" numberOfLines={2}>
+        <Text style={styles.subject} numberOfLines={2}>
           {item.subject}
         </Text>
         
-        <View className="flex-row items-center justify-between border-t border-gray-100 pt-4">
-          <View className="flex-row items-center">
-            <View className="w-8 h-8 rounded-full bg-gray-50 items-center justify-center mr-2">
+        <View style={styles.cardFooter}>
+          <View style={styles.categoryRow}>
+            <View style={styles.catIconWrap}>
               <Feather name={catIcon as any} size={14} color="#6B7280" />
             </View>
-            <Text className="text-gray-600 text-xs font-bold uppercase tracking-wider">
+            <Text style={styles.categoryText}>
               {item.category.replace('_', ' ')}
             </Text>
           </View>
-          <Text className="text-gray-400 text-xs font-medium">
+          <Text style={styles.dateText}>
             {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </Text>
         </View>
@@ -93,7 +93,7 @@ export default function SupportIndexScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#F8F9FB]">
+    <View style={styles.container}>
       <Stack.Screen
         options={{
           headerShown: true,
@@ -104,22 +104,22 @@ export default function SupportIndexScreen() {
         }}
       />
 
-      <View className="px-5 pb-2">
-        <Text className="text-[28px] font-extrabold text-gray-900 tracking-tight">Support</Text>
-        <Text className="text-gray-500 text-sm mt-1 font-medium">Get help with your orders and account</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Support</Text>
+        <Text style={styles.subtitle}>Get help with your orders and account</Text>
       </View>
 
       {loading ? (
-        <View className="flex-1 justify-center items-center">
+        <View style={styles.center}>
           <ActivityIndicator size="large" color="#00B140" />
         </View>
       ) : tickets.length === 0 ? (
-        <View className="flex-1 justify-center items-center py-10 px-8">
-          <View className="w-24 h-24 bg-white rounded-full items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,177,64,0.1)]">
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconWrap}>
             <Ionicons name="chatbubbles-outline" size={40} color="#00B140" />
           </View>
-          <Text className="text-2xl font-black text-gray-900 tracking-tight text-center">How can we help?</Text>
-          <Text className="text-gray-500 text-center mt-2 font-medium leading-5">
+          <Text style={styles.emptyTitle}>How can we help?</Text>
+          <Text style={styles.emptySubtitle}>
             You don't have any active support tickets. If you need help, feel free to start a conversation.
           </Text>
         </View>
@@ -128,22 +128,55 @@ export default function SupportIndexScreen() {
           data={tickets}
           keyExtractor={(item) => item.id}
           renderItem={renderTicket}
-          contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 100 }}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
         />
       )}
 
       {/* Floating Action Button */}
-      <View className="absolute bottom-0 left-0 right-0 p-5" style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
+      <View style={[styles.fabContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => router.push('/support/new' as any)}
-          className="bg-[#00B140] w-full flex-row items-center justify-center py-4 rounded-2xl shadow-[0_8px_20px_rgba(0,177,64,0.3)]"
+          style={styles.fabBtn}
         >
           <Ionicons name="add-circle" size={20} color="#fff" />
-          <Text className="text-white font-bold text-[16px] ml-2 tracking-wide">Start New Ticket</Text>
+          <Text style={styles.fabText}>Start New Ticket</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8F9FB' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 20, paddingBottom: 8 },
+  title: { fontSize: 28, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
+  subtitle: { color: '#64748B', fontSize: 14, fontWeight: '500', marginTop: 4 },
+  
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20, elevation: 4, borderWidth: 1, borderColor: '#F1F5F9' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
+  ticketId: { color: '#94A3B8', fontWeight: 'bold', fontSize: 12 },
+  
+  subject: { fontSize: 17, fontWeight: '900', color: '#0F172A', marginBottom: 16, lineHeight: 24 },
+  
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  categoryRow: { flexDirection: 'row', alignItems: 'center' },
+  catIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  categoryText: { color: '#475569', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  dateText: { color: '#94A3B8', fontSize: 12, fontWeight: '500' },
+  
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 },
+  emptyIconWrap: { width: 96, height: 96, backgroundColor: '#FFF', borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 10 },
+  emptyTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5, textAlign: 'center' },
+  emptySubtitle: { color: '#64748B', textAlign: 'center', marginTop: 8, fontWeight: '500', lineHeight: 20 },
+  
+  listContent: { padding: 20 },
+  
+  fabContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20 },
+  fabBtn: { backgroundColor: '#00B140', width: '100%', flexDirection: 'row', items: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  fabText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8, letterSpacing: 0.5 }
+});

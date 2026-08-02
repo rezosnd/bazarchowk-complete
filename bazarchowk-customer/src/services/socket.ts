@@ -3,7 +3,7 @@ import { TokenStorage } from '@/services/api';
 
 class SocketService {
   private socket: Socket | null = null;
-  private url = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+  private url = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
   async connect() {
     if (this.socket?.connected) return;

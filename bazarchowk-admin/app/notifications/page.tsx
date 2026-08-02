@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function NotificationsAdminPage() {
   const [targetAudience, setTargetAudience] = useState<'ALL' | 'CUSTOMER' | 'PARTNER' | 'RIDER'>('ALL');

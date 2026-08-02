@@ -4,7 +4,7 @@ import { socketService } from "@/lib/socket";
 import { FiActivity, FiDollarSign, FiShoppingBag, FiTruck, FiMapPin, FiUsers, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { AdminContext } from "./auth-guard";
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 const tok = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : '';
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {

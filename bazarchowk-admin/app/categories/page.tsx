@@ -30,7 +30,7 @@ interface Category {
   subCategories: SubCategory[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function CategoriesAdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);

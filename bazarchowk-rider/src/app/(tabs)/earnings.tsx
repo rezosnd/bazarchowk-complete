@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 
 import api from '@/services/api';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function RiderEarningsScreen() {
   const insets = useSafeAreaInsets();

@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function PartnerRegisterScreen() {
   const insets = useSafeAreaInsets();

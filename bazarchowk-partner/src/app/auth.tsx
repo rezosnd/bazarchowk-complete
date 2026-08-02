@@ -3,7 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function AuthHandlerScreen() {
   const { accessToken, refreshToken } = useLocalSearchParams();

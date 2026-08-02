@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking, Modal, TextInput } from 'react-native';
+import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks';
 import { FontSize, FontWeight, BorderRadius, Spacing, Shadow } from '@/theme';
@@ -9,12 +10,17 @@ import { useAuthStore } from '@/store';
 
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import api from '@/services/api';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
 
   const MENU_ITEMS = [
     { id: 'orders', icon: 'receipt-outline', label: 'My Orders' },
@@ -54,6 +60,14 @@ export default function ProfileScreen() {
               {user?.email && (
                 <Text style={[styles.userEmail, { color: theme.textTertiary }]}>{user.email}</Text>
               )}
+              <TouchableOpacity onPress={() => {
+                setEditFirstName(user?.firstName || '');
+                setEditLastName(user?.lastName || '');
+                setEditPhone(user?.phone || '');
+                setIsEditModalVisible(true);
+              }} style={{ marginTop: 8 }}>
+                <Text style={{ color: theme.primary, fontWeight: 'bold' }}>Edit Profile</Text>
+              </TouchableOpacity>
             </View>
           </View>
         ) : (
@@ -92,6 +106,7 @@ export default function ProfileScreen() {
                 if (item.id === 'wallet') router.push('/wallet' as any);
                 if (item.id === 'my-reviews') router.push('/my-reviews' as any);
                 if (item.id === 'support') router.push('/support' as any);
+                if (item.id === 'about') Linking.openURL('https://bazarchowk.com/about');
               }}
             >
               <View style={styles.menuIconWrap}>
@@ -122,6 +137,42 @@ export default function ProfileScreen() {
       <Text style={[styles.version, { color: theme.textTertiary }]}>
         BazarChowk v1.0.0
       </Text>
+
+      <Modal visible={isEditModalVisible} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: insets.bottom + 24 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Edit Profile</Text>
+            
+            <Text style={{ color: '#64748B', marginBottom: 4 }}>First Name</Text>
+            <TextInput style={styles.input} value={editFirstName} onChangeText={setEditFirstName} />
+            
+            <Text style={{ color: '#64748B', marginBottom: 4, marginTop: 12 }}>Last Name</Text>
+            <TextInput style={styles.input} value={editLastName} onChangeText={setEditLastName} />
+            
+            <Text style={{ color: '#64748B', marginBottom: 4, marginTop: 12 }}>Mobile Number</Text>
+            <TextInput style={styles.input} value={editPhone} onChangeText={setEditPhone} keyboardType="phone-pad" />
+            
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <View style={{ flex: 1 }}><Button title="Cancel" variant="outline" onPress={() => setIsEditModalVisible(false)} /></View>
+              <View style={{ flex: 1 }}><Button title="Save" onPress={async () => {
+                try {
+                  const res = await api.patch('/users/me', {
+                    firstName: editFirstName,
+                    lastName: editLastName,
+                    phone: editPhone
+                  });
+                  // Update Zustand store so UI reflects changes instantly
+                  useAuthStore.getState().setUser(res.data);
+                  setIsEditModalVisible(false);
+                  alert('Profile updated and saved to database successfully!');
+                } catch (error) {
+                  alert('Failed to update profile in database');
+                }
+              }} /></View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -168,4 +219,13 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginLeft: Spacing.base + 22 + Spacing.md },
   logoutWrap: { paddingHorizontal: Spacing.base, marginBottom: Spacing.md },
   version: { textAlign: 'center', fontSize: FontSize.xs, marginTop: Spacing.sm },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 48,
+    fontSize: 16,
+    color: '#0F172A',
+  }
 });

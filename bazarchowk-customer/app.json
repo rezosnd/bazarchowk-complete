@@ -29,12 +29,20 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "CAMERA",
+        "READ_MEDIA_IMAGES",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "SCHEDULE_EXACT_ALARM"
+        "SCHEDULE_EXACT_ALARM",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS"
       ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY_HERE"
+        }
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -42,7 +50,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "bazarchowkapi.veritasco.tech"
+              "host": "bazarchowk-complete.vercel.app"
             }
           ],
           "category": [
@@ -63,16 +71,16 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/splash-screeb.png",
-          "resizeMode": "cover",
+          "image": "./assets/images/APP-ICON.png",
+          "resizeMode": "contain",
           "android": {
-            "image": "./assets/images/splash-screeb.png",
-            "resizeMode": "cover",
+            "image": "./assets/images/APP-ICON.png",
+            "resizeMode": "contain",
             "backgroundColor": "#FFFFFF"
           },
           "ios": {
-            "image": "./assets/images/splash-screeb.png",
-            "resizeMode": "cover",
+            "image": "./assets/images/APP-ICON.png",
+            "resizeMode": "contain",
             "backgroundColor": "#FFFFFF"
           }
         }
@@ -92,17 +100,20 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": false
     },
     "extra": {
-      "apiUrl": "https://bazarchowkapi.veritasco.tech",
+      "apiUrl": "https://bazarchowk-complete.vercel.app",
+      "router": {},
       "eas": {
-        "projectId": "bazarchowk-customer"
+        "projectId": "41928b2f-6523-484a-a619-f1287e852b06"
       }
-    }
+    },
+    "owner": "veritasco"
   }
 }

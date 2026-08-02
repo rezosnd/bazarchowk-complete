@@ -22,7 +22,7 @@ export default function AdminLogin() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/auth/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const profile = await res.json();
@@ -43,7 +43,7 @@ export default function AdminLogin() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -59,7 +59,7 @@ export default function AdminLogin() {
 
   const handleGoogle = () => {
     setGoogleLoading(true);
-    const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const api = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
     window.location.href = `${api}/auth/google/admin`;
   };
 

@@ -18,7 +18,7 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 WebBrowser.maybeCompleteAuthSession();
 

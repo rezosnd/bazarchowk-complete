@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = 'https://bazarchowk-complete.vercel.app';
 
 export default function ChatScreen() {
   const { id: conversationId, name: recipientName, type } = useLocalSearchParams();

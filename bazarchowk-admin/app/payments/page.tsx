@@ -12,7 +12,7 @@ export default function PaymentsPage() {
 
   const fetchPayments = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/payments`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/payments`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
         }
@@ -31,7 +31,7 @@ export default function PaymentsPage() {
     
     setRefunding(orderId);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/payments/refund/${orderId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/payments/refund/${orderId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,

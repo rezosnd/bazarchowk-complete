@@ -20,14 +20,13 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useAIStore } from '@/store/aiStore';
 import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
-import type { Audio as AudioType } from 'expo-av';
 let Speech: any = null;
 let Audio: any = null;
 let FileSystem: any = null;
 
 try {
   Speech = require('expo-speech');
-  Audio = require('expo-av').Audio;
+  Audio = require('expo-audio');
   FileSystem = require('expo-file-system');
 } catch (e) {
   console.log('Voice packages not available in Expo Go');
@@ -70,8 +69,12 @@ function HomeHeader() {
   const { data: notifications = [] } = useQuery({ 
     queryKey: ['notifications'], 
     queryFn: async () => {
-      const res = await api.get('/notifications');
-      return res.data;
+      try {
+        const res = await api.get('/notifications');
+        return res.data;
+      } catch (e) {
+        return [];
+      }
     } 
   });
 
@@ -492,13 +495,21 @@ function RecommendedSection() {
 }
 
 function VoiceChatOverlay() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isListening, stopListening } = useAIStore();
-  const [aiResponse, setAiResponse] = useState('How can I help you today?');
+  const greeting = t('ai.greeting', { defaultValue: 'How can I help you today?' });
+  const [aiResponse, setAiResponse] = useState(greeting);
   const [processing, setProcessing] = useState(false);
-  const [recording, setRecording] = useState<AudioType.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (isListening && Speech) {
+      const langCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
+      Speech.speak(greeting, { language: langCode, rate: 0.9 });
+    }
+  }, [isListening, i18n.language, greeting]);
 
   if (!isListening) return null;
 
@@ -513,13 +524,19 @@ function VoiceChatOverlay() {
         return;
       }
       setAiResponse('Listening...');
-      await Audio.requestPermissionsAsync();
+      await Audio.requestRecordingPermissionsAsync();
       await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
-      setRecording(recording);
+      
+      const options = Audio.RecordingPresets.LOW_QUALITY;
+      const platformOptions = Platform.OS === 'ios' ? { ...options, ...options.ios } : { ...options, ...options.android };
+      const recorder = new Audio.AudioModule.AudioRecorder(platformOptions);
+      
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setRecording(recorder);
       setIsRecording(true);
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -535,8 +552,8 @@ function VoiceChatOverlay() {
 
     setProcessing(true);
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await recording.stop();
+      const uri = recording.uri;
       if (!uri) throw new Error('No audio URI');
       
       const audioBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
@@ -560,6 +577,8 @@ function VoiceChatOverlay() {
         setTimeout(() => router.push('/cart'), 3000); 
       } else if (data.action === 'BOOKED') {
         setTimeout(() => router.push('/appointments' as any), 3000);
+      } else if (data.action === 'CONFIRM_ORDER' || data.orderPlaced) {
+        setTimeout(() => router.push('/(tabs)/orders' as any), 3000);
       }
     } catch (e: any) {
       const errMessage = e.response?.data?.message || 'Something went wrong processing audio';
@@ -574,9 +593,17 @@ function VoiceChatOverlay() {
 
 
 
+  const toggleRecording = async () => {
+    if (isRecording) {
+      await stopRecordingAndSubmit();
+    } else {
+      await startRecording();
+    }
+  };
+
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 9999, justifyContent: 'flex-end' }]}>
-      <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
+      <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
       <TouchableOpacity style={StyleSheet.absoluteFill} onPress={stopListening} activeOpacity={1} />
       
       <View style={styles.voicePanel}>
@@ -591,14 +618,15 @@ function VoiceChatOverlay() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
           <TouchableOpacity 
             style={[styles.aiMicBtnLarge, { width: 80, height: 80, borderRadius: 40, backgroundColor: isRecording ? '#EF4444' : EMERALD }]} 
-            onPressIn={startRecording}
-            onPressOut={stopRecordingAndSubmit}
+            onPress={toggleRecording}
             disabled={processing}
           >
             {processing ? <ActivityIndicator size="large" color="#FFF" /> : <Ionicons name="mic" size={40} color="#FFF" />}
           </TouchableOpacity>
         </View>
-        <Text style={{ textAlign: 'center', color: TEXT_MUTED, marginBottom: 12 }}>Hold to speak, release to send</Text>
+        <Text style={{ textAlign: 'center', color: TEXT_MUTED, marginBottom: 12 }}>
+          {isRecording ? "Tap to send" : "Tap to start speaking"}
+        </Text>
 
       </View>
     </View>

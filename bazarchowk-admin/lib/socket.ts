@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 
 class SocketService {
   private socket: Socket | null = null;
-  private url = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+  private url = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
   connect() {
     if (this.socket?.connected) return;

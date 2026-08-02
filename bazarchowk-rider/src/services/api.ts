@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 const ACCESS_TOKEN_KEY = 'rider_token';
 const REFRESH_TOKEN_KEY = 'rider_refresh_token';
 const REQUEST_TIMEOUT = 15000;

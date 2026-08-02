@@ -104,7 +104,7 @@ export class AuthController {
     
     // Redirect to Admin Panel if state indicates admin login
     if (req.query.state === 'admin') {
-      const adminUrl = process.env.ADMIN_URL || 'http://localhost:3001';
+      const adminUrl = process.env.ADMIN_URL || 'https://bazarchowk-complete.vercel.app:3001';
       return res.redirect(`${adminUrl}/login?token=${tokens.accessToken}`);
     }
     

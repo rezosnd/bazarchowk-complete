@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { socketService } from "@/lib/socket";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://bazarchowkapi.veritasco.tech";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://bazarchowk-complete.vercel.app";
 const tok = () => typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; icon: React.ReactNode; dot: string }> = {

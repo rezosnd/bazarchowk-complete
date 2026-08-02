@@ -35,7 +35,7 @@ async function bootstrap() {
   // Secure CORS for production
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['http://localhost:3000', 'http://localhost:8081', '*']; // Fallback for local dev
+    : ['https://bazarchowk-complete.vercel.app', 'https://bazarchowk-complete.vercel.app:8081', '*']; // Fallback for local dev
 
   app.enableCors({
     origin: process.env.NODE_ENV === 'production' ? allowedOrigins : '*',
@@ -81,6 +81,6 @@ if (!process.env.VERCEL) {
   bootstrap().then(async (app) => {
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
-    Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+    Logger.log(`🚀 Application is running on: https://bazarchowk-complete.vercel.app:${port}`, 'Bootstrap');
   });
 }

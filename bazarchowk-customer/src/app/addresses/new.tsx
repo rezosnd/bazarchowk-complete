@@ -8,15 +8,7 @@ import { router } from 'expo-router';
 import { useAddAddress } from '@/hooks';
 import { Button, Input } from '@/components/ui';
 import * as Location from 'expo-location';
-let MapView: any = null;
-let Marker: any = null;
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default || maps;
-  Marker = maps.Marker;
-} catch (e) {
-  console.log('react-native-maps not available on web');
-}
+import { WebView } from 'react-native-webview';
 
 export default function AddAddressScreen() {
   const theme = useTheme();
@@ -182,22 +174,61 @@ export default function AddAddressScreen() {
 
         {/* Interactive Map */}
         <View style={styles.mapContainer}>
-          {MapView ? (
-            <MapView
-              style={styles.map}
-              region={region}
-              onRegionChangeComplete={(r: any) => {
-                setRegion(r);
-                setLatitude(r.latitude);
-                setLongitude(r.longitude);
-              }}
-            >
-              {Marker && <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} />}
-            </MapView>
+          {Platform.OS === 'web' ? (
+             <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }]}>
+               <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
+             </View>
           ) : (
-            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }]}>
-              <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
-            </View>
+            <WebView
+              style={styles.map}
+              scrollEnabled={false}
+              source={{
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <style>
+                      body { padding: 0; margin: 0; }
+                      html, body, #map { height: 100%; width: 100%; }
+                    </style>
+                  </head>
+                  <body>
+                    <div id="map"></div>
+                    <script>
+                      var map = L.map('map', { zoomControl: false }).setView([${region.latitude}, ${region.longitude}], 15);
+                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                      var marker = L.marker([${region.latitude}, ${region.longitude}]).addTo(map);
+                      
+                      map.on('move', function() {
+                        marker.setLatLng(map.getCenter());
+                      });
+
+                      map.on('moveend', function() {
+                        var center = map.getCenter();
+                        window.ReactNativeWebView.postMessage(JSON.stringify({
+                          latitude: center.lat,
+                          longitude: center.lng
+                        }));
+                      });
+                    </script>
+                  </body>
+                  </html>
+                `
+              }}
+              onMessage={(event) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data.latitude && data.longitude) {
+                    setLatitude(data.latitude);
+                    setLongitude(data.longitude);
+                    setRegion(prev => ({ ...prev, latitude: data.latitude, longitude: data.longitude }));
+                  }
+                } catch (e) {}
+              }}
+            />
           )}
           <View style={styles.mapOverlay}>
             <Text style={styles.mapOverlayText}>Drag map to pin exact location</Text>

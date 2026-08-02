@@ -70,7 +70,7 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     try {
       const redirectUri = Linking.createURL('auth');
-      const authUrl = `${process.env.EXPO_PUBLIC_API_URL || 'http://10.153.104.1:3000'}/auth/google?redirectUri=${encodeURIComponent(redirectUri)}`;
+      const authUrl = `${process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/auth/google?redirectUri=${encodeURIComponent(redirectUri)}`;
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       
       if (result.type === 'success' && result.url) {

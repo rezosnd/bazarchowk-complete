@@ -11,7 +11,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import RazorpayCheckout from 'react-native-razorpay';
 import api from '../../services/api';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function ActiveDeliveryScreen() {
   const insets = useSafeAreaInsets();

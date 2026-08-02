@@ -20,7 +20,7 @@ interface Product {
   variants: ProductVariant[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function ProductsAdminPage() {
   const [products, setProducts] = useState<Product[]>([]);

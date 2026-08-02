@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function ShopProductsScreen() {
   const insets = useSafeAreaInsets();

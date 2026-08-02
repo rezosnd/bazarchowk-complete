@@ -18,7 +18,7 @@ try {
   console.log('expo-notifications is not available in this environment');
 }
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'; // Fallback
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'; // Fallback
 
 export function usePushNotifications() {
   const notificationListener = useRef<any>();

@@ -25,7 +25,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     // Verify token and get profile
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech'}/auth/profile`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app'}/auth/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {

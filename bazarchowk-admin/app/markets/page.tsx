@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function MarketsPage() {
   const [marketName, setMarketName] = useState('');

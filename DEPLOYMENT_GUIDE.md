@@ -82,6 +82,6 @@ This document outlines the enterprise-grade deployment strategy for the BazarCho
 ## Final Pre-Launch Checklist
 
 - [ ] Run `npx prisma generate` against the production database URL.
-- [ ] Ensure all local `localhost:3000` URLs in your frontend code are replaced with the live backend URL.
+- [ ] Ensure all local `bazarchowk-complete.vercel.app` URLs in your frontend code are replaced with the live backend URL.
 - [ ] Whitelist your live Vercel frontend domains in the backend's CORS configuration (in `src/main.ts`).
 - [ ] Perform a test order (Add to Cart -> Checkout -> Rider Assignment) using the live production URLs to ensure real-time Sockets are connecting properly.

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 const tok = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : '';
 
 const STATUS_COLORS: Record<string, string> = {

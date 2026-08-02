@@ -7,7 +7,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window');
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function ShopOnboardingScreen() {
   const insets = useSafeAreaInsets();

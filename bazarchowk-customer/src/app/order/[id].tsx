@@ -6,19 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { Image } from 'expo-image';
 import { socketService } from '@/services/socket';
-let MapView: typeof import('react-native-maps').default | any = null;
-let Marker: any = null;
-let Polyline: any = null;
-let AnimatedRegion: any = null;
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default || maps;
-  Marker = maps.Marker;
-  Polyline = maps.Polyline;
-  AnimatedRegion = maps.AnimatedRegion;
-} catch (e) {
-  console.log('react-native-maps not available on web');
-}
+import { WebView } from 'react-native-webview';
 
 const { width, height } = Dimensions.get('window');
 const PRIMARY = '#00B140';
@@ -141,57 +129,57 @@ export default function OrderTrackingScreen() {
   return (
     <View style={styles.container}>
       {/* FULL SCREEN MAP */}
-      {isTrackingActive && MapView ? (
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFill}
-          showsUserLocation={false}
-          initialRegion={{
-            latitude: (order.shop.latitude + order.deliveryAddress.latitude) / 2,
-            longitude: (order.shop.longitude + order.deliveryAddress.longitude) / 2,
-            latitudeDelta: Math.abs(order.shop.latitude - order.deliveryAddress.latitude) * 2 + 0.05,
-            longitudeDelta: Math.abs(order.shop.longitude - order.deliveryAddress.longitude) * 2 + 0.05,
-          }}
-        >
-          {Polyline && (
-            <Polyline
-              coordinates={routeCoords}
-              strokeColor={PRIMARY}
-              strokeWidth={5}
-              lineJoin="round"
-              lineCap="round"
-            />
-          )}
-          {Marker && (
-            <>
-              <Marker coordinate={{ latitude: order.shop.latitude, longitude: order.shop.longitude }} anchor={{x:0.5, y:0.5}}>
-                <View style={styles.shopMarker}>
-                  <Ionicons name="storefront" size={20} color="#FFF" />
-                </View>
-              </Marker>
-              <Marker coordinate={{ latitude: order.deliveryAddress.latitude, longitude: order.deliveryAddress.longitude }} anchor={{x:0.5, y:0.5}}>
-                <View style={styles.homeMarker}>
-                  <Ionicons name="home" size={20} color="#FFF" />
-                </View>
-              </Marker>
-            </>
-          )}
+      {isTrackingActive ? (
+        Platform.OS === 'web' ? (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
+          </View>
+        ) : (
+          <WebView
+            style={StyleSheet.absoluteFill}
+            scrollEnabled={false}
+            source={{
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                  <style>
+                    body { padding: 0; margin: 0; }
+                    html, body, #map { height: 100%; width: 100%; }
+                  </style>
+                </head>
+                <body>
+                  <div id="map"></div>
+                  <script>
+                    var map = L.map('map', { zoomControl: false }).setView([${(order.shop.latitude + order.deliveryAddress.latitude) / 2}, ${(order.shop.longitude + order.deliveryAddress.longitude) / 2}], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                    
+                    var shopIcon = L.divIcon({ html: '<div style="background:#1E40AF;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏬</span></div>', className: '' });
+                    var homeIcon = L.divIcon({ html: '<div style="background:#DC2626;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏠</span></div>', className: '' });
+                    
+                    L.marker([${order.shop.latitude}, ${order.shop.longitude}], {icon: shopIcon}).addTo(map);
+                    L.marker([${order.deliveryAddress.latitude}, ${order.deliveryAddress.longitude}], {icon: homeIcon}).addTo(map);
+                    
+                    ${routeCoords.length > 0 ? `
+                      var route = ${JSON.stringify(routeCoords.map((c: any) => [c.latitude, c.longitude]))};
+                      L.polyline(route, {color: '#00B140', weight: 5}).addTo(map);
+                      map.fitBounds(L.polyline(route).getBounds(), { padding: [50, 50] });
+                    ` : ''}
 
-          {riderLocation && Marker && Marker.Animated && riderAnimatedRegion && (
-            <Marker.Animated
-              coordinate={riderAnimatedRegion as any}
-              anchor={{ x: 0.5, y: 0.5 }}
-              style={{ transform: [{ rotate: `${riderLocation.heading}deg` }] }}
-            >
-              {/* Custom Rider Icon Image */}
-              <Image 
-                source={require('@/assets/images/rider-on-map.png')} 
-                style={{ width: 48, height: 48 }}
-                contentFit="contain"
-              />
-            </Marker.Animated>
-          )}
-        </MapView>
+                    ${riderLocation ? `
+                      var riderIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3209/3209800.png', iconSize: [40, 40] });
+                      L.marker([${riderLocation.lat}, ${riderLocation.lng}], {icon: riderIcon}).addTo(map);
+                    ` : ''}
+                  </script>
+                </body>
+                </html>
+              `
+            }}
+          />
+        )
       ) : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F8FAFC' }]} />
       )}

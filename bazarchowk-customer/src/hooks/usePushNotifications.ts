@@ -8,14 +8,18 @@ import { useAuthStore } from '@/store';
 
 let Notifications: any = null;
 try {
-  Notifications = require('expo-notifications');
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  } else {
+    console.log('Push notifications disabled in Expo Go to prevent SDK 53 crash');
+  }
 } catch (e) {
   console.log('expo-notifications is not available in this environment');
 }

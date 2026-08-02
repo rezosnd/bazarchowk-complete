@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import '@/i18n';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -50,13 +51,17 @@ export default function RootLayout() {
   }, [initialize]);
 
   useEffect(() => {
-    import('@/services/socket').then(({ socketService }) => {
-      if (isAuthenticated) {
-        socketService.connect();
-      } else {
-        socketService.disconnect();
-      }
-    });
+    import('@/services/socket')
+      .then(({ socketService }) => {
+        if (isAuthenticated) {
+          socketService.connect();
+        } else {
+          socketService.disconnect();
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load socket service:', error);
+      });
   }, [isAuthenticated]);
 
   // ─── Mandatory Phone Number Wall ─────────────────────────────────────────────
