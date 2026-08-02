@@ -80,6 +80,8 @@ export default function AddAddressScreen() {
     }
   };
 
+  const webViewRef = React.useRef<WebView>(null);
+
   const geocodeAddressFallback = async () => {
     if (!addressLine1 || !city) return;
     setLocationLoading(true);
@@ -92,7 +94,17 @@ export default function AddAddressScreen() {
         setLongitude(coords[0]);
         setLatitude(coords[1]);
         setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
-        alert('Coordinates successfully fetched from Mapbox based on your address!');
+        
+        // Dynamically move the Leaflet map without reloading the WebView
+        webViewRef.current?.injectJavaScript(`
+          if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
+            map.flyTo([${coords[1]}, ${coords[0]}], 15);
+            marker.setLatLng([${coords[1]}, ${coords[0]}]);
+          }
+          true;
+        `);
+        
+        alert('Map successfully moved to your searched address!');
       } else {
         alert('Mapbox could not find coordinates for this address.');
       }
@@ -180,6 +192,7 @@ export default function AddAddressScreen() {
              </View>
           ) : (
             <WebView
+              ref={webViewRef}
               style={styles.map}
               scrollEnabled={false}
               source={{
@@ -235,7 +248,38 @@ export default function AddAddressScreen() {
           </View>
         </View>
 
-        <Input label="Address Title" placeholder="Home, Office, etc." value={title} onChangeText={setTitle} required />
+        <Text style={{ fontWeight: '600', marginBottom: Spacing.xs, color: theme.text }}>Save Address As</Text>
+        <View style={{ flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm }}>
+          {['Home', 'Office', 'Other'].map(type => (
+            <TouchableOpacity 
+              key={type}
+              style={{ 
+                paddingHorizontal: 16, paddingVertical: 8, 
+                borderRadius: 20, 
+                borderWidth: 1, 
+                borderColor: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primary : '#E5E7EB',
+                backgroundColor: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primarySurface : 'transparent'
+              }}
+              onPress={() => {
+                if (type !== 'Other') {
+                  setTitle(type);
+                } else {
+                  setTitle('');
+                }
+              }}
+            >
+              <Text style={{ 
+                color: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primary : theme.textSecondary,
+                fontWeight: '600'
+              }}>{type}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {(!['Home', 'Office'].includes(title)) && (
+          <Input label="Custom Title" placeholder="e.g. Friend's House" value={title} onChangeText={setTitle} required />
+        )}
+
         <Input label="Address Line 1" placeholder="House/Flat No., Building Name" value={addressLine1} onChangeText={setAddressLine1} required />
         <Input label="Address Line 2 (Optional)" placeholder="Street, Area" value={addressLine2} onChangeText={setAddressLine2} />
         

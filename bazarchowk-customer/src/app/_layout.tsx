@@ -30,6 +30,8 @@ const queryClient = new QueryClient({
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
+import { VoiceChatOverlay } from '@/components/VoiceChatOverlay';
+
 // ─── Root Layout ──────────────────────────────────────────────────────────────
 export default function RootLayout() {
   const isInitialized = useAuthStore((s) => s.isInitialized);
@@ -99,6 +101,8 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" />
             {/* NOTE: "[...unmatched]" removed — Expo Router handles 404s automatically */}
           </Stack>
+          
+          <VoiceChatOverlay />
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
