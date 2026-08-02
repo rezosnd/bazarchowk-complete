@@ -14,6 +14,18 @@ export default function SearchScreen() {
   const [results, setResults] = useState<{ products: any[]; shops: any[] }>({ products: [], shops: [] });
   const [loading, setLoading] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Use AuthStore and useQuery to get the default location
+  const { isAuthenticated } = require('@/store').useAuthStore();
+  const { useQuery } = require('@tanstack/react-query');
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const res = await api.get('/addresses');
+      return res.data;
+    },
+    enabled: isAuthenticated
+  });
 
   const fetchSearch = async (text: string) => {
     if (!text.trim()) {
@@ -23,8 +35,15 @@ export default function SearchScreen() {
     }
 
     try {
-      // Pass coordinates for Geofencing if available (future logic)
-      const { data } = await api.get(`/search?query=\${encodeURIComponent(text)}`);
+      let lat = '';
+      let lng = '';
+      const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+      if (defaultAddress && defaultAddress.latitude && defaultAddress.longitude) {
+        lat = defaultAddress.latitude;
+        lng = defaultAddress.longitude;
+      }
+      
+      const { data } = await api.get(`/search?query=${encodeURIComponent(text)}&lat=${lat}&lng=${lng}`);
       setResults(data.results || { products: [], shops: [] });
     } catch (e) {
       console.warn('Search failed');
@@ -41,7 +60,7 @@ export default function SearchScreen() {
     setTypingTimeout(
       setTimeout(() => {
         fetchSearch(text);
-      }, 500) // Debounce 500ms
+      }, 500)
     );
   };
 

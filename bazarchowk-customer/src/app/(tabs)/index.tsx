@@ -326,10 +326,26 @@ function SectionHeader({ title }: { title: string }) {
 
 function NearbyShops() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuthStore();
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const res = await api.get('/addresses');
+      return res.data;
+    },
+    enabled: isAuthenticated
+  });
 
   useEffect(() => {
     (async () => {
+      const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+      if (defaultAddress && defaultAddress.latitude && defaultAddress.longitude) {
+        setLocation({ lat: defaultAddress.latitude, lng: defaultAddress.longitude });
+        return;
+      }
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         return;
@@ -341,11 +357,12 @@ function NearbyShops() {
         console.warn('Failed to get location', e);
       }
     })();
-  }, []);
+  }, [addresses]);
 
   const { data: shops = [], isLoading } = useQuery({ 
     queryKey: ['shops', location?.lat, location?.lng], 
-    queryFn: () => HomeService.getNearbyShops(location?.lat, location?.lng) 
+    queryFn: () => HomeService.getNearbyShops(location?.lat, location?.lng),
+    enabled: !!location // Only fetch when location is determined
   });
 
   if (isLoading || shops.length === 0) return null;
