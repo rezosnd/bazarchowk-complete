@@ -116,34 +116,48 @@ export default function AddAddressScreen() {
     }
   };
 
-  const handleMapSearch = async () => {
-    if (!mapSearchQuery) return;
-    setLocationLoading(true);
-    try {
-      const query = encodeURIComponent(mapSearchQuery);
-      const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/\${query}.json?access_token=\${MAPBOX_TOKEN}`);
-      const data = await res.json();
-      if (data.features && data.features.length > 0) {
-        const coords = data.features[0].center; // [lng, lat]
-        setLongitude(coords[0]);
-        setLatitude(coords[1]);
-        setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
-        
-        webViewRef.current?.injectJavaScript(`
-          if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
-            map.flyTo([\${coords[1]}, \${coords[0]}], 15);
-            marker.setLatLng([\${coords[1]}, \${coords[0]}]);
-          }
-          true;
-        `);
-      } else {
-        alert('Could not find this location.');
-      }
-    } catch (e) {
-      alert('Search failed. Please try again.');
-    } finally {
-      setLocationLoading(false);
+  const [mapSuggestions, setMapSuggestions] = useState<any[]>([]);
+  const searchTimeout = useRef<any>(null);
+
+  const fetchMapSuggestions = async (text: string) => {
+    setMapSearchQuery(text);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    
+    if (text.length < 3) {
+      setMapSuggestions([]);
+      return;
     }
+
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const query = encodeURIComponent(text);
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/\${query}.json?autocomplete=true&types=place,locality,neighborhood,address,poi&access_token=\${MAPBOX_TOKEN}`);
+        const data = await res.json();
+        if (data.features) {
+          setMapSuggestions(data.features);
+        }
+      } catch (e) {
+        console.warn('Autocomplete error', e);
+      }
+    }, 400);
+  };
+
+  const selectSuggestion = (feature: any) => {
+    const coords = feature.center;
+    setMapSearchQuery(feature.place_name);
+    setMapSuggestions([]);
+    
+    setLongitude(coords[0]);
+    setLatitude(coords[1]);
+    setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
+    
+    webViewRef.current?.injectJavaScript(`
+      if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
+        map.flyTo([\${coords[1]}, \${coords[0]}], 15);
+        marker.setLatLng([\${coords[1]}, \${coords[0]}]);
+      }
+      true;
+    `);
   };
 
   useEffect(() => {
@@ -216,21 +230,30 @@ export default function AddAddressScreen() {
         </View>
 
         {/* Interactive Map Search */}
-        <View style={styles.mapSearchContainer}>
+        <View style={[styles.mapSearchContainer, { zIndex: 10 }]}>
           <Input 
-            placeholder="Search a place or area on map..."
+            placeholder="Search city, area, or place..."
             value={mapSearchQuery}
-            onChangeText={setMapSearchQuery}
+            onChangeText={fetchMapSuggestions}
             leftIcon="search"
-            style={{ marginBottom: 8, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
+            style={{ marginBottom: 0, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
           />
-          <TouchableOpacity 
-            style={[styles.searchMapBtn, { backgroundColor: theme.primary }]}
-            onPress={handleMapSearch}
-            disabled={locationLoading}
-          >
-            <Text style={styles.searchMapBtnText}>{locationLoading ? 'Searching...' : 'Locate on Map'}</Text>
-          </TouchableOpacity>
+          {mapSuggestions.length > 0 && (
+            <View style={{ backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, marginTop: 4, maxHeight: 150, overflow: 'hidden' }}>
+              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                {mapSuggestions.map((item: any, index: number) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={{ padding: 12, borderBottomWidth: index === mapSuggestions.length - 1 ? 0 : 1, borderBottomColor: '#F3F4F6' }}
+                    onPress={() => selectSuggestion(item)}
+                  >
+                    <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }} numberOfLines={1}>{item.text}</Text>
+                    <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }} numberOfLines={1}>{item.place_name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
         {/* Interactive Map */}
