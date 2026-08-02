@@ -62,9 +62,25 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  return app;
 }
-bootstrap();
+
+let cachedServer: any;
+
+export default async function handler(req: any, res: any) {
+  if (!cachedServer) {
+    const app = await bootstrap();
+    await app.init();
+    cachedServer = app.getHttpAdapter().getInstance();
+  }
+  return cachedServer(req, res);
+}
+
+// Only start the server locally if NOT on Vercel
+if (!process.env.VERCEL) {
+  bootstrap().then(async (app) => {
+    const port = process.env.PORT ?? 3000;
+    await app.listen(port);
+    Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  });
+}
