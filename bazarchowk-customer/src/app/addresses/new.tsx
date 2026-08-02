@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks';
@@ -80,7 +80,7 @@ export default function AddAddressScreen() {
     }
   };
 
-  const webViewRef = React.useRef<WebView>(null);
+  const webViewRef = useRef<WebView>(null);
 
   const geocodeAddressFallback = async () => {
     if (!addressLine1 || !city) return;
