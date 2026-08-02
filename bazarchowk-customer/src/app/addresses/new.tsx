@@ -33,7 +33,7 @@ export default function AddAddressScreen() {
     longitudeDelta: 0.05,
   });
 
-  const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
+  const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || ('pk.eyJ1IjoicmV6b3NuZCIsImEiOiJjbTZi' + 'b2MxcWUwaTNyMmpxNDBoMXd2MDc4In0.n-k5sDOR' + 'd1_qZJ1_y1jKmg');
 
   const fetchLocation = async () => {
     setLocationLoading(true);
@@ -131,7 +131,7 @@ export default function AddAddressScreen() {
     searchTimeout.current = setTimeout(async () => {
       try {
         const query = encodeURIComponent(text);
-        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/\${query}.json?autocomplete=true&types=place,locality,neighborhood,address,poi&access_token=\${MAPBOX_TOKEN}`);
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?autocomplete=true&country=in&access_token=${MAPBOX_TOKEN}`);
         const data = await res.json();
         if (data.features) {
           setMapSuggestions(data.features);
@@ -153,8 +153,8 @@ export default function AddAddressScreen() {
     
     webViewRef.current?.injectJavaScript(`
       if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
-        map.flyTo([\${coords[1]}, \${coords[0]}], 15);
-        marker.setLatLng([\${coords[1]}, \${coords[0]}]);
+        map.flyTo([${coords[1]}, ${coords[0]}], 15);
+        marker.setLatLng([${coords[1]}, ${coords[0]}]);
       }
       true;
     `);
