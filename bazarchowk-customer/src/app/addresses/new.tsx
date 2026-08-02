@@ -235,10 +235,10 @@ export default function AddAddressScreen() {
             placeholder="Search city, area, or place..."
             value={mapSearchQuery}
             onChangeText={fetchMapSuggestions}
-            leftIcon="search"
+            leftIcon={<Ionicons name="search" size={20} color={theme.textTertiary} />}
             style={{ marginBottom: 0, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
           />
-          {mapSuggestions.length > 0 && (
+          {mapSuggestions.length > 0 ? (
             <View style={{ backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, marginTop: 4, maxHeight: 150, overflow: 'hidden' }}>
               <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
                 {mapSuggestions.map((item: any, index: number) => (
@@ -253,7 +253,7 @@ export default function AddAddressScreen() {
                 ))}
               </ScrollView>
             </View>
-          )}
+          ) : null}
         </View>
 
         {/* Interactive Map */}
