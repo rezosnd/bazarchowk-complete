@@ -157,6 +157,9 @@ export function VoiceChatOverlay() {
       const uri = recording.uri;
       if (!uri) throw new Error('No audio URI');
       
+      // Add a tiny delay to allow the OS to completely flush the audio file to disk before reading it
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const audioBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       
       const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
