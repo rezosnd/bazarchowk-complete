@@ -23,6 +23,7 @@ export default function AddAddressScreen() {
   const [pincode, setPincode] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
 
   const [region, setRegion] = useState({
@@ -115,6 +116,36 @@ export default function AddAddressScreen() {
     }
   };
 
+  const handleMapSearch = async () => {
+    if (!mapSearchQuery) return;
+    setLocationLoading(true);
+    try {
+      const query = encodeURIComponent(mapSearchQuery);
+      const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/\${query}.json?access_token=\${MAPBOX_TOKEN}`);
+      const data = await res.json();
+      if (data.features && data.features.length > 0) {
+        const coords = data.features[0].center; // [lng, lat]
+        setLongitude(coords[0]);
+        setLatitude(coords[1]);
+        setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
+        
+        webViewRef.current?.injectJavaScript(`
+          if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
+            map.flyTo([\${coords[1]}, \${coords[0]}], 15);
+            marker.setLatLng([\${coords[1]}, \${coords[0]}]);
+          }
+          true;
+        `);
+      } else {
+        alert('Could not find this location.');
+      }
+    } catch (e) {
+      alert('Search failed. Please try again.');
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLocation();
   }, []);
@@ -181,6 +212,24 @@ export default function AddAddressScreen() {
           </View>
           <TouchableOpacity onPress={fetchLocation} style={styles.refreshBtn}>
             <Ionicons name="refresh" size={20} color={theme.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Interactive Map Search */}
+        <View style={styles.mapSearchContainer}>
+          <Input 
+            placeholder="Search a place or area on map..."
+            value={mapSearchQuery}
+            onChangeText={setMapSearchQuery}
+            leftIcon="search"
+            style={{ marginBottom: 8, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
+          />
+          <TouchableOpacity 
+            style={[styles.searchMapBtn, { backgroundColor: theme.primary }]}
+            onPress={handleMapSearch}
+            disabled={locationLoading}
+          >
+            <Text style={styles.searchMapBtnText}>{locationLoading ? 'Searching...' : 'Locate on Map'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -359,5 +408,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 10,
+  },
+  mapSearchContainer: {
+    marginBottom: Spacing.sm,
+    borderRadius: 12,
+  },
+  searchMapBtn: {
+    padding: Spacing.sm,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  searchMapBtnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
   },
 });
