@@ -15,7 +15,11 @@ let FileSystem: any = null;
 try {
   Speech = require('expo-speech');
   Audio = require('expo-audio');
-  FileSystem = require('expo-file-system');
+  try {
+    FileSystem = require('expo-file-system/legacy');
+  } catch (e) {
+    FileSystem = require('expo-file-system');
+  }
 } catch (e) {
   console.log('Voice packages not available in Expo Go');
 }
