@@ -156,11 +156,15 @@ export default function ProfileScreen() {
               <View style={{ flex: 1 }}><Button title="Cancel" variant="outline" onPress={() => setIsEditModalVisible(false)} /></View>
               <View style={{ flex: 1 }}><Button title="Save" onPress={async () => {
                 try {
-                  const res = await api.patch('/users/me', {
-                    firstName: editFirstName,
-                    lastName: editLastName,
-                    phone: editPhone
-                  });
+                  const updateData: any = {
+                    firstName: editFirstName.trim(),
+                    lastName: editLastName.trim(),
+                  };
+                  if (editPhone.trim() !== '') {
+                    updateData.phone = editPhone.trim();
+                  }
+
+                  const res = await api.patch('/users/me', updateData);
                   // Update Zustand store so UI reflects changes instantly
                   useAuthStore.getState().setUser(res.data);
                   setIsEditModalVisible(false);

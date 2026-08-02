@@ -141,6 +141,7 @@ export default function ShopOrdersScreen() {
         <Text style={styles.title}>Live Orders</Text>
       </View>
 
+      <ScrollView contentContainerStyle={styles.scroll}>
         {/* Tabs */}
         <View style={styles.tabRow}>
           <TouchableOpacity style={[styles.tab, activeTab === 'LIVE' && styles.tabActive]} onPress={() => setActiveTab('LIVE')}>
