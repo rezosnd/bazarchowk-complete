@@ -122,3 +122,9 @@ export class CreateCityConfigDto {
   @IsNumber()
   minOrderAmount?: number;
 }
+
+export class AssignRoleDto {
+  @ApiProperty({ description: 'The role name to assign (e.g. SUPER_ADMIN, DISTRICT_ADMIN, MARKET_ADMIN, CUSTOMER)' })
+  @IsString()
+  roleName: string;
+}

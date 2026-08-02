@@ -28,8 +28,8 @@
       "vegetables": "Order vegetables",
       "plumber": "Book a plumber",
       "doctor": "Need a doctor",
-      "cake": "Birthday cake",
-      "medicine": "Medicine delivery"
+      "medicine": "Medicine delivery",
+      "pandit": "Book a Pandit"
     }
   },
   "search": {
@@ -48,7 +48,8 @@
     "tutor": "ਟਿਊਟਰ",
     "taxi": "ਟੈਕਸੀ",
     "cleaning": "ਸਫਾਈ",
-    "more": "More"
+    "more": "More",
+    "pandit": "Pandits & Astrology"
   },
   "navigation": {
     "home": "Home",

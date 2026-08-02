@@ -10,7 +10,18 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 0,
+      gcTime: 1_000 * 60 * 5,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+    },
+    mutations: { retry: 0 },
+  },
+});
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);

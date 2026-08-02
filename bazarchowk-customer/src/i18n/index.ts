@@ -1,5 +1,6 @@
-import i18n from 'i18next';
+import i18n, { LanguageDetectorAsyncModule } from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import en from './locales/en.json';
 import hi from './locales/hi.json';
@@ -13,11 +14,40 @@ import pa from './locales/pa.json';
 import ta from './locales/ta.json';
 import te from './locales/te.json';
 
+const STORE_LANGUAGE_KEY = 'settings.lang';
+
+const languageDetectorPlugin: LanguageDetectorAsyncModule = {
+  type: 'languageDetector',
+  async: true,
+  init: () => {},
+  detect: function (callback: (lang: string) => void) {
+    try {
+      AsyncStorage.getItem(STORE_LANGUAGE_KEY).then((language) => {
+        if (language) {
+          return callback(language);
+        } else {
+          return callback('en');
+        }
+      });
+    } catch (error) {
+      console.log('Error reading language', error);
+      callback('en');
+    }
+  },
+  cacheUserLanguage: async function (language: string) {
+    try {
+      await AsyncStorage.setItem(STORE_LANGUAGE_KEY, language);
+    } catch (error) {
+      console.log('Error caching language', error);
+    }
+  },
+};
+
 i18n
+  .use(languageDetectorPlugin)
   .use(initReactI18next)
   .init({
-    compatibilityJSON: 'v3',
-    lng: 'en',
+    compatibilityJSON: 'v4',
     fallbackLng: 'en',
 
     resources: {

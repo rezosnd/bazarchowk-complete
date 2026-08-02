@@ -108,9 +108,12 @@ export class CommissionService {
 
     if (!rule) throw new NotFoundException('Commission rule not found');
 
+    const order = await this.prisma.order.findUnique({ where: { id: dto.orderId } });
+    if (!order) throw new NotFoundException('Order not found');
+
     const commissionAmt = (dto.orderAmount * rule.commissionPercent) / 100;
     const platformFee = (dto.orderAmount * rule.platformFeePercent) / 100;
-    const deliveryFee = rule.deliveryFeeFixed;
+    const deliveryFee = order.deliveryFee || rule.deliveryFeeFixed; // Use dynamic distance fee from order!
     const netShopPayable = dto.orderAmount - commissionAmt - deliveryFee;
 
     // Use an interactive transaction to ensure Commission and Ledger entries are atomically saved

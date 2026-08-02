@@ -4,7 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import api from '@/services/api';
-import RazorpayCheckout from 'react-native-razorpay';
+// @ts-ignore
+let RazorpayCheckout: any = null;
+try {
+  RazorpayCheckout = require('react-native-razorpay').default;
+} catch (e) {
+  console.log('Razorpay not available in Expo Go');
+}
 
 const PRIMARY = '#00B140';
 
@@ -41,6 +47,9 @@ export default function WalletScreen() {
         redirectUri: 'ignored' // no longer needed for native SDK
       });
 
+      if (!RazorpayCheckout) {
+        throw new Error('Razorpay is not available on web or in this environment.');
+      }
       const data = await RazorpayCheckout.open({
         key: 'rzp_live_Sr05Li4YOC8ZQo',
         amount: linkData.amount,
@@ -171,7 +180,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 20, gap: 24, paddingBottom: 100 },
   
   balanceCard: { height: 160, borderRadius: 24, overflow: 'hidden', backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
-  balanceBg: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.1)' },
+  balanceBg: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.1)' },
   balanceContent: { flex: 1, justifyContent: 'center', padding: 24 },
   balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 16, fontWeight: '600', marginBottom: 8 },
   balanceAmount: { color: '#FFF', fontSize: 40, fontWeight: '800' },

@@ -56,6 +56,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CommunicationModule } from './communication/communication.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { HomeModule } from './home/home.module';
 
 @Module({
   imports: [
@@ -90,7 +91,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     CommunicationModule,
     GeminiModule,
     CloudinaryModule,
-    AuthModule, UsersModule, PrismaModule, AddressesModule, NotificationsModule, CategoriesModule, ShopsModule, ProductsModule, InventoryModule, SearchModule, CartModule, OrdersModule, PaymentsModule, ReviewsModule, RealtimeModule, AppointmentsModule, DeliveryModule, WalletModule, LoyaltyModule, AdsModule, BusinessModule, VoiceOrderingModule, AiAssistantModule, AnalyticsModule
+    AuthModule, UsersModule, PrismaModule, AddressesModule, NotificationsModule, CategoriesModule, ShopsModule, ProductsModule, InventoryModule, SearchModule, CartModule, OrdersModule, PaymentsModule, ReviewsModule, RealtimeModule, AppointmentsModule, DeliveryModule, WalletModule, LoyaltyModule, AdsModule, BusinessModule, VoiceOrderingModule, AiAssistantModule, AnalyticsModule, HomeModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,7 +1,7 @@
 import '@/i18n';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,8 +18,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1_000 * 60 * 5,  // 5 min
-      gcTime:    1_000 * 60 * 30, // 30 min
+      staleTime: 0,               // ALWAYS fetch fresh data (no caching delay)
+      gcTime: 1_000 * 60 * 5,     // Keep in garbage collector for 5 mins
+      refetchOnMount: true,       // Refetch when navigating back to a screen
+      refetchOnWindowFocus: true, // Refetch when app comes back from background
     },
     mutations: { retry: 0 },
   },
@@ -31,7 +33,11 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 export default function RootLayout() {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user           = useAuthStore((s) => s.user);
   const initialize     = useAuthStore((s) => s.initialize);
+
+  const segments = useSegments();
+  const router = useRouter();
 
   // Register push notifications
   usePushNotifications();
@@ -53,12 +59,32 @@ export default function RootLayout() {
     });
   }, [isAuthenticated]);
 
+  // ─── Mandatory Phone Number Wall ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    
+    if (isAuthenticated && user) {
+      if (!user.phone && segments.join('/') !== '(auth)/complete-profile') {
+        // If they are logged in (e.g. Google Auth) but have no phone number, FORCE them here
+        router.replace('/(auth)/complete-profile' as any);
+      } else if (user.phone && inAuthGroup) {
+        // If they are fully authenticated and have a phone, send them to tabs
+        router.replace('/(tabs)');
+      }
+    } else if (!isAuthenticated && !inAuthGroup) {
+      // Not authenticated, send to login
+      router.replace('/(auth)/login');
+    }
+  }, [isInitialized, isAuthenticated, user?.phone, segments]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           {/* Translucent so splash image fills edge-to-edge on Android */}
-          <StatusBar style="light" translucent />
+          <StatusBar style="light" />
 
           {/* Premium animated splash overlay — exits when isInitialized = true */}
           <BazarChowkSplashOverlay appReady={isInitialized} />

@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class OrdersService {
@@ -12,6 +15,8 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly realtime: RealtimeGateway,
+    private readonly auditService: AuditService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   // Generate a random unique order number
@@ -20,6 +25,14 @@ export class OrdersService {
   }
 
   async createOrder(customerId: string, createDto: CreateOrderDto) {
+    if (createDto.idempotencyKey) {
+      const cacheKey = `order_idempotency_${createDto.idempotencyKey}`;
+      const existingOrderId = await this.cacheManager.get(cacheKey);
+      if (existingOrderId) {
+        throw new BadRequestException('Order already being processed or completed');
+      }
+      await this.cacheManager.set(cacheKey, 'PROCESSING', 60000); // 1 minute lock
+    }
     // 1. Fetch Cart and Address
     const [cart, deliveryAddress] = await Promise.all([
       this.prisma.cart.findUnique({
@@ -62,7 +75,49 @@ export class OrdersService {
       });
     }
 
-    // 3. Create Order via Transaction
+    // 3. Calculate Haversine Distance for Delivery Fee
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: createDto.shopId }
+    });
+
+    if (!shop) throw new NotFoundException('Shop not found');
+
+    const R = 6371; // Earth's radius in km
+    const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
+    const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deliveryAddress.latitude * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distanceKm = R * c;
+
+    // 4. Resolve Dynamic Delivery Fee based on distance tiers configured by Super Admin
+    let calculatedDeliveryFee = 20; // Hard fallback
+    const rule = await this.prisma.deliveryRule.findFirst({
+      where: { OR: [{ marketId: shop.marketId || undefined }, { marketId: 'DEFAULT_MARKET' }] },
+      orderBy: { marketId: 'desc' } // Prioritize specific market over default
+    });
+
+    if (rule) {
+      if (distanceKm <= rule.tier1MaxKm) {
+        calculatedDeliveryFee = rule.tier1Fee;
+      } else if (distanceKm <= rule.tier2MaxKm) {
+        calculatedDeliveryFee = rule.tier2Fee;
+      } else if (distanceKm <= rule.tier3MaxKm) {
+        calculatedDeliveryFee = rule.tier3Fee;
+      } else {
+        // Beyond tier 3, add base + extra per km
+        calculatedDeliveryFee = rule.tier3Fee + Math.ceil(distanceKm - rule.tier3MaxKm) * 10;
+      }
+    } else {
+      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5); // Fallback if no rule
+    }
+
+    // Add Delivery Fee to total
+    totalAmount += calculatedDeliveryFee;
+
+    // 5. Create Order via Transaction
     const orderNumber = this.generateOrderNumber();
 
     const order = await this.prisma.$transaction(async (prisma) => {
@@ -77,6 +132,7 @@ export class OrdersService {
           paymentStatus: createDto.paymentMethod === 'WALLET' ? PaymentStatus.PAID : PaymentStatus.PENDING,
           status: OrderStatus.PLACED,
           totalAmount,
+          deliveryFee: calculatedDeliveryFee,
           items: {
             create: orderItemsData,
           },
@@ -179,6 +235,10 @@ export class OrdersService {
       timestamp: new Date()
     });
 
+    if (createDto.idempotencyKey) {
+      await this.cacheManager.set(`order_idempotency_${createDto.idempotencyKey}`, order.id, 86400000); // lock for 24h
+    }
+
     return order;
   }
 
@@ -254,6 +314,16 @@ export class OrdersService {
           notes: dto.notes,
           createdBy: userId,
         }
+      });
+
+      // Audit Log
+      await this.auditService.logAction({
+        actorId: userId,
+        action: 'UPDATE_ORDER_STATUS',
+        entity: 'Order',
+        entityId: orderId,
+        newValue: JSON.stringify({ status: dto.status }),
+        ipAddress: 'System',
       });
 
       // If the shop just ACCEPTED the order, push it to the Delivery Queue!

@@ -19,6 +19,6 @@ export class VoiceOrderingController {
     @Body() dto: ProcessVoiceOrderDto,
     @CurrentUser() user: any
   ) {
-    return this.voiceService.processConversationalVoiceOrder(user.id, dto.transcript, dto.sessionId, dto.language, dto.audioUrl);
+    return this.voiceService.processConversationalVoiceOrder(user.id, dto.transcript, dto.sessionId, dto.language, dto.audioUrl, dto.audioBase64);
   }
 }

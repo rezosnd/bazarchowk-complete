@@ -18,10 +18,11 @@ import Animated, {
   withDelay,
   Extrapolation,
   runOnJS,
+  SharedValue,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { FloatingCart } from '@/components/FloatingCart';
+// import { FloatingCart } from '@/components/FloatingCart';
 
 const { width: W, height: H } = Dimensions.get('window');
 const EMERALD = '#00B140';
@@ -143,7 +144,7 @@ function GlobalAIOverlay() {
 
 // ─── AI Button Component ──────────────────────────────────────────────────────
 
-function AIButton({ label, aiActiveState }: { label: string, aiActiveState: Animated.SharedValue<number> }) {
+function AIButton({ label, aiActiveState }: { label: string, aiActiveState: SharedValue<number> }) {
   const isListening = useAIStore((state) => state.isListening);
   const toggleListening = useAIStore((state) => state.toggleListening);
 
@@ -213,7 +214,7 @@ function TabIcon({
   label: string;
   focused: boolean;
   tabName: string;
-  aiActiveState: Animated.SharedValue<number>;
+  aiActiveState: SharedValue<number>;
 }) {
   const color = focused ? EMERALD : '#9CA3AF';
   
@@ -328,7 +329,7 @@ export default function TabsLayout() {
         options={{
           tabBarButton: (props) => (
             <TouchableOpacity 
-              {...props} 
+              {...(props as any)} 
               activeOpacity={1} 
               style={{ flex: 1 }}
               onPress={() => {}} // Block default nav

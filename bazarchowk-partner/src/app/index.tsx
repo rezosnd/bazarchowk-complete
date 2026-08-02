@@ -11,7 +11,8 @@ export default function PartnerDashboard() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [shopName, setShopName] = useState('Your Shop');
-  const [partnerType, setPartnerType] = useState('GROCERY');
+  const [hasProducts, setHasProducts] = useState(false);
+  const [hasServices, setHasServices] = useState(false);
 
   useEffect(() => {
     checkSession();
@@ -58,7 +59,8 @@ export default function PartnerDashboard() {
       if (res.ok) {
         const data = await res.json();
         setShopName(data.name || 'Your Shop');
-        setPartnerType(data.partnerType || 'GROCERY');
+        setHasProducts(data.hasProducts);
+        setHasServices(data.hasServices);
         await SecureStore.setItemAsync('bazar_shop_id', data.id);
       } else if (res.status === 404) {
         // Only force onboarding if we explicitly get a 404 Not Found
@@ -75,41 +77,34 @@ export default function PartnerDashboard() {
   };
 
   const getMenuItems = () => {
-    const isStore = ['RESTAURANT', 'GROCERY', 'PHARMACY'].includes(partnerType);
-    const isSalon = partnerType === 'SALON';
+    let items: any[] = [];
     
-    if (isSalon) {
-      return [
+    if (hasProducts) {
+      items.push(
+        { title: 'Live Orders', icon: 'receipt-outline', route: '/shop/orders', color: '#ea580c', bgColor: '#ffedd5' },
+        { title: 'Products', icon: 'cube-outline', route: '/shop/products', color: '#3B82F6', bgColor: '#DBEAFE' },
+        { title: 'Inventory', icon: 'list-circle-outline', route: '/shop/inventory', color: '#8B5CF6', bgColor: '#EDE9FE' }
+      );
+    }
+    
+    if (hasServices) {
+      items.push(
         { title: 'Appointments', icon: 'calendar-outline', route: '/services', color: '#0EA5E9', bgColor: '#E0F2FE' },
-        { title: 'Customers', icon: 'people-outline', route: '/shop/customers', color: '#8B5CF6', bgColor: '#EDE9FE' },
-        { title: 'Shop Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#10B981', bgColor: '#D1FAE5' },
-        { title: 'Timings', icon: 'time-outline', route: '/shop/timings', color: '#EC4899', bgColor: '#FCE7F3' },
-        { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
-        { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' },
-      ];
+        { title: 'Customers', icon: 'people-outline', route: '/shop/customers', color: '#14b8a6', bgColor: '#ccfbf1' }
+      );
     }
     
-    if (!isStore && !isSalon) {
-      // Professional (Plumber, Electrician, etc.)
-      return [
-        { title: 'Live Bookings', icon: 'calendar-outline', route: '/services', color: '#0EA5E9', bgColor: '#E0F2FE' },
-        { title: 'Schedule', icon: 'time-outline', route: '/shop/timings', color: '#EC4899', bgColor: '#FCE7F3' },
-        { title: 'My Profile', icon: 'person-outline', route: '/shop/profile', color: '#10B981', bgColor: '#D1FAE5' },
-        { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
-        { title: 'Ratings', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' },
-      ];
-    }
-
-    // Default Store (Grocery, Pharmacy, Restaurant)
-    return [
-      { title: 'Live Orders', icon: 'receipt-outline', route: '/shop/orders', color: '#ea580c', bgColor: '#ffedd5' },
-      { title: 'Products', icon: 'cube-outline', route: '/shop/products', color: '#3B82F6', bgColor: '#DBEAFE' },
-      { title: 'Inventory', icon: 'list-circle-outline', route: '/shop/inventory', color: '#8B5CF6', bgColor: '#EDE9FE' },
-      { title: 'Shop Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#10B981', bgColor: '#D1FAE5' },
+    // Common settings for all
+    items.push(
+      { title: 'Promote Ads', icon: 'megaphone-outline', route: '/shop/ads', color: '#00B140', bgColor: '#DCFCE7' },
+      { title: 'Revenue', icon: 'cash-outline', route: '/shop/revenue', color: '#10B981', bgColor: '#D1FAE5' },
+      { title: 'Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#F59E0B', bgColor: '#FEF3C7' },
       { title: 'Timings', icon: 'time-outline', route: '/shop/timings', color: '#EC4899', bgColor: '#FCE7F3' },
       { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
-      { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' },
-    ];
+      { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' }
+    );
+    
+    return items;
   };
 
   const menuItems = getMenuItems();
@@ -149,7 +144,7 @@ export default function PartnerDashboard() {
           <Text style={styles.summaryTitle}>Today's Overview</Text>
           <View style={styles.summaryRow}>
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryLabel}>{partnerType === 'SALON' || (!['RESTAURANT', 'GROCERY', 'PHARMACY'].includes(partnerType) && partnerType !== 'SALON') ? 'Bookings' : 'Orders'}</Text>
+              <Text style={styles.summaryLabel}>{hasServices && !hasProducts ? 'Bookings' : 'Orders'}</Text>
               <Text style={styles.summaryVal}>0</Text>
             </View>
             <View style={styles.divider} />

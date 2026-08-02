@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useTranslation } from 'react-i18next';
-import { useCategories, Category, SubCategory } from '@/hooks';
+import { useCategories } from '@/hooks';
 
 const { width: W } = Dimensions.get('window');
 const PADDING_H = 20;
@@ -29,7 +29,7 @@ function SectionHeader({ title, subtitle, emoji }: { title: string, subtitle?: s
   );
 }
 
-function GridCard({ item, index }: { item: SubCategory; index: number }) {
+function GridCard({ item, index }: { item: any; index: number }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -60,11 +60,11 @@ function GridCard({ item, index }: { item: SubCategory; index: number }) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
+import { CATEGORIES } from '@/data/categories';
+
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  
-  const { data: categories, isLoading, error } = useCategories();
 
   return (
     <View style={styles.container}>
@@ -76,7 +76,7 @@ export default function CategoriesScreen() {
       >
         {/* ── 0. Sticky Header + Search ── */}
         <View style={styles.stickyHeaderWrap}>
-          <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFillObject} />
+          <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
 
           <View style={[styles.headerInner, { paddingTop: insets.top + 12 }]}>
             <View style={styles.locationRow}>
@@ -125,35 +125,21 @@ export default function CategoriesScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {isLoading ? (
-            <ActivityIndicator size="large" color={PRIMARY} style={{ marginTop: 40 }} />
-          ) : error ? (
-            <Text style={{ textAlign: 'center', color: 'red', marginTop: 40 }}>Failed to load categories.</Text>
-          ) : categories?.length === 0 ? (
-            <Text style={{ textAlign: 'center', color: '#64748B', marginTop: 40 }}>No categories found.</Text>
-          ) : (
-            categories?.map((category) => (
-              <View key={category.id} style={styles.sectionMargin}>
-                <SectionHeader 
-                  title={category.name} 
-                  subtitle={category.description || `Explore ${category.name}`} 
-                  emoji={category.iconUrl ? undefined : "✨"} 
-                />
-                
-                {category.subCategories && category.subCategories.length > 0 ? (
-                  <View style={styles.grid2Col}>
-                    {category.subCategories.map((sub, idx) => (
-                      <GridCard key={sub.id} item={sub} index={idx} />
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={{ paddingHorizontal: PADDING_H, color: '#94A3B8', fontSize: 12 }}>
-                    No subcategories available.
-                  </Text>
-                )}
+          {CATEGORIES.map((category) => (
+            <View key={category.id} style={styles.sectionMargin}>
+              <SectionHeader 
+                title={category.name} 
+                subtitle={`Explore ${category.name}`} 
+                emoji="✨" 
+              />
+              
+              <View style={styles.grid2Col}>
+                {category.subcategories.map((sub, idx) => (
+                  <GridCard key={sub.id} item={{ id: sub.id, name: sub.name, description: '' } as any} index={idx} />
+                ))}
               </View>
-            ))
-          )}
+            </View>
+          ))}
 
         </View>
       </ScrollView>
@@ -247,7 +233,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
     flexDirection: 'row',
-    alignItems: 'space-between',
+    justifyContent: 'space-between',
     overflow: 'hidden',
   },
   gridCardTextWrap: { flex: 1, zIndex: 2 },

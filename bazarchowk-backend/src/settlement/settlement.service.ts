@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import {
   RecordCashCollectionDto,
   SubmitRiderDepositDto,
@@ -16,6 +17,7 @@ export class SettlementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly emailService: EmailService,
   ) {}
 
   // =============== RIDER: CASH COLLECTION ===============
@@ -168,7 +170,20 @@ export class SettlementService {
    * Generate a settlement for a shop for a given date range
    */
   async createShopSettlement(adminId: string, dto: CreateSettlementDto) {
-    const commissionPct = dto.commissionPercent ?? 5;
+    // SECURITY PATCH: Verify Admin Role to prevent Commission Tampering
+    const adminUser = await this.prisma.user.findUnique({
+      where: { id: adminId },
+      include: { role: true }
+    });
+
+    let commissionPct = 5; // Absolute baseline fallback
+    if (adminUser?.role?.name === 'SUPER_ADMIN' && dto.commissionPercent !== undefined) {
+      commissionPct = dto.commissionPercent; // Only SuperAdmin can negotiate/change commission
+    } else if (dto.commissionPercent !== undefined && dto.commissionPercent !== 5) {
+      this.logger.warn(`SECURITY ALERT: User ${adminId} (${adminUser?.role?.name}) attempted to alter commission to ${dto.commissionPercent}%. Blocked.`);
+      // Enforce 5% for all standard Market/District Admins regardless of DTO injection
+      commissionPct = 5;
+    }
     const periodStart = new Date(dto.periodStart);
     const periodEnd = new Date(dto.periodEnd);
 
@@ -244,16 +259,39 @@ export class SettlementService {
     const updatedSettlement = await this.prisma.shopSettlement.update({
       where: { id: settlementId },
       data: { status: 'COMPLETED', paymentReference: dto.paymentReference, settledAt: new Date() },
-      include: { shop: { select: { ownerId: true, name: true } } },
+      include: { shop: { select: { ownerId: true, name: true, upiId: true, bankAccountNumber: true } } },
     });
 
-    // Notify Shop Owner
+    // Notify Shop Owner via In-App Notification
     await this.notificationsService.sendInAppNotification(
       updatedSettlement.shop.ownerId,
       'Settlement Paid',
-      `Your settlement of ₹${updatedSettlement.netSettlementAmt.toFixed(2)} has been paid. Ref: ${dto.paymentReference}`,
+      `Your settlement of ₹${updatedSettlement.netSettlementAmt.toFixed(2)} has been paid via ${updatedSettlement.shop.upiId || 'Bank Transfer'}. Ref: ${dto.paymentReference}`,
       'SYSTEM'
     );
+
+    // Automate Email Confirmation with PDF Attachment
+    const owner = await this.prisma.user.findUnique({ where: { id: updatedSettlement.shop.ownerId } });
+    if (owner && owner.email) {
+      const totalOrders = await this.prisma.order.count({
+        where: { shopId: updatedSettlement.shopId, status: 'DELIVERED', createdAt: { gte: updatedSettlement.periodStart, lte: updatedSettlement.periodEnd } }
+      });
+
+      await this.emailService.sendSettlementEmail(owner.email, {
+        shopName: updatedSettlement.shop.name,
+        periodStart: updatedSettlement.periodStart,
+        periodEnd: updatedSettlement.periodEnd,
+        settlementId: updatedSettlement.id,
+        paymentRef: dto.paymentReference || 'N/A',
+        paymentMode: updatedSettlement.shop.upiId ? `UPI (${updatedSettlement.shop.upiId})` : 'Bank Transfer',
+        totalOrders: totalOrders,
+        grossSales: updatedSettlement.totalOrderAmount,
+        commission: updatedSettlement.platformCommission,
+        netPayout: updatedSettlement.netSettlementAmt
+      });
+      
+      this.logger.log(`Live Settlement PDF Email sent to ${owner.email} for Shop ${updatedSettlement.shop.name}`);
+    }
 
     return updatedSettlement;
   }

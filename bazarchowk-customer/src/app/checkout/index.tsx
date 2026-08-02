@@ -3,7 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import RazorpayCheckout from 'react-native-razorpay';
+let RazorpayCheckout: any = null;
+try {
+  RazorpayCheckout = require('react-native-razorpay').default;
+} catch (e) {
+  console.log('Razorpay not available in Expo Go');
+}
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
 
@@ -68,6 +73,9 @@ export default function CheckoutScreen() {
 
         // 2. Open Native Razorpay Checkout
         try {
+          if (!RazorpayCheckout) {
+            throw new Error('Razorpay is not available on web or in this environment.');
+          }
           const data = await RazorpayCheckout.open({
             key: 'rzp_live_Sr05Li4YOC8ZQo', // Use your public key
             amount: amount,

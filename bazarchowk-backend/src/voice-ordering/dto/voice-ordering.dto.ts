@@ -2,10 +2,10 @@ import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ProcessVoiceOrderDto {
-  @ApiProperty({ description: 'The text transcript of the user voice input' })
+  @ApiPropertyOptional({ description: 'The text transcript of the user voice input' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  transcript: string;
+  transcript?: string;
 
   @ApiProperty({ description: 'Session ID to maintain conversation context' })
   @IsString()
@@ -21,4 +21,9 @@ export class ProcessVoiceOrderDto {
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Base64 encoded audio string from expo-av recording' })
+  @IsOptional()
+  @IsString()
+  audioBase64?: string;
 }

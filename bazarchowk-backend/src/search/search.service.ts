@@ -1,16 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchQueryDto, SearchType } from './dto/search.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class SearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(SearchService.name);
 
-  async search(searchQuery: SearchQueryDto) {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
+  ) {}
+
+  async search(searchQuery: SearchQueryDto, userId?: string) {
     const { query, type = SearchType.ALL, limit = 10, offset = 0, city } = searchQuery;
     
-    // Format query for Postgres to_tsquery (e.g., "apple & juice" or "apple | juice")
-    const formattedQuery = query.trim().split(/\s+/).join(' | ');
+    // Create deterministic cache key
+    const cacheKey = `search_${type}_${query.toLowerCase()}_${city || 'ALL'}_${offset}_${limit}_${searchQuery.latitude || 0}_${searchQuery.longitude || 0}`;
+    
+    // 1. Check Cache First (High Performance)
+    const cachedResult = await this.cacheManager.get(cacheKey);
+    if (cachedResult) {
+      this.logger.debug(`Cache hit for search: ${query}`);
+      // Log search history asynchronously even on cache hit
+      this.logSearchHistory(userId, query, type, (cachedResult as any).pagination.totalResults);
+      return cachedResult;
+    }
+
+    // Format query for Postgres to_tsquery and sanitize to prevent syntax errors
+    const sanitizedQuery = query.replace(/[&|!():*<>{}\[\]]/g, '').trim();
+    if (!sanitizedQuery) {
+      return {
+        query,
+        results: { products: [], shops: [], services: [] },
+        pagination: { limit, offset, totalResults: 0 }
+      };
+    }
+    const formattedQuery = sanitizedQuery.split(/\s+/).join(' | ');
 
     let products: any[] = [];
     let shops: any[] = [];
@@ -22,64 +49,74 @@ export class SearchService {
       shopConditions.city = { equals: city, mode: 'insensitive' };
     }
 
+    // 2. Perform FTS Queries concurrently
+    const queries = [];
+
     if (type === SearchType.ALL || type === SearchType.PRODUCTS) {
-      products = await this.prisma.product.findMany({
-        where: {
-          isPublished: true,
-          shop: shopConditions,
-          OR: [
-            { name: { search: formattedQuery } },
-            { description: { search: formattedQuery } },
-            { searchTerms: { search: formattedQuery } },
-            // Fallback for partial matches
-            { name: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-        include: {
-          shop: { select: { id: true, name: true, city: true, deliveryRadius: true, latitude: true, longitude: true } },
-          images: { where: { isPrimary: true }, take: 1 },
-          variants: true,
-        },
-        take: Number(limit),
-        skip: Number(offset),
-      });
+      queries.push(
+        this.prisma.product.findMany({
+          where: {
+            isPublished: true,
+            shop: shopConditions,
+            OR: [
+              { name: { search: formattedQuery } },
+              { description: { search: formattedQuery } },
+              { searchTerms: { search: formattedQuery } },
+              { name: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+          include: {
+            shop: { select: { id: true, name: true, city: true, deliveryRadius: true, latitude: true, longitude: true } },
+            images: { where: { isPrimary: true }, take: 1 },
+            variants: true,
+          },
+          take: Number(limit),
+          skip: Number(offset),
+        }).then(res => products = res)
+      );
     }
 
     if (type === SearchType.ALL || type === SearchType.SHOPS) {
-      shops = await this.prisma.shop.findMany({
-        where: {
-          ...shopConditions,
-          OR: [
-            { name: { search: formattedQuery } },
-            { description: { search: formattedQuery } },
-            { name: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-        take: Number(limit),
-        skip: Number(offset),
-      });
+      queries.push(
+        this.prisma.shop.findMany({
+          where: {
+            ...shopConditions,
+            OR: [
+              { name: { search: formattedQuery } },
+              { description: { search: formattedQuery } },
+              { name: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+          take: Number(limit),
+          skip: Number(offset),
+        }).then(res => shops = res)
+      );
     }
 
     if (type === SearchType.ALL || type === SearchType.SERVICES) {
-      services = await this.prisma.serviceOffering.findMany({
-        where: {
-          isActive: true,
-          shop: shopConditions,
-          OR: [
-            { name: { search: formattedQuery } },
-            { description: { search: formattedQuery } },
-            { name: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-        include: {
-          shop: { select: { id: true, name: true, city: true, deliveryRadius: true, latitude: true, longitude: true } },
-        },
-        take: Number(limit),
-        skip: Number(offset),
-      });
+      queries.push(
+        this.prisma.serviceOffering.findMany({
+          where: {
+            isActive: true,
+            shop: shopConditions,
+            OR: [
+              { name: { search: formattedQuery } },
+              { description: { search: formattedQuery } },
+              { name: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+          include: {
+            shop: { select: { id: true, name: true, city: true, deliveryRadius: true, latitude: true, longitude: true } },
+          },
+          take: Number(limit),
+          skip: Number(offset),
+        }).then(res => services = res)
+      );
     }
 
-    // Geofencing if lat/lon provided (Software-level haversine distance filtering)
+    await Promise.all(queries);
+
+    // 3. Geofencing (Software Haversine fallback)
     if (searchQuery.latitude && searchQuery.longitude) {
       const { latitude, longitude, radius = 20 } = searchQuery;
       
@@ -99,13 +136,11 @@ export class SearchService {
           isWithinRadius(latitude, longitude, shop.latitude, shop.longitude, Math.max(radius, shop.deliveryRadius || 20))
         );
       }
-
       if (products.length > 0) {
         products = products.filter(product => 
           isWithinRadius(latitude, longitude, product.shop.latitude, product.shop.longitude, Math.max(radius, product.shop.deliveryRadius || 20))
         );
       }
-
       if (services.length > 0) {
         services = services.filter(service => 
           isWithinRadius(latitude, longitude, service.shop.latitude, service.shop.longitude, Math.max(radius, service.shop.deliveryRadius || 20))
@@ -113,17 +148,34 @@ export class SearchService {
       }
     }
 
-    return {
+    const totalResults = products.length + shops.length + services.length;
+
+    const finalResult = {
       query,
-      results: {
-        products,
-        shops,
-        services,
-      },
-      pagination: {
-        limit,
-        offset,
-      }
+      results: { products, shops, services },
+      pagination: { limit, offset, totalResults }
     };
+
+    // 4. Cache the payload (TTL: 60 seconds to balance freshness and speed)
+    await this.cacheManager.set(cacheKey, finalResult, 60000);
+
+    // 5. Asynchronously log to SearchHistory
+    this.logSearchHistory(userId, query, type, totalResults);
+
+    return finalResult;
+  }
+
+  /**
+   * Fire-and-forget search history logging for AI recommendations later
+   */
+  private logSearchHistory(userId: string | undefined, query: string, type: string, resultsCount: number) {
+    this.prisma.searchHistory.create({
+      data: {
+        userId: userId || null,
+        query: query.substring(0, 200), // Max length safety
+        filters: JSON.stringify({ type }),
+        results: resultsCount
+      }
+    }).catch(err => this.logger.error('Failed to log search history', err));
   }
 }

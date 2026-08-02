@@ -5,9 +5,10 @@ import { SettlementController } from './settlement.controller';
 import { SettlementAutomationController } from './settlement-automation.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [PrismaModule, NotificationsModule],
+  imports: [PrismaModule, NotificationsModule, EmailModule],
   providers: [SettlementService, SettlementAutomationService],
   controllers: [SettlementController, SettlementAutomationController],
   exports: [SettlementService, SettlementAutomationService],

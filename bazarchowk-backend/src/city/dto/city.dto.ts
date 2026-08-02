@@ -54,6 +54,11 @@ export class CreateCityDto {
   @IsOptional()
   @IsString()
   languages?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  distanceFeeTiers?: any[];
 }
 
 export class UpdateCityDto {
@@ -86,6 +91,11 @@ export class UpdateCityDto {
   @IsOptional()
   @IsNumber()
   taxPercent?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  distanceFeeTiers?: any[];
 }
 
 export class CreateRegionalPromotionDto {

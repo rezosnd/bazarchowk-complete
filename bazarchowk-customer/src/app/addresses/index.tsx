@@ -26,7 +26,7 @@ export default function AddressesScreen() {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
-        <Text style={{ color: theme.error }}>Failed to load addresses</Text>
+        <Text style={{ color: '#EF4444' }}>Failed to load addresses</Text>
       </View>
     );
   }
@@ -51,7 +51,7 @@ export default function AddressesScreen() {
           </View>
         ) : (
           addresses?.map((address) => (
-            <View key={address.id} style={[styles.addressCard, { backgroundColor: theme.surface, borderColor: address.isDefault ? theme.primary : theme.border }]}>
+            <View key={address.id} style={[styles.addressCard, { backgroundColor: theme.background, borderColor: address.isDefault ? theme.primary : theme.border }]}>
               <View style={styles.addressHeader}>
                 <View style={styles.titleRow}>
                   <Ionicons name="home" size={20} color={theme.textSecondary} />
@@ -86,7 +86,7 @@ export default function AddressesScreen() {
                   onPress={() => deleteMutation.mutate(address.id)}
                   style={styles.actionBtn}
                 >
-                  <Ionicons name="trash-outline" size={20} color={theme.error} />
+                  <Ionicons name="trash-outline" size={20} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -95,7 +95,7 @@ export default function AddressesScreen() {
       </ScrollView>
 
       {/* Footer Add Button */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom || Spacing.lg, backgroundColor: theme.surface }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom || Spacing.lg, backgroundColor: theme.background }]}>
         <Button
           title="+ Add New Address"
           onPress={() => router.push('/addresses/new')}

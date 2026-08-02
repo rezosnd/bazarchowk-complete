@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,26 +9,13 @@ import * as Location from 'expo-location';
 const { width } = Dimensions.get('window');
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
-const PARTNER_TYPES = [
-  { id: 'RESTAURANT', label: 'Restaurant / Food', icon: 'restaurant' },
-  { id: 'GROCERY', label: 'Kirana / Grocery', icon: 'basket' },
-  { id: 'PHARMACY', label: 'Pharmacy', icon: 'medkit' },
-  { id: 'SALON', label: 'Salon & Beauty', icon: 'cut' },
-  { id: 'PLUMBER', label: 'Plumber', icon: 'water' },
-  { id: 'ELECTRICIAN', label: 'Electrician', icon: 'flash' },
-  { id: 'AC_REPAIR', label: 'AC Repair', icon: 'snow' },
-  { id: 'CARPENTER', label: 'Carpenter', icon: 'hammer' },
-  { id: 'CLEANING', label: 'Home Cleaning', icon: 'color-palette' },
-  { id: 'TUTOR', label: 'Tutor', icon: 'book' },
-  { id: 'MECHANIC', label: 'Mechanic', icon: 'construct' },
-  { id: 'OTHER', label: 'Other Services', icon: 'briefcase' },
-];
-
 export default function ShopOnboardingScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const [partnerType, setPartnerType] = useState<string>('');
+  
+  // Selection
+  const [offerType, setOfferType] = useState<'PRODUCTS' | 'SERVICES' | 'BOTH' | ''>('');
 
   // Form Fields
   const [name, setName] = useState('');
@@ -40,23 +27,62 @@ export default function ShopOnboardingScreen() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
 
+  const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
+
   const fetchCoordinates = async () => {
+    setLoading(true);
     try {
       const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (servicesEnabled) {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          let loc = await Location.getLastKnownPositionAsync();
-          if (!loc) loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-          if (loc) {
-            setLatitude(loc.coords.latitude.toString());
-            setLongitude(loc.coords.longitude.toString());
-            return;
+      if (!servicesEnabled) throw new Error('Location services disabled');
+      
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') throw new Error('Permission denied');
+      
+      let loc = await Location.getLastKnownPositionAsync();
+      if (!loc) loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+      
+      if (loc) {
+        const lat = loc.coords.latitude;
+        const lng = loc.coords.longitude;
+        setLatitude(lat.toString());
+        setLongitude(lng.toString());
+
+        // Reverse Geocode via Mapbox to auto-fill text fields
+        try {
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`);
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const place = data.features[0];
+            const context = place.context || [];
+            const cityObj = context.find((c: any) => c.id.startsWith('place'));
+            const stateObj = context.find((c: any) => c.id.startsWith('region'));
+            if (!address) setAddress(place.place_name.split(',')[0]);
+            if (!city && cityObj) setCity(cityObj.text);
+            if (!stateName && stateObj) setStateName(stateObj.text);
           }
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-      console.warn('Location fetch failed', e);
+    } catch (e: any) {
+      console.warn('GPS failed, attempting Mapbox text fallback', e);
+      if (address && city) {
+        try {
+          const query = encodeURIComponent(`${address}, ${city}, ${stateName}`);
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${MAPBOX_TOKEN}`);
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const coords = data.features[0].center; // [lng, lat]
+            setLongitude(coords[0].toString());
+            setLatitude(coords[1].toString());
+            alert('GPS failed, but we grabbed your coordinates via Mapbox from the address typed!');
+          }
+        } catch (err) {
+          alert('Could not fetch location via GPS or Mapbox. Please enter manually.');
+        }
+      } else {
+        alert('GPS Failed. Please enter Address and City, then try again to use Mapbox Fallback.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,6 +97,9 @@ export default function ShopOnboardingScreen() {
       const token = await SecureStore.getItemAsync('partner_token');
       if (!token) throw new Error('Authentication token missing. Please log in again.');
       
+      const hasProducts = offerType === 'PRODUCTS' || offerType === 'BOTH';
+      const hasServices = offerType === 'SERVICES' || offerType === 'BOTH';
+
       const payload = {
         name,
         description,
@@ -80,7 +109,9 @@ export default function ShopOnboardingScreen() {
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         deliveryRadius: parseFloat(deliveryRadius),
-        partnerType,
+        hasProducts,
+        hasServices,
+        partnerType: 'OTHER' // Optional legacy compatibility
       };
 
       const res = await fetch(`${API_BASE}/shops`, {
@@ -96,14 +127,11 @@ export default function ShopOnboardingScreen() {
         const newShop = await res.json();
         await SecureStore.setItemAsync('bazar_shop_id', newShop.id);
         
-        // Dynamic redirect based on type
-        const isService = ['PLUMBER', 'ELECTRICIAN', 'CARPENTER', 'AC_REPAIR', 'CLEANING', 'TUTOR', 'MECHANIC', 'OTHER', 'SALON'].includes(partnerType);
-        
-        alert('Registered Successfully!');
-        if (isService) {
-          router.push('/services'); // Push to appointments dashboard
+        alert('Business Profile Completed Successfully!');
+        if (hasServices && !hasProducts) {
+          router.push('/services' as any);
         } else {
-          router.push('/'); // Push to store dashboard
+          router.push('/' as any);
         }
       } else {
         const err = await res.json();
@@ -118,168 +146,183 @@ export default function ShopOnboardingScreen() {
 
   if (step === 1) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>What's your business?</Text>
-          <Text style={styles.subtitle}>Select your partner type</Text>
+      <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+        <View className="px-6 py-8 bg-white border-b border-gray-100 shadow-sm z-10">
+          <Text className="text-3xl font-extrabold text-gray-900 tracking-tight">What would you like to offer?</Text>
+          <Text className="text-emerald-600 font-bold mt-2 text-base">Select how you want to grow your business</Text>
         </View>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <View style={styles.grid}>
-            {PARTNER_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.typeCard,
-                  partnerType === type.id && styles.typeCardActive
-                ]}
-                onPress={() => setPartnerType(type.id)}
-              >
-                <View style={[styles.iconWrap, partnerType === type.id && styles.iconWrapActive]}>
-                  <Ionicons name={type.icon as any} size={28} color={partnerType === type.id ? '#FFF' : '#059669'} />
-                </View>
-                <Text style={[styles.typeText, partnerType === type.id && styles.typeTextActive]}>{type.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            style={[styles.btn, !partnerType && { opacity: 0.5 }]} 
-            disabled={!partnerType}
-            onPress={() => setStep(2)}
+        <ScrollView className="flex-1 px-4 pt-8" contentContainerStyle={{ paddingBottom: 100 }}>
+          
+          <TouchableOpacity
+            onPress={() => setOfferType('PRODUCTS')}
+            className={`bg-white p-6 rounded-3xl mb-4 border-2 shadow-sm flex-row items-center ${
+              offerType === 'PRODUCTS' ? 'border-emerald-500 bg-emerald-50' : 'border-transparent'
+            }`}
           >
-            <Text style={styles.btnText}>Continue</Text>
+            <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${
+              offerType === 'PRODUCTS' ? 'bg-emerald-500 shadow-md shadow-emerald-500/30' : 'bg-emerald-50'
+            }`}>
+              <Ionicons name="cart" size={32} color={offerType === 'PRODUCTS' ? '#FFF' : '#059669'} />
+            </View>
+            <View className="flex-1">
+              <Text className={`text-xl font-extrabold ${offerType === 'PRODUCTS' ? 'text-emerald-800' : 'text-gray-900'}`}>Sell Products</Text>
+              <Text className="text-gray-500 text-sm mt-1 leading-5">Grocery, Pharmacy, Restaurant Food, Electronics, Fashion</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setOfferType('SERVICES')}
+            className={`bg-white p-6 rounded-3xl mb-4 border-2 shadow-sm flex-row items-center ${
+              offerType === 'SERVICES' ? 'border-orange-500 bg-orange-50' : 'border-transparent'
+            }`}
+          >
+            <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${
+              offerType === 'SERVICES' ? 'bg-orange-500 shadow-md shadow-orange-500/30' : 'bg-orange-50'
+            }`}>
+              <Ionicons name="calendar" size={32} color={offerType === 'SERVICES' ? '#FFF' : '#EA580C'} />
+            </View>
+            <View className="flex-1">
+              <Text className={`text-xl font-extrabold ${offerType === 'SERVICES' ? 'text-orange-800' : 'text-gray-900'}`}>Provide Services</Text>
+              <Text className="text-gray-500 text-sm mt-1 leading-5">Salon, Plumber, Electrician, Doctor, Tutor, Cleaning</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setOfferType('BOTH')}
+            className={`bg-white p-6 rounded-3xl mb-4 border-2 shadow-sm flex-row items-center ${
+              offerType === 'BOTH' ? 'border-blue-500 bg-blue-50' : 'border-transparent'
+            }`}
+          >
+            <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${
+              offerType === 'BOTH' ? 'bg-blue-500 shadow-md shadow-blue-500/30' : 'bg-blue-50'
+            }`}>
+              <Ionicons name="briefcase" size={32} color={offerType === 'BOTH' ? '#FFF' : '#3B82F6'} />
+            </View>
+            <View className="flex-1">
+              <Text className={`text-xl font-extrabold ${offerType === 'BOTH' ? 'text-blue-800' : 'text-gray-900'}`}>Both Products & Services</Text>
+              <Text className="text-gray-500 text-sm mt-1 leading-5">Run a hybrid business offering both products and bookings.</Text>
+            </View>
+          </TouchableOpacity>
+
+        </ScrollView>
+        <View className="px-6 py-4 bg-white border-t border-gray-100 shadow-lg">
+          <TouchableOpacity 
+            disabled={!offerType}
+            onPress={() => setStep(2)}
+            className={`h-14 rounded-2xl items-center justify-center shadow-lg ${
+              offerType ? (offerType === 'PRODUCTS' ? 'bg-emerald-600 shadow-emerald-600/30' : offerType === 'SERVICES' ? 'bg-orange-600 shadow-orange-600/30' : 'bg-blue-600 shadow-blue-600/30') : 'bg-gray-300'
+            }`}
+          >
+            <Text className="text-white font-bold text-lg">Continue</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  const isProfessional = ['PLUMBER', 'ELECTRICIAN', 'CARPENTER', 'AC_REPAIR', 'CLEANING', 'TUTOR', 'MECHANIC', 'OTHER'].includes(partnerType);
-  const isSalon = partnerType === 'SALON';
+  const isProfessional = offerType === 'SERVICES';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setStep(1)} style={{ marginBottom: 16 }}>
-          <Feather name="arrow-left" size={24} color="#0F172A" />
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+      <View className="px-6 py-5 bg-white border-b border-gray-100 shadow-sm z-10 flex-row items-center">
+        <TouchableOpacity onPress={() => setStep(1)} className="mr-4 h-10 w-10 bg-gray-50 rounded-full items-center justify-center">
+          <Feather name="arrow-left" size={20} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.title}>Register Details</Text>
-        <Text style={styles.subtitle}>Step 2: Business Information</Text>
+        <View>
+          <Text className="text-2xl font-extrabold text-gray-900 tracking-tight">Complete Profile</Text>
+          <Text className="text-emerald-600 font-bold text-sm mt-0.5">Step 2: Business Information</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{isProfessional ? 'Professional Details' : 'Shop Details'}</Text>
+      <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm mb-5">
+          <Text className="text-lg font-extrabold text-gray-900 mb-5">{isProfessional ? 'Professional Details' : 'Business Details'}</Text>
           
-          <Text style={styles.label}>{isProfessional ? 'Your Full Name *' : 'Business/Shop Name *'}</Text>
-          <TextInput style={styles.input} placeholder={isProfessional ? "John Doe" : "Fresh Groceries Mart"} value={name} onChangeText={setName} />
-
-          <Text style={styles.label}>Description & Experience</Text>
+          <Text className="text-sm font-bold text-gray-500 mb-2">{isProfessional ? 'Your Full Name / Brand *' : 'Business/Shop Name *'}</Text>
           <TextInput 
-            style={[styles.input, { height: 80, textAlignVertical: 'top' }]} 
+            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium mb-4" 
+            placeholder={isProfessional ? "e.g. John Doe Plumbing" : "e.g. Fresh Groceries Mart"} 
+            placeholderTextColor="#9ca3af"
+            value={name} 
+            onChangeText={setName} 
+          />
+
+          <Text className="text-sm font-bold text-gray-500 mb-2">Description & Experience</Text>
+          <TextInput 
+            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium mb-2 h-24" 
             placeholder={isProfessional ? "Tell customers about your experience..." : "Tell customers about your shop..."} 
+            placeholderTextColor="#9ca3af"
+            textAlignVertical="top"
             value={description} 
             onChangeText={setDescription}
             multiline
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{isProfessional ? 'Service Area' : 'Location Details'}</Text>
+        <View className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm mb-5">
+          <Text className="text-lg font-extrabold text-gray-900 mb-5">{isProfessional ? 'Service Area' : 'Location Details'}</Text>
           
-          <Text style={styles.label}>{isProfessional ? 'Base Address / Locality *' : 'Street Address *'}</Text>
-          <TextInput style={styles.input} placeholder="Shop No, Building, Street" value={address} onChangeText={setAddress} />
+          <Text className="text-sm font-bold text-gray-500 mb-2">{isProfessional ? 'Base Address / Locality *' : 'Street Address *'}</Text>
+          <TextInput 
+            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium mb-4" 
+            placeholder="Shop No, Building, Street" 
+            placeholderTextColor="#9ca3af"
+            value={address} 
+            onChangeText={setAddress} 
+          />
 
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>City *</Text>
-              <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
+          <View className="flex-row space-x-3 mb-4">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-bold text-gray-500 mb-2">City *</Text>
+              <TextInput className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium" placeholder="City" placeholderTextColor="#9ca3af" value={city} onChangeText={setCity} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>State *</Text>
-              <TextInput style={styles.input} placeholder="State" value={stateName} onChangeText={setStateName} />
+            <View className="flex-1 ml-2">
+              <Text className="text-sm font-bold text-gray-500 mb-2">State *</Text>
+              <TextInput className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium" placeholder="State" placeholderTextColor="#9ca3af" value={stateName} onChangeText={setStateName} />
             </View>
           </View>
 
-          {!isSalon && (
-            <>
-              <Text style={styles.label}>{isProfessional ? 'Service Radius (km)' : 'Delivery Radius (km)'}</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="5" 
-                keyboardType="numeric"
-                value={deliveryRadius} 
-                onChangeText={setDeliveryRadius} 
-              />
-            </>
-          )}
+          <View className="mb-4">
+            <Text className="text-sm font-bold text-gray-500 mb-2">{isProfessional ? 'Service Radius (km)' : 'Delivery Radius (km)'}</Text>
+            <TextInput 
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium" 
+              placeholder="5" 
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={deliveryRadius} 
+              onChangeText={setDeliveryRadius} 
+            />
+          </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            <Text style={styles.sectionTitle}>Map Coordinates</Text>
-            <TouchableOpacity onPress={fetchCoordinates} style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
-              <Text style={{ color: '#059669', fontWeight: 'bold', fontSize: 12 }}>Auto Fetch GPS</Text>
+          <View className="flex-row justify-between items-center mt-2 mb-4">
+            <Text className="text-lg font-extrabold text-gray-900">Map Coordinates</Text>
+            <TouchableOpacity onPress={fetchCoordinates} className="bg-emerald-100 px-4 py-2 rounded-xl">
+              <Text className="text-emerald-700 font-bold text-xs flex-row items-center">
+                <Ionicons name="location" size={12} /> Auto Fetch GPS
+              </Text>
             </TouchableOpacity>
           </View>
           
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Latitude *</Text>
-              <TextInput style={styles.input} placeholder="e.g. 25.5941" keyboardType="numeric" value={latitude} onChangeText={setLatitude} />
+          <View className="flex-row space-x-3">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-bold text-gray-500 mb-2">Latitude *</Text>
+              <TextInput className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium" placeholder="e.g. 25.5941" placeholderTextColor="#9ca3af" keyboardType="numeric" value={latitude} onChangeText={setLatitude} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Longitude *</Text>
-              <TextInput style={styles.input} placeholder="e.g. 85.1376" keyboardType="numeric" value={longitude} onChangeText={setLongitude} />
+            <View className="flex-1 ml-2">
+              <Text className="text-sm font-bold text-gray-500 mb-2">Longitude *</Text>
+              <TextInput className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium" placeholder="e.g. 85.1376" placeholderTextColor="#9ca3af" keyboardType="numeric" value={longitude} onChangeText={setLongitude} />
             </View>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Complete Registration</Text>}
+        <TouchableOpacity 
+          onPress={handleRegister} 
+          disabled={loading}
+          className="h-14 bg-gray-900 rounded-2xl items-center justify-center shadow-lg shadow-gray-900/30 mt-2 mb-8"
+        >
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white font-bold text-lg">Complete Registration</Text>}
         </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
-  title: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  subtitle: { fontSize: 15, color: '#059669', fontWeight: '600', marginTop: 4 },
-  scroll: { padding: 20, gap: 20, paddingBottom: 100 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  typeCard: {
-    width: (width - 60) / 2,
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#F1F5F9',
-    shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2
-  },
-  typeCardActive: {
-    borderColor: '#059669',
-    backgroundColor: '#ECFDF5',
-  },
-  iconWrap: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#ECFDF5',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12
-  },
-  iconWrapActive: {
-    backgroundColor: '#059669',
-  },
-  typeText: { fontSize: 14, fontWeight: '700', color: '#334155', textAlign: 'center' },
-  typeTextActive: { color: '#059669' },
-  footer: { padding: 20, backgroundColor: '#FFF', borderTopWidth: 1, borderColor: '#E2E8F0' },
-  card: { backgroundColor: '#FFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
-  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#0F172A', marginBottom: 16 },
-  row: { flexDirection: 'row', gap: 12 },
-  hint: { fontSize: 12, color: '#94A3B8', marginTop: -8, marginBottom: 16 },
-  btn: { backgroundColor: '#ea580c', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#ea580c', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  btnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-});

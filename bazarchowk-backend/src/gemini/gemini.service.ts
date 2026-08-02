@@ -52,7 +52,7 @@ export class GeminiService {
     }
   }
 
-  async processVoiceAssistant(messages: any[], systemPrompt: string): Promise<any> {
+  async processVoiceAssistant(messages: any[], systemPrompt: string, audioBase64?: string): Promise<any> {
     try {
       const model = this.getModel(systemPrompt);
       // Map OpenAI format to Gemini format
@@ -61,13 +61,25 @@ export class GeminiService {
         parts: [{ text: m.content }],
       }));
       
-      const lastMessage = history.pop(); // the current transcript
-      if (!lastMessage) {
-        throw new InternalServerErrorException('No user message provided for voice assistant');
-      }
+      let lastMessage = history.pop(); // the current transcript, if any
       
       const chat = model.startChat({ history });
-      const result = await chat.sendMessage(lastMessage.parts[0].text);
+      
+      let result;
+      if (audioBase64) {
+        const parts: any[] = [{ inlineData: { data: audioBase64, mimeType: "audio/mp4" } }];
+        if (lastMessage?.parts[0]?.text) {
+          parts.push(lastMessage.parts[0]);
+        } else {
+          parts.push({ text: "Please listen to this audio and respond accordingly." });
+        }
+        result = await chat.sendMessage(parts);
+      } else if (lastMessage) {
+        result = await chat.sendMessage(lastMessage.parts[0].text);
+      } else {
+        throw new InternalServerErrorException('No user message or audio provided');
+      }
+      
       return result.response.text();
     } catch (error) {
       this.handleError('processVoiceAssistant', error);

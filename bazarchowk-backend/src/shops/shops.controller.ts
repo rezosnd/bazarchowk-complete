@@ -27,8 +27,8 @@ export class ShopsController {
 
   @Get()
   @ApiOperation({ summary: 'Public: List all shops (optionally filtered by radius)' })
-  findAll(@Query('lat') lat?: string, @Query('lng') lng?: string) {
-    return this.shopsService.findAll(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
+  findAll(@Query('lat') lat?: string, @Query('lng') lng?: string, @Query('all') all?: string) {
+    return this.shopsService.findAll(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined, all === 'true');
   }
 
   @Get('me')

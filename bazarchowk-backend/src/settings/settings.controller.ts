@@ -33,13 +33,22 @@ export class SettingsController {
     }
 
     return {
-      maintenanceMode: maintenance?.value === 'true',
-      featureFlags: flags.map(f => f.name),
+      maintenanceMode: (maintenance as any)?.value === 'true',
+      featureFlags: Array.isArray(flags) ? flags.map((f: any) => f.name) : [],
       versionCheck
     };
   }
 
   // --- ADMIN SETTINGS --- //
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @Get('config')
+  @ApiOperation({ summary: 'Get all global settings (Admin)' })
+  getAllSettings() {
+    return this.settingsService.getAllSettings();
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @ApiBearerAuth()
@@ -58,6 +67,24 @@ export class SettingsController {
     return this.settingsService.toggleFeatureFlag(dto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @Get('flags/all')
+  @ApiOperation({ summary: 'Get all feature flags (Admin)' })
+  getAllFeatureFlags() {
+    return this.settingsService.getAllFeatureFlags();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @Post('flags/delete')
+  @ApiOperation({ summary: 'Delete a feature flag' })
+  deleteFeatureFlag(@Body('name') name: string) {
+    return this.settingsService.deleteFeatureFlag(name);
+  }
+
   // --- BANNERS --- //
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
@@ -74,6 +101,24 @@ export class SettingsController {
     return this.settingsService.getActiveBanners(position);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiBearerAuth()
+  @Get('banners/all')
+  @ApiOperation({ summary: 'Get all banners (Admin)' })
+  getAllBanners() {
+    return this.settingsService.getAllBanners();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiBearerAuth()
+  @Post('banners/delete')
+  @ApiOperation({ summary: 'Delete a banner' })
+  deleteBanner(@Body('id') id: string) {
+    return this.settingsService.deleteBanner(id);
+  }
+
   // --- VERSIONING --- //
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
@@ -82,5 +127,14 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update App Version Control' })
   updateAppVersion(@Body() dto: UpdateAppVersionDto) {
     return this.settingsService.updateAppVersion(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @Get('version/all')
+  @ApiOperation({ summary: 'Get all app version configs (Admin)' })
+  getAllAppVersions() {
+    return this.settingsService.getAllAppVersions();
   }
 }

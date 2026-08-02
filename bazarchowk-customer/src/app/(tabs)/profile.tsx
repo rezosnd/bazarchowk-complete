@@ -43,12 +43,12 @@ export default function ProfileScreen() {
           <View style={styles.userInfo}>
             <View style={[styles.avatar, { backgroundColor: theme.primarySurface }]}>
               <Text style={styles.avatarText}>
-                {user?.name?.charAt(0)?.toUpperCase() || user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
+                {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.userName, { color: theme.text }]}>
-                {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User')}
+                {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
               </Text>
               {user?.phone && <Text style={[styles.userPhone, { color: theme.textSecondary }]}>{user.phone}</Text>}
               {user?.email && (
@@ -91,6 +91,7 @@ export default function ProfileScreen() {
                 if (item.id === 'addresses') router.push('/addresses');
                 if (item.id === 'wallet') router.push('/wallet' as any);
                 if (item.id === 'my-reviews') router.push('/my-reviews' as any);
+                if (item.id === 'support') router.push('/support' as any);
               }}
             >
               <View style={styles.menuIconWrap}>

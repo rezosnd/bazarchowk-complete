@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -11,6 +13,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async createProduct(ownerId: string, createProductDto: CreateProductDto) {
@@ -29,6 +32,10 @@ export class ProductsService {
   }
 
   async findAll(shopId?: string, query?: string) {
+    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     const whereClause: any = {};
     if (shopId) whereClause.shopId = shopId;
     if (query) {
@@ -40,7 +47,7 @@ export class ProductsService {
       ];
     }
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
         images: { where: { isPrimary: true }, take: 1 },
@@ -48,9 +55,16 @@ export class ProductsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    await this.cacheManager.set(cacheKey, products, 60000);
+    return products;
   }
 
   async findOne(id: string) {
+    const cacheKey = `product_detail_${id}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
@@ -61,6 +75,8 @@ export class ProductsService {
       },
     });
     if (!product) throw new NotFoundException('Product not found');
+    
+    await this.cacheManager.set(cacheKey, product, 60000);
     return product;
   }
 
@@ -70,10 +86,12 @@ export class ProductsService {
       throw new ForbiddenException('You do not own this product');
     }
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id },
       data: updateProductDto,
     });
+    await this.cacheManager.del(`product_detail_${id}`);
+    return updated;
   }
 
   async addVariant(productId: string, ownerId: string, variantDto: CreateProductVariantDto) {

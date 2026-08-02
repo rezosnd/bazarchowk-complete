@@ -31,8 +31,8 @@
       "vegetables": "সবজি অর্ডার করুন",
       "plumber": "প্লাম্বার বুক করুন",
       "doctor": "ডাক্তার দরকার",
-      "cake": "জন্মদিনের কেক",
-      "medicine": "ওষুধ ডেলিভারি"
+      "medicine": "ওষুধ ডেলিভারি",
+      "pandit": "Book a Pandit"
     }
   },
   "search": {
@@ -51,7 +51,8 @@
     "tutor": "গৃহশিক্ষক",
     "taxi": "ট্যাক্সি",
     "cleaning": "পরিষ্কার",
-    "more": "আরও"
+    "more": "আরও",
+    "pandit": "Pandits & Astrology"
   },
   "navigation": {
     "home": "হোম",

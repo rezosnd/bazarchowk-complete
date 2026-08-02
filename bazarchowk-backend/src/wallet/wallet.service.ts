@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransactionType, TransactionReason } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 const Razorpay = require('razorpay');
 
@@ -11,7 +12,8 @@ export class WalletService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notifications: NotificationsService
+    private readonly notifications: NotificationsService,
+    private readonly auditService: AuditService
   ) {
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
       this.razorpay = new Razorpay({
@@ -76,6 +78,15 @@ export class WalletService {
       'WALLET'
     );
 
+    await this.auditService.logAction({
+      actorId: userId,
+      action: 'WALLET_CREDIT',
+      entity: 'WalletTransaction',
+      entityId: transaction.id,
+      newValue: JSON.stringify({ amount, reason, balanceAfter: transaction.balanceAfter }),
+      ipAddress: 'System',
+    });
+
     return transaction;
   }
 
@@ -114,6 +125,15 @@ export class WalletService {
       `₹\${amount} was deducted from your wallet.`,
       'WALLET'
     );
+
+    await this.auditService.logAction({
+      actorId: userId,
+      action: 'WALLET_DEBIT',
+      entity: 'WalletTransaction',
+      entityId: transaction.id,
+      newValue: JSON.stringify({ amount, reason, balanceAfter: transaction.balanceAfter }),
+      ipAddress: 'System',
+    });
 
     return transaction;
   }

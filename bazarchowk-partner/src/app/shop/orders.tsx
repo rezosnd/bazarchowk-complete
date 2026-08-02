@@ -12,6 +12,7 @@ export default function ShopOrdersScreen() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'LIVE' | 'PAST'>('LIVE');
 
   useEffect(() => {
     fetchOrders();
@@ -123,6 +124,14 @@ export default function ShopOrdersScreen() {
     return <View style={styles.center}><ActivityIndicator size="large" color="#00B140" /></View>;
   }
 
+  const filteredOrders = orders.filter(o => {
+    if (activeTab === 'LIVE') {
+      return !['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'].includes(o.status);
+    } else {
+      return ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'].includes(o.status);
+    }
+  });
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -132,15 +141,24 @@ export default function ShopOrdersScreen() {
         <Text style={styles.title}>Live Orders</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {orders.length === 0 ? (
+        {/* Tabs */}
+        <View style={styles.tabRow}>
+          <TouchableOpacity style={[styles.tab, activeTab === 'LIVE' && styles.tabActive]} onPress={() => setActiveTab('LIVE')}>
+            <Text style={[styles.tabText, activeTab === 'LIVE' && styles.tabTextActive]}>Live Orders</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'PAST' && styles.tabActive]} onPress={() => setActiveTab('PAST')}>
+            <Text style={[styles.tabText, activeTab === 'PAST' && styles.tabTextActive]}>Past Orders</Text>
+          </TouchableOpacity>
+        </View>
+
+        {filteredOrders.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="receipt-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No live orders</Text>
-            <Text style={styles.emptySub}>When customers order, they appear here.</Text>
+            <Text style={styles.emptyText}>{activeTab === 'LIVE' ? 'No live orders' : 'No past orders'}</Text>
+            <Text style={styles.emptySub}>{activeTab === 'LIVE' ? 'When customers order, they appear here.' : 'Completed orders will appear here.'}</Text>
           </View>
         ) : (
-          orders.map((order) => (
+          filteredOrders.map((order) => (
             <View key={order.id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View>
@@ -191,6 +209,12 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', marginTop: 80 },
   emptyText: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginTop: 16 },
   emptySub: { fontSize: 14, color: '#64748B', marginTop: 8 },
+  
+  tabRow: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 12, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  tabActive: { backgroundColor: '#F8FAFC' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  tabTextActive: { color: '#0F172A', fontWeight: '800' },
   
   card: { backgroundColor: '#FFF', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderColor: '#F1F5F9' },

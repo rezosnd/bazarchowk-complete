@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -11,6 +13,7 @@ export class CategoriesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async createCategory(createCategoryDto: CreateCategoryDto, adminId?: string) {
@@ -24,14 +27,21 @@ export class CategoriesService {
     if (adminId) {
       await this.notificationsService.sendInAppNotification(adminId, 'Category Created', `Category "\${category.name}" was added.`, 'SYSTEM');
     }
+    await this.cacheManager.del('all_categories');
     return category;
   }
 
-  findAllCategories() {
-    return this.prisma.category.findMany({
+  async findAllCategories() {
+    const cached = await this.cacheManager.get('all_categories');
+    if (cached) return cached;
+
+    const categories = await this.prisma.category.findMany({
       include: { subCategories: true },
       orderBy: { name: 'asc' },
     });
+    
+    await this.cacheManager.set('all_categories', categories, 3600000); // Cache for 1 hour
+    return categories;
   }
 
   async findCategory(id: string) {
@@ -60,6 +70,7 @@ export class CategoriesService {
     if (adminId) {
       await this.notificationsService.sendInAppNotification(adminId, 'Category Updated', `Category "\${updated.name}" was modified.`, 'SYSTEM');
     }
+    await this.cacheManager.del('all_categories');
     return updated;
   }
 
@@ -69,6 +80,7 @@ export class CategoriesService {
     if (adminId) {
       await this.notificationsService.sendInAppNotification(adminId, 'Category Deleted', `Category "\${category.name}" was removed.`, 'SYSTEM');
     }
+    await this.cacheManager.del('all_categories');
     return { message: 'Category deleted successfully' };
   }
 

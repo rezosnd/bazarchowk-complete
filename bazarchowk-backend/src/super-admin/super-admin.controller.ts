@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Query, UseGuards, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Query, UseGuards, Body, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -11,7 +11,8 @@ import {
   RevenueFilterDto, 
   CreateMarketDto, 
   UpdateMarketDto, 
-  CreateCityConfigDto 
+  CreateCityConfigDto,
+  AssignRoleDto
 } from './dto/super-admin.dto';
 
 @ApiTags('Super Admin Platform (Ecosystem Management)')
@@ -50,6 +51,12 @@ export class SuperAdminController {
     return this.superAdminService.unbanUser(id);
   }
 
+  @Patch('users/:id/role')
+  @ApiOperation({ summary: 'Assign a new role to a user (e.g. DISTRICT_ADMIN)' })
+  assignRole(@Param('id') id: string, @Body() dto: AssignRoleDto, @Req() req: any) {
+    return this.superAdminService.assignRole(id, dto.roleName, req?.user?.userId);
+  }
+
   // --- SHOP MANAGEMENT ---
 
   @Get('shops')
@@ -70,7 +77,23 @@ export class SuperAdminController {
     return this.superAdminService.suspendShop(id);
   }
 
-  // --- REVENUE MANAGEMENT ---
+  // --- ORDER MANAGEMENT ---
+
+  @Get('orders')
+  @ApiOperation({ summary: 'List all platform orders with search & pagination' })
+  @ApiQuery({ name: 'status', required: false })
+  getOrders(@Query() query: PaginationQueryDto, @Query('status') status?: string) {
+    return this.superAdminService.getAllOrders(Number(query.page || 1), Number(query.limit || 50), status);
+  }
+
+  // --- REVENUE & SETTLEMENT MANAGEMENT ---
+
+  @Get('settlements')
+  @ApiOperation({ summary: 'List all shop settlement batches' })
+  @ApiQuery({ name: 'status', required: false })
+  getSettlements(@Query() query: PaginationQueryDto, @Query('status') status?: string) {
+    return this.superAdminService.getAllSettlements(Number(query.page || 1), Number(query.limit || 50), status);
+  }
 
   @Get('revenue')
   @ApiOperation({ summary: 'Platform revenue report with top shops' })
@@ -198,5 +221,21 @@ export class SuperAdminController {
   @ApiQuery({ name: 'status', required: false })
   getCashCollections(@Query() query: PaginationQueryDto, @Query('status') status?: string) {
     return this.superAdminService.getCashCollections(Number(query.page || 1), Number(query.limit || 50), status);
+  }
+
+  // --- SYSTEM ERROR LOGS ---
+
+  @Get('logs/errors')
+  @ApiOperation({ summary: 'Get critical system errors (500s)' })
+  @ApiQuery({ name: 'statusCode', required: false })
+  getSystemErrorLogs(
+    @Query() query: PaginationQueryDto,
+    @Query('statusCode') statusCode?: string
+  ) {
+    return this.superAdminService.getSystemErrorLogs(
+      Number(query.page || 1), 
+      Number(query.limit || 50), 
+      statusCode ? Number(statusCode) : undefined
+    );
   }
 }

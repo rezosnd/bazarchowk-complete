@@ -6,6 +6,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import { socketService } from '../../services/socket';
+import MapView, { Marker, Polyline } from 'react-native-maps';
+// @ts-ignore
+import RazorpayCheckout from 'react-native-razorpay';
+import api from '../../services/api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowkapi.veritasco.tech';
 
@@ -16,6 +20,7 @@ export default function ActiveDeliveryScreen() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [riderLocation, setRiderLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -39,10 +44,11 @@ export default function ActiveDeliveryScreen() {
             distanceInterval: 2 
           },
           (loc) => {
+            const currentLoc = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+            setRiderLocation(currentLoc);
             socketService.emit('update_location', {
               orderId: order.id,
-              latitude: loc.coords.latitude,
-              longitude: loc.coords.longitude,
+              ...currentLoc,
               heading: loc.coords.heading
             });
           }
@@ -118,6 +124,41 @@ export default function ActiveDeliveryScreen() {
     if (url) Linking.openURL(url);
   };
 
+  const handleGeneratePayment = async () => {
+    try {
+      setUpdating(true);
+      // Generate Razorpay Order
+      const paymentRes = await api.post('/payments/create', { orderId: order.id });
+      const { razorpayOrderId, amount } = paymentRes.data;
+
+      // Open Native Razorpay Checkout (QR/UPI flow)
+      const data = await RazorpayCheckout.open({
+        key: 'rzp_live_Sr05Li4YOC8ZQo', 
+        amount: amount,
+        name: 'BazarChowk Delivery',
+        description: `Order #${order.orderNumber}`,
+        image: 'https://bazarchowk.com/logo.png',
+        order_id: razorpayOrderId,
+        theme: { color: '#00B140' }
+      });
+      
+      // Verify payment on backend
+      await api.post('/payments/verify', {
+        razorpayOrderId: data.razorpay_order_id,
+        razorpayPaymentId: data.razorpay_payment_id,
+        razorpaySignature: data.razorpay_signature
+      });
+
+      Alert.alert('Payment Successful!', 'Customer paid online. You do not need to collect cash.');
+      fetchOrderDetails(); // Refresh to show paid status
+    } catch (error: any) {
+      const errorMsg = error?.description || error?.response?.data?.message || error?.message || 'Payment cancelled';
+      Alert.alert('Payment Failed', typeof errorMsg === 'string' ? errorMsg : 'Failed or cancelled.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return <View style={styles.center}><ActivityIndicator size="large" color="#00B140" /></View>;
   }
@@ -154,6 +195,48 @@ export default function ActiveDeliveryScreen() {
           <Ionicons name="time" size={20} color="#00B140" />
           <Text style={styles.statusText}>{deliveryStatus.replace('_', ' ')}</Text>
         </View>
+
+        {/* Live Map Tracking */}
+        {order?.shop && order?.deliveryAddress && (
+          <View style={[styles.card, { padding: 0, overflow: 'hidden', height: 250 }]}>
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: (order.shop.latitude + order.deliveryAddress.latitude) / 2,
+                longitude: (order.shop.longitude + order.deliveryAddress.longitude) / 2,
+                latitudeDelta: Math.abs(order.shop.latitude - order.deliveryAddress.latitude) * 2 + 0.05,
+                longitudeDelta: Math.abs(order.shop.longitude - order.deliveryAddress.longitude) * 2 + 0.05,
+              }}
+            >
+              {riderLocation && (
+                <Marker coordinate={riderLocation} title="You">
+                  <View style={{ backgroundColor: '#00B140', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
+                    <Ionicons name="bicycle" size={16} color="#FFF" />
+                  </View>
+                </Marker>
+              )}
+              <Marker coordinate={{ latitude: order.shop.latitude, longitude: order.shop.longitude }} title="Pickup">
+                <View style={{ backgroundColor: '#1E40AF', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
+                  <Ionicons name="storefront" size={16} color="#FFF" />
+                </View>
+              </Marker>
+              <Marker coordinate={{ latitude: order.deliveryAddress.latitude, longitude: order.deliveryAddress.longitude }} title="Dropoff">
+                <View style={{ backgroundColor: '#DC2626', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
+                  <Ionicons name="home" size={16} color="#FFF" />
+                </View>
+              </Marker>
+              <Polyline
+                coordinates={[
+                  ...(riderLocation ? [riderLocation] : [{ latitude: order.shop.latitude, longitude: order.shop.longitude }]),
+                  { latitude: order.deliveryAddress.latitude, longitude: order.deliveryAddress.longitude }
+                ]}
+                strokeColor="#00B140"
+                strokeWidth={3}
+                lineDashPattern={[10, 10]}
+              />
+            </MapView>
+          </View>
+        )}
 
         {/* Pickup Details */}
         <View style={styles.card}>
@@ -207,8 +290,19 @@ export default function ActiveDeliveryScreen() {
         <View style={styles.amountCard}>
           <Text style={styles.amountLabel}>Collect Cash from Customer?</Text>
           <Text style={[styles.amountValue, order.paymentMethod === 'COD' ? {color: '#DC2626'} : {color: '#00B140'}]}>
-            {order.paymentMethod === 'COD' ? `YES: â‚¹${order.totalAmount}` : 'NO (Prepaid Online)'}
+            {order.paymentMethod === 'COD' ? `YES: ₹${order.totalAmount}` : 'NO (Prepaid Online)'}
           </Text>
+          
+          {order.paymentMethod === 'COD' && deliveryStatus === 'OUT_FOR_DELIVERY' && (
+            <TouchableOpacity 
+              style={styles.qrBtn} 
+              onPress={handleGeneratePayment}
+              disabled={updating}
+            >
+              <Ionicons name="qr-code" size={20} color="#FFF" />
+              <Text style={styles.qrBtnText}>Customer wants to Pay Online</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
       </ScrollView>
@@ -268,4 +362,7 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, borderTopWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
   primaryBtn: { backgroundColor: '#00B140', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  
+  qrBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0F172A', marginTop: 16, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, width: '100%', justifyContent: 'center' },
+  qrBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 }
 });

@@ -31,7 +31,7 @@
       "vegetables": "Fresh Vegetables",
       "plumber": "Find a Plumber",
       "doctor": "Doctor Appointment",
-      "cake": "Order a Cake",
+      "pandit": "Book a Pandit",
       "medicine": "Order Medicine"
     }
   },
@@ -51,6 +51,7 @@
     "tutor": "Tutor",
     "taxi": "Taxi",
     "cleaning": "Cleaning",
+    "pandit": "Pandits & Astrology",
     "more": "More",
     "viewAll": "View All"
   },

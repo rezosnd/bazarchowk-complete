@@ -11,65 +11,65 @@ datasource db {
 }
 
 model User {
-  id           String  @id @default(uuid())
-  email        String? @unique
-  phone        String? @unique
+  id           String    @id @default(uuid())
+  email        String?   @unique
+  phone        String?   @unique
   passwordHash String?
-  googleId     String? @unique
+  googleId     String?   @unique
   firstName    String?
   lastName     String?
   avatarUrl    String?
-  isGuest      Boolean @default(false)
-  isActive     Boolean @default(true)
-  languagePref String  @default("en") // 'en', 'hi', 'bn', 'or'
-  kycStatus    String  @default("UNVERIFIED") // 'UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'
-  referralCode String  @unique @default(dbgenerated("substr(md5(random()::text), 0, 8)"))
+  isGuest      Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  languagePref String    @default("en") // 'en', 'hi', 'bn', 'or'
+  kycStatus    String    @default("UNVERIFIED") // 'UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'
+  referralCode String    @unique @default(dbgenerated("substr(md5(random()::text), 0, 8)"))
   deletedAt    DateTime?
 
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
-  sessions        Session[]
-  addresses       Address[]
-  notifications   Notification[]
-  deviceTokens    DeviceToken[]
-  cart            Cart?
-  shops           Shop[]
-  customerOrders  Order[]          @relation("CustomerOrders")
-  riderOrders     Order[]          @relation("RiderOrders")
-  trackingPoints  TrackingPoint[]
-  inventoryLogs   InventoryLog[]
-  reviews         Review[]
-  providers       Provider[]
-  appointments    Appointment[]
-  deliveryPartner DeliveryPartner?
-  wallet          Wallet?
-  loyaltyAccount  LoyaltyAccount?
-  referralsMade   Referral[]       @relation("Referrer")
-  referredBy      Referral?        @relation("Referred")
-  ownedBusinesses Business[]       @relation("BusinessOwner")
+  sessions         Session[]
+  addresses        Address[]
+  notifications    Notification[]
+  deviceTokens     DeviceToken[]
+  cart             Cart?
+  shops            Shop[]
+  customerOrders   Order[]          @relation("CustomerOrders")
+  riderOrders      Order[]          @relation("RiderOrders")
+  trackingPoints   TrackingPoint[]
+  inventoryLogs    InventoryLog[]
+  reviews          Review[]
+  providers        Provider[]
+  appointments     Appointment[]
+  deliveryPartner  DeliveryPartner?
+  wallet           Wallet?
+  loyaltyAccount   LoyaltyAccount?
+  referralsMade    Referral[]       @relation("Referrer")
+  referredBy       Referral?        @relation("Referred")
+  ownedBusinesses  Business[]       @relation("BusinessOwner")
   recordedExpenses Expense[]
-  staffBusinesses BusinessStaff[]  @relation("BusinessStaffUser")
-  businessLeads   BusinessLead[]   @relation("CustomerLeads")
+  staffBusinesses  BusinessStaff[]  @relation("BusinessStaffUser")
+  businessLeads    BusinessLead[]   @relation("CustomerLeads")
 
-  voiceOrderLogs VoiceOrderLog[]
-  supportTickets SupportTicket[]
-  fraudLogs      FraudLog[]
-  cashVerificationsSubmitted CashVerification[] @relation("RiderCashSubmission")
-  cashVerificationsReviewed  CashVerification[] @relation("MarketAdminVerification")
+  voiceOrderLogs             VoiceOrderLog[]
+  supportTickets             SupportTicket[]
+  fraudLogs                  FraudLog[]
+  cashVerificationsSubmitted CashVerification[]        @relation("RiderCashSubmission")
+  cashVerificationsReviewed  CashVerification[]        @relation("MarketAdminVerification")
   cashShortages              CashShortage[]
   cashReceipts               CashReceipt[]
-  cashCollections    CashCollection[]    @relation("RiderCashCollections")
-  riderDeposits      RiderDeposit[]      @relation("RiderDeposits")
-  verifiedDeposits   RiderDeposit[]      @relation("DepositVerifier")
-  superAdminActions  SuperAdminAction[]  @relation("SuperAdminActions")
-  platformReports    PlatformReport[]    @relation("ReportGenerator")
-  shopSettlements    ShopSettlement[]    @relation("SettlementAdmin")
-  districtAdmin      DistrictAdmin?      @relation("DistrictAdminUser")
-  marketAdmin        MarketAdmin?        @relation("MarketAdminUser")
-  approvedBatches    SettlementBatch[]   @relation("BatchApprover")
-  conversations      ConversationParticipant[] @relation("UserConversations")
-  sentMessages       Message[]                 @relation("SentMessages")
+  cashCollections            CashCollection[]          @relation("RiderCashCollections")
+  riderDeposits              RiderDeposit[]            @relation("RiderDeposits")
+  verifiedDeposits           RiderDeposit[]            @relation("DepositVerifier")
+  superAdminActions          SuperAdminAction[]        @relation("SuperAdminActions")
+  platformReports            PlatformReport[]          @relation("ReportGenerator")
+  shopSettlements            ShopSettlement[]          @relation("SettlementAdmin")
+  districtAdmin              DistrictAdmin?            @relation("DistrictAdminUser")
+  marketAdmin                MarketAdmin?              @relation("MarketAdminUser")
+  approvedBatches            SettlementBatch[]         @relation("BatchApprover")
+  conversations              ConversationParticipant[] @relation("UserConversations")
+  sentMessages               Message[]                 @relation("SentMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -133,12 +133,12 @@ model Notification {
 
   title   String
   message String
-  type    String  @default("SYSTEM") // e.g., 'ORDER', 'PROMO', 'SYSTEM'
-  
+  type    String @default("SYSTEM") // e.g., 'ORDER', 'PROMO', 'SYSTEM'
+
   imageUrl String?
   linkUrl  String?
-  
-  isRead  Boolean @default(false)
+
+  isRead Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -199,6 +199,7 @@ enum PartnerType {
   CLEANING
   TUTOR
   MECHANIC
+  PANDIT
   OTHER
 }
 
@@ -210,7 +211,7 @@ model Shop {
   description String?
   logoUrl     String?
   bannerUrl   String?
-  
+
   partnerType PartnerType @default(GROCERY)
 
   // Location & Delivery Radius
@@ -221,30 +222,45 @@ model Shop {
   longitude      Float
   deliveryRadius Float  @default(5.0) // km
 
+  // Market Assignment
+  marketId String?
+  market   Market? @relation(fields: [marketId], references: [id])
+
   // Verification & Status
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
 
-  timings          ShopTiming[]
-  documents        ShopDocument[]
-  holidays         ShopHoliday[]
-  commissionRules  CommissionRule[]
-  products         Product[]
-  inventories      Inventory[]
-  orders           Order[]
-  reviews          Review[]
-  serviceOfferings ServiceOffering[]
-  providers        Provider[]
-  advertisements   Advertisement[]
-  coupons          Coupon[]
-  settlements      ShopSettlement[]
+  // Financial & Settlement Details
+  bankAccountNumber String?
+  bankIfsc          String?
+  bankAccountName   String?
+  upiId             String?
+
+  // Business Category Flags (Unified Partner Dashboard)
+  hasProducts Boolean @default(false)
+  hasServices Boolean @default(false)
+
+  timings           ShopTiming[]
+  documents         ShopDocument[]
+  holidays          ShopHoliday[]
+  commissionRules   CommissionRule[]
+  products          Product[]
+  inventories       Inventory[]
+  orders            Order[]
+  reviews           Review[]
+  serviceOfferings  ServiceOffering[]
+  providers         Provider[]
+  advertisements    Advertisement[]
+  coupons           Coupon[]
+  settlements       ShopSettlement[]
   settlementReports SettlementReport[]
-  commissions      Commission[]       @relation("ShopCommissions")
+  commissions       Commission[]       @relation("ShopCommissions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+  @@index([marketId])
 }
 
 model ShopTiming {
@@ -261,11 +277,11 @@ model ShopTiming {
 
 // Specific holiday / closure dates (e.g., Diwali, owner sick, etc.)
 model ShopHoliday {
-  id        String   @id @default(uuid())
-  shopId    String
-  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  date      DateTime // The specific calendar date that is closed
-  reason    String?  // Optional: "Diwali", "Owner on leave", "Renovation"
+  id     String   @id @default(uuid())
+  shopId String
+  shop   Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  date   DateTime // The specific calendar date that is closed
+  reason String? // Optional: "Diwali", "Owner on leave", "Renovation"
 
   createdAt DateTime @default(now())
 
@@ -437,14 +453,14 @@ model Order {
   paymentMethod PaymentMethod @default(COD)
   paymentStatus PaymentStatus @default(PENDING)
   payment       Payment?
-  
+
   // Billing Breakdown
-  subtotal      Float        @default(0)
-  taxAmount     Float        @default(0) // SGST + CGST
-  deliveryFee   Float        @default(0)
-  discount      Float        @default(0)
-  platformFee   Float        @default(0)
-  totalAmount   Float
+  subtotal    Float @default(0)
+  taxAmount   Float @default(0) // SGST + CGST
+  deliveryFee Float @default(0)
+  discount    Float @default(0)
+  platformFee Float @default(0)
+  totalAmount Float
 
   status OrderStatus @default(PLACED)
 
@@ -453,10 +469,10 @@ model Order {
   trackingPoints TrackingPoint[]
   delivery       Delivery?
   invoice        Invoice?
-  cashCollection   CashCollection?
-  settlementItem   SettlementItem?    @relation("OrderSettlementItem")
-  commission       Commission?        @relation("OrderCommission")
-  conversations    Conversation[]
+  cashCollection CashCollection?
+  settlementItem SettlementItem?      @relation("OrderSettlementItem")
+  commission     Commission?          @relation("OrderCommission")
+  conversations  Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -621,7 +637,7 @@ model Appointment {
   providerId String
   provider   Provider @relation(fields: [providerId], references: [id])
 
-  timeSlotId String   // Removed @unique — multiple customers can share one slot
+  timeSlotId String // Removed @unique — multiple customers can share one slot
   timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id])
 
   status AppointmentStatus @default(PENDING)
@@ -644,6 +660,12 @@ model DeliveryPartner {
   isOnline         Boolean @default(false)
   currentLatitude  Float?
   currentLongitude Float?
+
+  // Financial & Settlement Details
+  bankAccountNumber String?
+  bankIfsc          String?
+  bankAccountName   String?
+  upiId             String?
 
   deliveries Delivery[]
 
@@ -694,8 +716,9 @@ model Wallet {
 
   transactions WalletTransaction[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  businessBranches BusinessBranch[]
 }
 
 enum TransactionType {
@@ -875,6 +898,7 @@ enum BusinessType {
   LOCAL_BUSINESS
   NGO
   GOVERNMENT_SERVICE
+  PANDIT
   OTHER
 }
 
@@ -953,12 +977,15 @@ model BusinessBranch {
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   name         String
-  isHeadOffice Boolean @default(false)
+  isHeadOffice Boolean    @default(false)
   phone        String?
   email        String?
+  wallet       Wallet?    @relation(fields: [walletId], references: [id])
+  auditLogs    AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  walletId  String?
 }
 
 model BusinessDocument {
@@ -1145,14 +1172,14 @@ model SupportMessage {
 }
 
 model AnalyticsEvent {
-  id        String   @id @default(uuid())
-  eventName String   // e.g., 'APP_OPEN', 'CHECKOUT_STARTED', 'ORDER_COMPLETED'
+  id        String  @id @default(uuid())
+  eventName String // e.g., 'APP_OPEN', 'CHECKOUT_STARTED', 'ORDER_COMPLETED'
   userId    String?
   shopId    String?
   marketId  String?
-  platform  String?  // 'IOS', 'ANDROID', 'WEB'
-  metadata  Json?    
-  
+  platform  String? // 'IOS', 'ANDROID', 'WEB'
+  metadata  Json?
+
   createdAt DateTime @default(now())
 
   @@index([eventName])
@@ -1167,27 +1194,27 @@ enum DiscountType {
 }
 
 model Coupon {
-  id              String       @id @default(uuid())
-  code            String       @unique
-  discountType    DiscountType
-  discountValue   Float
-  maxDiscount     Float?
-  minOrderValue   Float        @default(0)
-  
-  startDate       DateTime
-  endDate         DateTime
-  
-  usageLimit      Int?
-  usedCount       Int          @default(0)
-  perUserLimit    Int          @default(1)
-  
-  isActive        Boolean      @default(true)
-  
-  shopId          String?
-  shop            Shop?        @relation(fields: [shopId], references: [id])
-  
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id            String       @id @default(uuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  maxDiscount   Float?
+  minOrderValue Float        @default(0)
+
+  startDate DateTime
+  endDate   DateTime
+
+  usageLimit   Int?
+  usedCount    Int  @default(0)
+  perUserLimit Int  @default(1)
+
+  isActive Boolean @default(true)
+
+  shopId String?
+  shop   Shop?   @relation(fields: [shopId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
   @@index([shopId])
@@ -1212,47 +1239,47 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id              String        @id @default(uuid())
-  invoiceNumber   String        @unique
-  type            InvoiceType
-  status          InvoiceStatus @default(ISSUED)
-  
-  userId          String?
-  shopId          String?
-  
-  orderId         String?       @unique
-  order           Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  referenceId     String?
-  
-  billingName     String
-  billingAddress  String
-  billingPhone    String?
-  billingGst      String?
-  
-  supplierName    String        @default("BazarChowk Pvt Ltd")
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  type          InvoiceType
+  status        InvoiceStatus @default(ISSUED)
+
+  userId String?
+  shopId String?
+
+  orderId String? @unique
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  referenceId String?
+
+  billingName    String
+  billingAddress String
+  billingPhone   String?
+  billingGst     String?
+
+  supplierName    String  @default("BazarChowk Pvt Ltd")
   supplierAddress String
   supplierGst     String?
-  
-  subtotal        Float         @default(0)
-  totalDiscount   Float         @default(0)
-  totalTax        Float         @default(0)
-  grandTotal      Float         @default(0)
-  
-  pdfUrl          String?       
-  
-  items           InvoiceItem[]
-  taxes           InvoiceTax[]
-  creditNotes     CreditNote[]
-  debitNotes      DebitNote[]
-  payments        InvoicePayment[]
-  downloads       InvoiceDownload[]
-  emails          InvoiceEmail[]
-  
-  issuedAt        DateTime      @default(now())
-  dueDate         DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+
+  subtotal      Float @default(0)
+  totalDiscount Float @default(0)
+  totalTax      Float @default(0)
+  grandTotal    Float @default(0)
+
+  pdfUrl String?
+
+  items       InvoiceItem[]
+  taxes       InvoiceTax[]
+  creditNotes CreditNote[]
+  debitNotes  DebitNote[]
+  payments    InvoicePayment[]
+  downloads   InvoiceDownload[]
+  emails      InvoiceEmail[]
+
+  issuedAt  DateTime  @default(now())
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
   @@index([shopId])
@@ -1261,80 +1288,80 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   name        String
   description String?
-  quantity    Int      @default(1)
+  quantity    Int     @default(1)
   unitPrice   Float
   totalPrice  Float
 }
 
 model InvoiceTax {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
-  taxName     String   // e.g., 'CGST', 'SGST', 'IGST'
-  taxRate     Float
-  taxAmount   Float
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  taxName   String // e.g., 'CGST', 'SGST', 'IGST'
+  taxRate   Float
+  taxAmount Float
 }
 
 model InvoicePayment {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
-  amount      Float
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount        Float
   paymentMethod String
-  paymentDate DateTime @default(now())
+  paymentDate   DateTime @default(now())
   transactionId String?
 }
 
 model InvoiceDownload {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  userId      String
+  id           String   @id @default(uuid())
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  userId       String
   downloadedAt DateTime @default(now())
 }
 
 model InvoiceEmail {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  emailTo     String
-  status      String   @default("SENT")
-  sentAt      DateTime @default(now())
+  id        String   @id @default(uuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  emailTo   String
+  status    String   @default("SENT")
+  sentAt    DateTime @default(now())
 }
 
 model CreditNote {
-  id              String   @id @default(uuid())
-  creditNoteNum   String   @unique
-  invoiceId       String
-  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  reason          String
-  amount          Float
-  createdAt       DateTime @default(now())
+  id            String   @id @default(uuid())
+  creditNoteNum String   @unique
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  reason        String
+  amount        Float
+  createdAt     DateTime @default(now())
 }
 
 model DebitNote {
-  id              String   @id @default(uuid())
-  debitNoteNum    String   @unique
-  invoiceId       String
-  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  reason          String
-  amount          Float
-  createdAt       DateTime @default(now())
+  id           String   @id @default(uuid())
+  debitNoteNum String   @unique
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  reason       String
+  amount       Float
+  createdAt    DateTime @default(now())
 }
 
 model InvoiceTemplate {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   htmlContent String
-  isActive    Boolean  @default(true)
+  isActive    Boolean @default(true)
 }
 
 // --- MODULE 30: MARKET MANAGEMENT --- //
@@ -1402,16 +1429,19 @@ model Village {
 }
 
 model Market {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   villageId   String
-  village     Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  village     Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
   name        String
   description String?
   latitude    Float
   longitude   Float
-  radiusKm    Float    @default(5.0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  radiusKm    Float   @default(5.0)
+  isActive    Boolean @default(true)
+
+  shops Shop[]
+
+  createdAt DateTime @default(now())
 
   @@unique([villageId, name])
 }
@@ -1421,7 +1451,7 @@ model Market {
 model AppSetting {
   id          String   @id @default(uuid())
   key         String   @unique // e.g., 'MAINTENANCE_MODE'
-  value       String   // e.g., 'true', 'false', JSON string
+  value       String // e.g., 'true', 'false', JSON string
   description String?
   updatedBy   String?
   updatedAt   DateTime @updatedAt
@@ -1436,26 +1466,26 @@ model FeatureFlag {
 }
 
 model AppBanner {
-  id          String   @id @default(uuid())
-  title       String
-  imageUrl    String
-  targetUrl   String?
-  isActive    Boolean  @default(true)
-  position    String   @default("HOME_TOP") // e.g., 'HOME_TOP', 'CHECKOUT'
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime @default(now())
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  targetUrl String?
+  isActive  Boolean   @default(true)
+  position  String    @default("HOME_TOP") // e.g., 'HOME_TOP', 'CHECKOUT'
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model AppVersion {
-  id              String   @id @default(uuid())
-  platform        String   // 'ANDROID', 'IOS'
-  latestVersion   String   // '1.0.5'
-  minVersion      String   // '1.0.0'
-  forceUpdate     Boolean  @default(false)
-  updateUrl       String
-  releaseNotes    String?
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(uuid())
+  platform      String // 'ANDROID', 'IOS'
+  latestVersion String // '1.0.5'
+  minVersion    String // '1.0.0'
+  forceUpdate   Boolean  @default(false)
+  updateUrl     String
+  releaseNotes  String?
+  updatedAt     DateTime @updatedAt
 
   @@unique([platform])
 }
@@ -1463,16 +1493,18 @@ model AppVersion {
 // --- MODULE 32: AUDIT LOGS --- //
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  action      String   // e.g., 'ORDER_STATUS_UPDATE', 'USER_BANNED', 'SETTINGS_CHANGED'
-  entity      String   // e.g., 'Order', 'User', 'AppSetting'
-  entityId    String   // ID of the affected entity
-  actorId     String?  // ID of the user/admin who performed the action
-  oldValue    String?  // JSON string
-  newValue    String?  // JSON string
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id               String          @id @default(uuid())
+  action           String // e.g., 'ORDER_STATUS_UPDATE', 'USER_BANNED', 'SETTINGS_CHANGED'
+  entity           String // e.g., 'Order', 'User', 'AppSetting'
+  entityId         String // ID of the affected entity
+  actorId          String? // ID of the user/admin who performed the action
+  oldValue         String? // JSON string
+  newValue         String? // JSON string
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime        @default(now())
+  businessBranch   BusinessBranch? @relation(fields: [businessBranchId], references: [id])
+  businessBranchId String?
 
   @@index([entity, entityId])
   @@index([actorId])
@@ -1495,11 +1527,11 @@ model LoginHistory {
 }
 
 model SearchHistory {
-  id        String   @id @default(uuid())
-  userId    String?
-  query     String
-  filters   String?  // JSON string of active filters
-  results   Int      @default(0)
+  id         String   @id @default(uuid())
+  userId     String?
+  query      String
+  filters    String? // JSON string of active filters
+  results    Int      @default(0)
   searchedAt DateTime @default(now())
 
   @@index([userId])
@@ -1507,12 +1539,12 @@ model SearchHistory {
 }
 
 model UserActivity {
-  id          String   @id @default(uuid())
-  userId      String
-  actionType  String   // e.g., 'VIEWED_PRODUCT', 'ADDED_TO_CART', 'SHARED_SHOP'
-  entityId    String?  // e.g., Product ID
-  metadata    String?  // JSON string
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  actionType String // e.g., 'VIEWED_PRODUCT', 'ADDED_TO_CART', 'SHARED_SHOP'
+  entityId   String? // e.g., Product ID
+  metadata   String? // JSON string
+  createdAt  DateTime @default(now())
 
   @@index([userId])
   @@index([actionType])
@@ -1524,8 +1556,8 @@ model EmailLog {
   id        String   @id @default(uuid())
   toEmail   String
   subject   String
-  type      String   // e.g., 'WELCOME', 'INVOICE', 'REFUND', 'TICKET_UPDATE'
-  status    String   // 'SENT', 'FAILED'
+  type      String // e.g., 'WELCOME', 'INVOICE', 'REFUND', 'TICKET_UPDATE'
+  status    String // 'SENT', 'FAILED'
   error     String?
   createdAt DateTime @default(now())
 
@@ -1537,9 +1569,9 @@ model EmailLog {
 
 model SystemEvent {
   id            String   @id @default(uuid())
-  eventName     String   // e.g., 'order.created', 'payment.failed'
-  payload       String   // JSON string
-  correlationId String?  // To trace multi-step workflows
+  eventName     String // e.g., 'order.created', 'payment.failed'
+  payload       String // JSON string
+  correlationId String? // To trace multi-step workflows
   createdAt     DateTime @default(now())
 
   @@index([eventName])
@@ -1555,7 +1587,7 @@ model SystemErrorLog {
   path       String
   method     String
   stackTrace String?
-  userId     String?  // If user was logged in
+  userId     String? // If user was logged in
   ipAddress  String?
   createdAt  DateTime @default(now())
 
@@ -1571,7 +1603,7 @@ model FraudLog {
   user        User?    @relation(fields: [userId], references: [id])
   ipAddress   String?
   deviceInfo  String?
-  fraudType   String   // e.g., 'MULTIPLE_ACCOUNTS', 'FAKE_ORDER', 'COUPON_ABUSE', 'SUSPICIOUS_ACTIVITY'
+  fraudType   String // e.g., 'MULTIPLE_ACCOUNTS', 'FAKE_ORDER', 'COUPON_ABUSE', 'SUSPICIOUS_ACTIVITY'
   riskScore   Int      @default(0) // 0-100
   description String
   isResolved  Boolean  @default(false)
@@ -1584,16 +1616,16 @@ model FraudLog {
 // --- MODULE 43: BACKUP & DISASTER RECOVERY --- //
 
 model BackupLog {
-  id           String   @id @default(uuid())
-  filename     String   // e.g., backup-2024-06-18T03-00-00.sql.gz
-  storageKey   String   // R2/S3 object key
-  storageBucket String  // Cloudflare R2 bucket name
-  sizeBytes    BigInt?
-  status       String   @default("PENDING") // 'PENDING', 'SUCCESS', 'FAILED'
-  type         String   @default("AUTO")    // 'AUTO', 'MANUAL'
-  errorMessage String?
-  triggeredBy  String?  // userId of admin who triggered manual backup
-  createdAt    DateTime @default(now())
+  id            String   @id @default(uuid())
+  filename      String // e.g., backup-2024-06-18T03-00-00.sql.gz
+  storageKey    String // R2/S3 object key
+  storageBucket String // Cloudflare R2 bucket name
+  sizeBytes     BigInt?
+  status        String   @default("PENDING") // 'PENDING', 'SUCCESS', 'FAILED'
+  type          String   @default("AUTO") // 'AUTO', 'MANUAL'
+  errorMessage  String?
+  triggeredBy   String? // userId of admin who triggered manual backup
+  createdAt     DateTime @default(now())
 
   @@index([status])
   @@index([createdAt])
@@ -1602,33 +1634,34 @@ model BackupLog {
 // --- MODULE 44: MULTI-CITY ARCHITECTURE --- //
 
 model CityConfig {
-  id           String  @id @default(uuid())
-  name         String  @unique  // e.g., 'Dhanbad', 'Darbhanga', 'Vaishali'
-  state        String            // e.g., 'Jharkhand', 'Bihar'
-  slug         String  @unique  // e.g., 'dhanbad', 'darbhanga'
-  isActive     Boolean @default(true)
-  isLaunched   Boolean @default(false) // false = Coming Soon
+  id         String  @id @default(uuid())
+  name       String  @unique // e.g., 'Dhanbad', 'Darbhanga', 'Vaishali'
+  state      String // e.g., 'Jharkhand', 'Bihar'
+  slug       String  @unique // e.g., 'dhanbad', 'darbhanga'
+  isActive   Boolean @default(true)
+  isLaunched Boolean @default(false) // false = Coming Soon
 
   // Regional Pricing Overrides
-  defaultDeliveryFee  Float  @default(20.0)   // INR
-  minOrderAmount      Float  @default(99.0)   // INR
-  platformFeePercent  Float  @default(2.0)    // %
-  taxPercent          Float  @default(5.0)    // GST %
+  defaultDeliveryFee Float @default(20.0) // INR
+  distanceFeeTiers   Json? // [{ "uptoKm": 1, "fee": 20 }, { "uptoKm": 2, "fee": 30 }, { "uptoKm": 999, "fee": 50 }]
+  minOrderAmount     Float @default(99.0) // INR
+  platformFeePercent Float @default(2.0) // %
+  taxPercent         Float @default(5.0) // GST %
 
   // Geographic Boundaries (center point)
-  latitude   Float?
-  longitude  Float?
-  radiusKm   Float  @default(30.0)  // Operational radius
+  latitude  Float?
+  longitude Float?
+  radiusKm  Float  @default(30.0) // Operational radius
 
   // Localization
-  languages  String  @default("en,hi")  // Comma-separated language codes
-  currency   String  @default("INR")
-  timezone   String  @default("Asia/Kolkata")
+  languages String @default("en,hi") // Comma-separated language codes
+  currency  String @default("INR")
+  timezone  String @default("Asia/Kolkata")
 
   promotions RegionalPromotion[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive])
   @@index([slug])
@@ -1639,21 +1672,21 @@ model RegionalPromotion {
   cityConfigId String
   city         CityConfig @relation(fields: [cityConfigId], references: [id], onDelete: Cascade)
 
-  title        String    // e.g., 'Dhanbad Launch Offer'
-  description  String?
-  discountType String    // 'PERCENT' | 'FLAT'
-  discountValue Float    // e.g., 20 (%) or 50 (INR flat)
-  couponCode   String?   @unique
-  maxUses      Int?
-  usedCount    Int       @default(0)
-  minOrderAmt  Float?    // Minimum order to apply promo
-  isActive     Boolean   @default(true)
+  title         String // e.g., 'Dhanbad Launch Offer'
+  description   String?
+  discountType  String // 'PERCENT' | 'FLAT'
+  discountValue Float // e.g., 20 (%) or 50 (INR flat)
+  couponCode    String? @unique
+  maxUses       Int?
+  usedCount     Int     @default(0)
+  minOrderAmt   Float? // Minimum order to apply promo
+  isActive      Boolean @default(true)
 
-  startDate    DateTime?
-  endDate      DateTime?
+  startDate DateTime?
+  endDate   DateTime?
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([cityConfigId])
   @@index([couponCode])
@@ -1662,21 +1695,21 @@ model RegionalPromotion {
 // --- MODULE 46: CASH COLLECTION & SETTLEMENT --- //
 
 model CashCollection {
-  id              String  @id @default(uuid())
-  orderId         String  @unique
-  order           Order   @relation(fields: [orderId], references: [id])
-  riderId         String
-  rider           User    @relation(name: "RiderCashCollections", fields: [riderId], references: [id])
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+  riderId String
+  rider   User   @relation(name: "RiderCashCollections", fields: [riderId], references: [id])
 
   amountCollected Float
   status          String  @default("COLLECTED") // 'COLLECTED', 'SUBMITTED', 'VERIFIED', 'DISPUTED'
   notes           String?
 
-  riderDepositId  String?
-  riderDeposit    RiderDeposit? @relation(fields: [riderDepositId], references: [id])
+  riderDepositId String?
+  riderDeposit   RiderDeposit? @relation(fields: [riderDepositId], references: [id])
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([riderId])
   @@index([status])
@@ -1684,70 +1717,70 @@ model CashCollection {
 }
 
 model RiderDeposit {
-  id              String   @id @default(uuid())
-  riderId         String
-  rider           User     @relation(name: "RiderDeposits", fields: [riderId], references: [id])
-  verifiedById    String?
-  verifiedBy      User?    @relation(name: "DepositVerifier", fields: [verifiedById], references: [id])
+  id           String  @id @default(uuid())
+  riderId      String
+  rider        User    @relation(name: "RiderDeposits", fields: [riderId], references: [id])
+  verifiedById String?
+  verifiedBy   User?   @relation(name: "DepositVerifier", fields: [verifiedById], references: [id])
 
   totalAmount     Float
-  status          String   @default("PENDING") // 'PENDING', 'VERIFIED', 'REJECTED'
+  status          String    @default("PENDING") // 'PENDING', 'VERIFIED', 'REJECTED'
   rejectionReason String?
-  depositDate     DateTime @default(now())
+  depositDate     DateTime  @default(now())
   verifiedAt      DateTime?
-  receiptImageUrl String?  // Photo proof of cash handover
+  receiptImageUrl String? // Photo proof of cash handover
 
-  collections     CashCollection[]
+  collections CashCollection[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([riderId])
   @@index([status])
 }
 
 model ShopSettlement {
-  id                String   @id @default(uuid())
-  shopId            String
-  shop              Shop     @relation(fields: [shopId], references: [id])
-  settledById       String
-  settledBy         User     @relation(name: "SettlementAdmin", fields: [settledById], references: [id])
+  id          String @id @default(uuid())
+  shopId      String
+  shop        Shop   @relation(fields: [shopId], references: [id])
+  settledById String
+  settledBy   User   @relation(name: "SettlementAdmin", fields: [settledById], references: [id])
 
-  totalOrderAmount  Float    // Gross order value
-  platformCommission Float   // Platform's cut
-  deliveryFeeTotal  Float    @default(0)
-  netSettlementAmt  Float    // Amount payable to shop
+  totalOrderAmount   Float // Gross order value
+  platformCommission Float // Platform's cut
+  deliveryFeeTotal   Float @default(0)
+  netSettlementAmt   Float // Amount payable to shop
 
-  status            String   @default("PENDING") // 'PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'
-  paymentReference  String?  // Bank transfer / UPI ref
-  settledAt         DateTime?
+  status           String    @default("PENDING") // 'PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'
+  paymentReference String? // Bank transfer / UPI ref
+  settledAt        DateTime?
 
-  batchId           String?
-  batch             SettlementBatch? @relation(fields: [batchId], references: [id])
+  batchId String?
+  batch   SettlementBatch? @relation(fields: [batchId], references: [id])
 
-  periodStart       DateTime
-  periodEnd         DateTime
+  periodStart DateTime
+  periodEnd   DateTime
 
-  items             SettlementItem[]
+  items SettlementItem[]
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([shopId])
   @@index([status])
 }
 
 model SettlementItem {
-  id               String         @id @default(uuid())
-  settlementId     String
-  settlement       ShopSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
-  orderId          String         @unique
-  order            Order          @relation(name: "OrderSettlementItem", fields: [orderId], references: [id])
+  id           String         @id @default(uuid())
+  settlementId String
+  settlement   ShopSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  orderId      String         @unique
+  order        Order          @relation(name: "OrderSettlementItem", fields: [orderId], references: [id])
 
-  orderAmount      Float
-  commission       Float
-  deliveryFee      Float  @default(0)
-  netAmount        Float
+  orderAmount Float
+  commission  Float
+  deliveryFee Float @default(0)
+  netAmount   Float
 
   @@index([settlementId])
 }
@@ -1757,63 +1790,63 @@ model SettlementItem {
 // Hierarchy: SuperAdmin -> DistrictAdmin -> MarketAdmin -> Shops/Riders
 
 model DistrictAdmin {
-  id           String  @id @default(uuid())
-  userId       String  @unique
-  user         User    @relation(name: "DistrictAdminUser", fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(name: "DistrictAdminUser", fields: [userId], references: [id], onDelete: Cascade)
 
-  districtName String  // e.g., 'Dhanbad District', 'Darbhanga District'
-  state        String  // e.g., 'Jharkhand', 'Bihar'
+  districtName String // e.g., 'Dhanbad District', 'Darbhanga District'
+  state        String // e.g., 'Jharkhand', 'Bihar'
   isActive     Boolean @default(true)
 
   // Revenue visibility limit (% of platform revenue shown to this admin)
   revenueVisibility Boolean @default(true)
 
-  marketAdmins  MarketAdmin[]  // District admin manages multiple market admins
-  permissions   AdminPermission[]
+  marketAdmins MarketAdmin[] // District admin manages multiple market admins
+  permissions  AdminPermission[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([districtName])
 }
 
 model MarketAdmin {
-  id               String        @id @default(uuid())
-  userId           String        @unique
-  user             User          @relation(name: "MarketAdminUser", fields: [userId], references: [id], onDelete: Cascade)
-  districtAdminId  String?
-  districtAdmin    DistrictAdmin? @relation(fields: [districtAdminId], references: [id])
+  id              String         @id @default(uuid())
+  userId          String         @unique
+  user            User           @relation(name: "MarketAdminUser", fields: [userId], references: [id], onDelete: Cascade)
+  districtAdminId String?
+  districtAdmin   DistrictAdmin? @relation(fields: [districtAdminId], references: [id])
 
-  marketName       String  // e.g., 'Dhanbad City Market', 'Jorapokhar Market'
-  coverageArea     String  // Description of market area
-  isActive         Boolean @default(true)
+  marketName   String // e.g., 'Dhanbad City Market', 'Jorapokhar Market'
+  coverageArea String // Description of market area
+  isActive     Boolean @default(true)
 
-  assignedMarkets  AdminMarket[]
-  permissions      AdminPermission[]
+  assignedMarkets AdminMarket[]
+  permissions     AdminPermission[]
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([districtAdminId])
 }
 
 model AdminMarket {
-  id            String       @id @default(uuid())
+  id            String      @id @default(uuid())
   marketAdminId String
-  marketAdmin   MarketAdmin  @relation(fields: [marketAdminId], references: [id], onDelete: Cascade)
+  marketAdmin   MarketAdmin @relation(fields: [marketAdminId], references: [id], onDelete: Cascade)
 
-  citySlug      String  // Links to CityConfig.slug
-  marketArea    String  // Specific market/locality name
+  citySlug   String // Links to CityConfig.slug
+  marketArea String // Specific market/locality name
 
   // Territory boundaries (for map display)
-  centerLat     Float?
-  centerLon     Float?
-  radiusKm      Float?  @default(5.0)
+  centerLat Float?
+  centerLon Float?
+  radiusKm  Float? @default(5.0)
 
-  isActive      Boolean  @default(true)
-  assignedAt    DateTime @default(now())
+  isActive   Boolean  @default(true)
+  assignedAt DateTime @default(now())
 
   @@unique([marketAdminId, citySlug, marketArea])
   @@index([marketAdminId])
@@ -1821,25 +1854,25 @@ model AdminMarket {
 }
 
 model AdminPermission {
-  id              String  @id @default(uuid())
+  id String @id @default(uuid())
 
   districtAdminId String?
   districtAdmin   DistrictAdmin? @relation(fields: [districtAdminId], references: [id], onDelete: Cascade)
 
-  marketAdminId   String?
-  marketAdmin     MarketAdmin?   @relation(fields: [marketAdminId], references: [id], onDelete: Cascade)
+  marketAdminId String?
+  marketAdmin   MarketAdmin? @relation(fields: [marketAdminId], references: [id], onDelete: Cascade)
 
   // Granular permissions flags
-  canVerifyShops     Boolean @default(true)
-  canManageRiders    Boolean @default(true)
-  canViewRevenue     Boolean @default(true)
-  canSettlePayments  Boolean @default(false)
-  canManageAds       Boolean @default(false)
-  canBanUsers        Boolean @default(false)
-  canViewFraudLogs   Boolean @default(false)
+  canVerifyShops    Boolean @default(true)
+  canManageRiders   Boolean @default(true)
+  canViewRevenue    Boolean @default(true)
+  canSettlePayments Boolean @default(false)
+  canManageAds      Boolean @default(false)
+  canBanUsers       Boolean @default(false)
+  canViewFraudLogs  Boolean @default(false)
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([districtAdminId])
   @@index([marketAdminId])
@@ -1848,57 +1881,55 @@ model AdminPermission {
 // --- MODULE 48: COMMISSION & REVENUE ENGINE --- //
 
 model CommissionRule {
-  id           String  @id @default(uuid())
+  id String @id @default(uuid())
 
   // Scope: rules can be global, per-city, per-category, or per-shop
-  name         String  @unique  // e.g., 'Global Default', 'Dhanbad Food Shops'
-  scope        String  @default("GLOBAL") // 'GLOBAL', 'CITY', 'CATEGORY', 'SHOP'
-  citySlug     String?  // For CITY scope
-  categoryId   String?  // For CATEGORY scope
-  shopId       String?  // For SHOP scope (custom overrides)
-  shop         Shop?   @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  name       String  @unique // e.g., 'Global Default', 'Dhanbad Food Shops'
+  scope      String  @default("GLOBAL") // 'GLOBAL', 'CITY', 'CATEGORY', 'SHOP'
+  citySlug   String? // For CITY scope
+  categoryId String? // For CATEGORY scope
+  shopId     String? // For SHOP scope (custom overrides)
+  shop       Shop?   @relation(fields: [shopId], references: [id], onDelete: SetNull)
 
   // Commission rates
-  commissionPercent  Float  @default(5.0)   // % of order value
-  deliveryFeeFixed   Float  @default(20.0)  // Fixed delivery fee per order (INR)
-  platformFeePercent Float  @default(2.0)   // Platform convenience fee to customer
+  commissionPercent  Float @default(5.0) // % of order value
+  deliveryFeeFixed   Float @default(20.0) // Fixed delivery fee per order (INR)
+  platformFeePercent Float @default(2.0) // Platform convenience fee to customer
 
   // Advertisement revenue rates
-  featuredShopDailyRate   Float  @default(100.0)  // INR/day for featured shop
-  featuredProductDailyRate Float @default(50.0)   // INR/day for featured product
+  featuredShopDailyRate    Float @default(100.0) // INR/day for featured shop
+  featuredProductDailyRate Float @default(50.0) // INR/day for featured product
 
-  isActive   Boolean  @default(true)
+  isActive    Boolean      @default(true)
   commissions Commission[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([scope])
   @@index([citySlug])
   @@index([shopId])
 }
 
-
 model Commission {
+  id      String          @id @default(uuid())
+  orderId String          @unique
+  order   Order           @relation(name: "OrderCommission", fields: [orderId], references: [id])
+  shopId  String
+  shop    Shop            @relation(name: "ShopCommissions", fields: [shopId], references: [id])
+  ruleId  String?
+  rule    CommissionRule? @relation(fields: [ruleId], references: [id])
 
-  id               String         @id @default(uuid())
-  orderId          String         @unique
-  order            Order          @relation(name: "OrderCommission", fields: [orderId], references: [id])
-  shopId           String
-  shop             Shop           @relation(name: "ShopCommissions", fields: [shopId], references: [id])
-  ruleId           String?
-  rule             CommissionRule? @relation(fields: [ruleId], references: [id])
+  orderAmount    Float // Gross order value
+  commissionAmt  Float // Platform's commission
+  deliveryFee    Float // Delivery fee collected
+  platformFee    Float // Platform convenience fee
+  netShopPayable Float // What shop actually receives
 
-  orderAmount      Float    // Gross order value
-  commissionAmt    Float    // Platform's commission
-  deliveryFee      Float    // Delivery fee collected
-  platformFee      Float    // Platform convenience fee
-  netShopPayable   Float    // What shop actually receives
+  isSettled Boolean   @default(false)
+  settledAt DateTime?
 
-  isSettled        Boolean  @default(false)
-  settledAt        DateTime?
-
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([shopId])
   @@index([isSettled])
@@ -1906,21 +1937,21 @@ model Commission {
 }
 
 model RevenueLedger {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Source of revenue entry
-  entryType    String   // 'ORDER_COMMISSION', 'DELIVERY_FEE', 'PLATFORM_FEE', 'AD_REVENUE', 'REFUND_DEDUCTION'
-  referenceId  String   // orderId, adId, etc.
-  referenceType String  // 'ORDER', 'ADVERTISEMENT', 'REFUND'
+  entryType     String // 'ORDER_COMMISSION', 'DELIVERY_FEE', 'PLATFORM_FEE', 'AD_REVENUE', 'REFUND_DEDUCTION'
+  referenceId   String // orderId, adId, etc.
+  referenceType String // 'ORDER', 'ADVERTISEMENT', 'REFUND'
 
-  amount       Float    // Revenue amount (negative for refunds/deductions)
-  currency     String   @default("INR")
-  description  String?
+  amount      Float // Revenue amount (negative for refunds/deductions)
+  currency    String  @default("INR")
+  description String?
 
-  citySlug     String?  // For city-wise revenue slicing
-  shopId       String?  // For shop-wise tracking
+  citySlug String? // For city-wise revenue slicing
+  shopId   String? // For shop-wise tracking
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([entryType])
   @@index([referenceId])
@@ -1931,37 +1962,37 @@ model RevenueLedger {
 // --- MODULE 49: ACCOUNTING & FINANCE --- //
 
 model FinanceAccount {
-  id           String  @id @default(uuid())
-  name         String  @unique // e.g. 'Main Revenue', 'Rider Cash', 'Shop Payables', 'Taxes'
-  type         String  // 'REVENUE', 'EXPENSE', 'ASSET', 'LIABILITY', 'EQUITY'
-  currency     String  @default("INR")
-  balance      Float   @default(0.0) // Cached sum of all ledger entries
-  
-  description  String?
-  isActive     Boolean @default(true)
+  id       String @id @default(uuid())
+  name     String @unique // e.g. 'Main Revenue', 'Rider Cash', 'Shop Payables', 'Taxes'
+  type     String // 'REVENUE', 'EXPENSE', 'ASSET', 'LIABILITY', 'EQUITY'
+  currency String @default("INR")
+  balance  Float  @default(0.0) // Cached sum of all ledger entries
 
-  entries      LedgerEntry[]
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  description String?
+  isActive    Boolean @default(true)
+
+  entries LedgerEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([type])
 }
 
 model LedgerEntry {
-  id              String   @id @default(uuid())
-  accountId       String
-  account         FinanceAccount @relation(fields: [accountId], references: [id])
-  
-  amount          Float    // Positive for Credit, Negative for Debit
-  transactionType String   // 'ORDER_PAYMENT', 'SETTLEMENT', 'EXPENSE_PAYOUT', 'TAX_DEDUCTION'
-  
-  referenceId     String?  // Links to Order ID, Settlement ID, or Expense ID
-  referenceType   String?  
-  
-  description     String?
-  
-  createdAt       DateTime @default(now())
+  id        String         @id @default(uuid())
+  accountId String
+  account   FinanceAccount @relation(fields: [accountId], references: [id])
+
+  amount          Float // Positive for Credit, Negative for Debit
+  transactionType String // 'ORDER_PAYMENT', 'SETTLEMENT', 'EXPENSE_PAYOUT', 'TAX_DEDUCTION'
+
+  referenceId   String? // Links to Order ID, Settlement ID, or Expense ID
+  referenceType String?
+
+  description String?
+
+  createdAt DateTime @default(now())
 
   @@index([accountId])
   @@index([transactionType])
@@ -1970,43 +2001,43 @@ model LedgerEntry {
 }
 
 model Expense {
-  id          String   @id @default(uuid())
-  category    String   // 'MARKETING', 'SALARY', 'SERVER', 'LEGAL', 'MISC'
-  amount      Float
-  currency    String   @default("INR")
-  
+  id       String @id @default(uuid())
+  category String // 'MARKETING', 'SALARY', 'SERVER', 'LEGAL', 'MISC'
+  amount   Float
+  currency String @default("INR")
+
   date        DateTime // When the expense occurred
   description String
   receiptUrl  String?
-  
+
   recordedById String
-  recordedBy   User     @relation(fields: [recordedById], references: [id])
+  recordedBy   User   @relation(fields: [recordedById], references: [id])
 
   isReconciled Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([category])
   @@index([date])
 }
 
 model FinancialTransaction {
-  id              String   @id @default(uuid())
-  transactionId   String   @unique // From Payment Gateway (Razorpay, Stripe) or Bank
-  type            String   // 'CREDIT', 'DEBIT'
-  method          String   // 'UPI', 'BANK_TRANSFER', 'CASH'
-  
-  amount          Float
-  currency        String   @default("INR")
-  
-  status          String   // 'PENDING', 'SUCCESS', 'FAILED'
-  
-  referenceId     String?  // Can link to Settlement, Order, or Expense
-  referenceType   String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String @id @default(uuid())
+  transactionId String @unique // From Payment Gateway (Razorpay, Stripe) or Bank
+  type          String // 'CREDIT', 'DEBIT'
+  method        String // 'UPI', 'BANK_TRANSFER', 'CASH'
+
+  amount   Float
+  currency String @default("INR")
+
+  status String // 'PENDING', 'SUCCESS', 'FAILED'
+
+  referenceId   String? // Can link to Settlement, Order, or Expense
+  referenceType String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
@@ -2015,16 +2046,16 @@ model FinancialTransaction {
 // --- MODULE 50: SUPER ADMIN OPERATIONS --- //
 
 model SuperAdminAction {
-  id          String   @id @default(uuid())
-  adminId     String
-  admin       User     @relation("SuperAdminActions", fields: [adminId], references: [id])
-  actionType  String   // 'BAN_USER', 'APPROVE_SHOP', 'FORCE_SETTLEMENT', 'DELETE_MARKET', etc.
-  targetId    String   // ID of the user, shop, market, etc.
-  targetType  String   // 'USER', 'SHOP', 'MARKET', 'SETTLEMENT'
-  reason      String?
-  metadata    Json?    // Optional data dump of the old state
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  adminId    String
+  admin      User     @relation("SuperAdminActions", fields: [adminId], references: [id])
+  actionType String // 'BAN_USER', 'APPROVE_SHOP', 'FORCE_SETTLEMENT', 'DELETE_MARKET', etc.
+  targetId   String // ID of the user, shop, market, etc.
+  targetType String // 'USER', 'SHOP', 'MARKET', 'SETTLEMENT'
+  reason     String?
+  metadata   Json? // Optional data dump of the old state
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 
   @@index([adminId])
   @@index([actionType])
@@ -2034,8 +2065,8 @@ model SuperAdminAction {
 model PlatformReport {
   id          String   @id @default(uuid())
   title       String
-  reportType  String   // 'FINANCE', 'OPERATIONS', 'FRAUD', 'GROWTH'
-  data        Json     // The generated report data payload
+  reportType  String // 'FINANCE', 'OPERATIONS', 'FRAUD', 'GROWTH'
+  data        Json // The generated report data payload
   generatedBy String
   generator   User     @relation("ReportGenerator", fields: [generatedBy], references: [id])
   startDate   DateTime
@@ -2047,14 +2078,14 @@ model PlatformReport {
 }
 
 model OperationalLog {
-  id          String   @id @default(uuid())
-  severity    String   // 'INFO', 'WARNING', 'CRITICAL'
-  module      String   // 'PAYMENTS', 'DELIVERY', 'FRAUD', 'SYSTEM'
-  message     String
-  context     Json?    // Contextual debugging data
-  isResolved  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  severity   String // 'INFO', 'WARNING', 'CRITICAL'
+  module     String // 'PAYMENTS', 'DELIVERY', 'FRAUD', 'SYSTEM'
+  message    String
+  context    Json? // Contextual debugging data
+  isResolved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([severity])
   @@index([module])
@@ -2064,24 +2095,24 @@ model OperationalLog {
 // --- MODULE 51: RIDER CASH VERIFICATION --- //
 
 model CashVerification {
-  id              String   @id @default(uuid())
-  riderId         String
-  rider           User     @relation("RiderCashSubmission", fields: [riderId], references: [id])
-  marketAdminId   String?
-  marketAdmin     User?    @relation("MarketAdminVerification", fields: [marketAdminId], references: [id])
-  
-  expectedAmount  Float    // Calculated from COD orders
-  submittedAmount Float    // What the rider claims to submit
-  verifiedAmount  Float?   // What the admin actually counted
-  currency        String   @default("INR")
-  
-  status          String   @default("PENDING") // 'PENDING', 'VERIFIED', 'DISPUTED'
-  discrepancy     Float?   // Positive = excess, Negative = shortage
-  
-  date            DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String  @id @default(uuid())
+  riderId       String
+  rider         User    @relation("RiderCashSubmission", fields: [riderId], references: [id])
+  marketAdminId String?
+  marketAdmin   User?   @relation("MarketAdminVerification", fields: [marketAdminId], references: [id])
 
-  receipt         CashReceipt?
+  expectedAmount  Float // Calculated from COD orders
+  submittedAmount Float // What the rider claims to submit
+  verifiedAmount  Float? // What the admin actually counted
+  currency        String @default("INR")
+
+  status      String @default("PENDING") // 'PENDING', 'VERIFIED', 'DISPUTED'
+  discrepancy Float? // Positive = excess, Negative = shortage
+
+  date      DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  receipt CashReceipt?
 
   @@index([riderId])
   @@index([status])
@@ -2089,35 +2120,35 @@ model CashVerification {
 }
 
 model CashShortage {
-  id               String   @id @default(uuid())
-  riderId          String
-  rider            User     @relation(fields: [riderId], references: [id])
-  verificationId   String   @unique
-  
-  shortageAmount   Float
-  currency         String   @default("INR")
-  reason           String?  // Explanation given by rider
-  status           String   @default("UNRECOVERED") // 'UNRECOVERED', 'RECOVERED_FROM_SALARY', 'PAID'
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String @id @default(uuid())
+  riderId        String
+  rider          User   @relation(fields: [riderId], references: [id])
+  verificationId String @unique
+
+  shortageAmount Float
+  currency       String  @default("INR")
+  reason         String? // Explanation given by rider
+  status         String  @default("UNRECOVERED") // 'UNRECOVERED', 'RECOVERED_FROM_SALARY', 'PAID'
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([riderId])
   @@index([status])
 }
 
 model CashReceipt {
-  id               String   @id @default(uuid())
-  verificationId   String   @unique
-  verification     CashVerification @relation(fields: [verificationId], references: [id])
-  riderId          String
-  rider            User     @relation(fields: [riderId], references: [id])
-  
-  amount           Float
-  currency         String   @default("INR")
-  receiptNumber    String   @unique @default(dbgenerated("substr(md5(random()::text), 0, 10)"))
-  
-  createdAt        DateTime @default(now())
+  id             String           @id @default(uuid())
+  verificationId String           @unique
+  verification   CashVerification @relation(fields: [verificationId], references: [id])
+  riderId        String
+  rider          User             @relation(fields: [riderId], references: [id])
+
+  amount        Float
+  currency      String @default("INR")
+  receiptNumber String @unique @default(dbgenerated("substr(md5(random()::text), 0, 10)"))
+
+  createdAt DateTime @default(now())
 
   @@index([riderId])
   @@index([receiptNumber])
@@ -2126,29 +2157,29 @@ model CashReceipt {
 // --- MODULE 52: SETTLEMENT AUTOMATION --- //
 
 model SettlementBatch {
-  id              String   @id @default(uuid())
-  batchNumber     String   @unique @default(dbgenerated("substr(md5(random()::text), 0, 12)"))
-  frequency       String   // 'DAILY', 'WEEKLY', 'MONTHLY'
-  
-  status          String   @default("PENDING") // 'PENDING', 'PROCESSING', 'APPROVED', 'COMPLETED', 'FAILED'
-  periodStart     DateTime
-  periodEnd       DateTime
-  
-  totalShops      Int      @default(0)
-  totalAmount     Float    @default(0.0)
-  platformFee     Float    @default(0.0)
-  netPayable      Float    @default(0.0)
-  currency        String   @default("INR")
+  id          String @id @default(uuid())
+  batchNumber String @unique @default(dbgenerated("substr(md5(random()::text), 0, 12)"))
+  frequency   String // 'DAILY', 'WEEKLY', 'MONTHLY'
 
-  approvedById    String?
-  approvedBy      User?    @relation("BatchApprover", fields: [approvedById], references: [id])
-  approvedAt      DateTime?
+  status      String   @default("PENDING") // 'PENDING', 'PROCESSING', 'APPROVED', 'COMPLETED', 'FAILED'
+  periodStart DateTime
+  periodEnd   DateTime
+
+  totalShops  Int    @default(0)
+  totalAmount Float  @default(0.0)
+  platformFee Float  @default(0.0)
+  netPayable  Float  @default(0.0)
+  currency    String @default("INR")
+
+  approvedById String?
+  approvedBy   User?     @relation("BatchApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
 
   reports         SettlementReport[]
   shopSettlements ShopSettlement[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([frequency])
@@ -2156,25 +2187,25 @@ model SettlementBatch {
 }
 
 model SettlementReport {
-  id                String   @id @default(uuid())
-  batchId           String
-  batch             SettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  
-  shopId            String
-  shop              Shop     @relation(fields: [shopId], references: [id])
-  
-  reportUrl         String?  // PDF or CSV link in Cloudflare R2
-  
-  totalOrders       Int
-  grossRevenue      Float
-  commissionDeducted Float
-  deliveryFeeDeducted Float
-  netPayout         Float
-  currency          String   @default("INR")
-  
-  isEmailed         Boolean  @default(false)
+  id      String          @id @default(uuid())
+  batchId String
+  batch   SettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
-  createdAt         DateTime @default(now())
+  shopId String
+  shop   Shop   @relation(fields: [shopId], references: [id])
+
+  reportUrl String? // PDF or CSV link in Cloudflare R2
+
+  totalOrders         Int
+  grossRevenue        Float
+  commissionDeducted  Float
+  deliveryFeeDeducted Float
+  netPayout           Float
+  currency            String @default("INR")
+
+  isEmailed Boolean @default(false)
+
+  createdAt DateTime @default(now())
 
   @@index([batchId])
   @@index([shopId])
@@ -2183,74 +2214,73 @@ model SettlementReport {
 // --- MODULE 57: COMMUNICATION HUB --- //
 
 model Conversation {
-  id              String   @id @default(uuid())
-  type            String   // 'P2P', 'GROUP', 'SHOP_CUSTOMER', 'RIDER_CUSTOMER', 'SUPPORT', 'BROADCAST'
-  title           String?  // Optional name for groups/broadcasts
-  
+  id    String  @id @default(uuid())
+  type  String // 'P2P', 'GROUP', 'SHOP_CUSTOMER', 'RIDER_CUSTOMER', 'SUPPORT', 'BROADCAST'
+  title String? // Optional name for groups/broadcasts
+
   // Relations
-  participants    ConversationParticipant[]
-  messages        Message[]
-  
+  participants ConversationParticipant[]
+  messages     Message[]
+
   // Metadata for context
-  orderId         String?
-  order           Order?   @relation(fields: [orderId], references: [id])
-  
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([type])
   @@index([orderId])
 }
 
 model ConversationParticipant {
-  id              String   @id @default(uuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User     @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
-  
-  role            String   @default("MEMBER") // 'ADMIN', 'MEMBER'
-  lastReadAt      DateTime?
-  
-  joinedAt        DateTime @default(now())
-  
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+
+  role       String    @default("MEMBER") // 'ADMIN', 'MEMBER'
+  lastReadAt DateTime?
+
+  joinedAt DateTime @default(now())
+
   @@unique([conversationId, userId])
   @@index([userId])
 }
 
 model Message {
-  id              String   @id @default(uuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  senderId        String?  // Optional for system messages
-  sender          User?    @relation("SentMessages", fields: [senderId], references: [id], onDelete: SetNull)
-  
-  content         String
-  messageType     String   @default("TEXT") // 'TEXT', 'IMAGE', 'AUDIO', 'SYSTEM'
-  
-  attachments     MessageAttachment[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String? // Optional for system messages
+  sender   User?   @relation("SentMessages", fields: [senderId], references: [id], onDelete: SetNull)
+
+  content     String
+  messageType String @default("TEXT") // 'TEXT', 'IMAGE', 'AUDIO', 'SYSTEM'
+
+  attachments MessageAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
 }
 
 model MessageAttachment {
-  id              String   @id @default(uuid())
-  messageId       String
-  message         Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  fileUrl         String
-  fileType        String   // 'image/jpeg', 'audio/mp3', etc.
-  fileSize        Int      // in bytes
-  
-  createdAt       DateTime @default(now())
-  
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileUrl  String
+  fileType String // 'image/jpeg', 'audio/mp3', etc.
+  fileSize Int // in bytes
+
+  createdAt DateTime @default(now())
+
   @@index([messageId])
 }
-

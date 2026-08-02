@@ -95,8 +95,8 @@
       "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": false,
+      "reactCompiler": false
     },
     "extra": {
       "apiUrl": "https://bazarchowkapi.veritasco.tech",

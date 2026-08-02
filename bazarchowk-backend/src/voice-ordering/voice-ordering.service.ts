@@ -18,9 +18,9 @@ export class VoiceOrderingService {
     private readonly geminiService: GeminiService
   ) {}
 
-  async processConversationalVoiceOrder(userId: string, transcript: string, sessionId: string, language: string = 'hi-IN', audioUrl?: string) {
-    if (!transcript || transcript.trim() === '') {
-      throw new BadRequestException('Voice transcript cannot be empty');
+  async processConversationalVoiceOrder(userId: string, transcript: string | undefined, sessionId: string, language: string = 'hi-IN', audioUrl?: string, audioBase64?: string) {
+    if (!transcript?.trim() && !audioBase64) {
+      throw new BadRequestException('Voice transcript or audio must be provided');
     }
 
     const historyLogs = await this.prisma.voiceOrderLog.findMany({
@@ -51,7 +51,8 @@ export class VoiceOrderingService {
           "shopName": "Extracted shop name if they provided one",
           "appointmentTime": "Time in HH:mm format if provided",
           "items": [ { "searchTerm": "Aloo translated to English", "quantity": 1, "unit": "kg" } ]
-        }`
+        }
+        IMPORTANT: If the user provided audio (and no transcript), you must accurately transcribe their speech and include it in the JSON as the "transcript" field.`
       }
     ];
 
@@ -62,13 +63,15 @@ export class VoiceOrderingService {
       }
     }
 
-    messages.push({ role: "user", content: transcript });
+    if (transcript?.trim()) {
+      messages.push({ role: "user", content: transcript });
+    }
 
     let aiOutput: any = {};
     try {
       const systemPromptMsg = messages.find(m => m.role === 'system');
       const systemPrompt = systemPromptMsg ? systemPromptMsg.content : '';
-      const rawContent = await this.geminiService.processVoiceAssistant(messages, systemPrompt);
+      const rawContent = await this.geminiService.processVoiceAssistant(messages, systemPrompt, audioBase64);
       
       // Attempt to clean markdown JSON formatting if present
       const cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -82,7 +85,7 @@ export class VoiceOrderingService {
       data: {
         userId,
         sessionId,
-        transcript,
+        transcript: transcript || aiOutput.transcript || "Audio input",
         language,
         audioUrl,
         aiReply: aiOutput.aiVoiceReply,

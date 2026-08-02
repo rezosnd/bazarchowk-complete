@@ -29,6 +29,9 @@ export class EmailProcessor extends WorkerHost {
           const buffer = Buffer.from(data.pdfBuffer);
           await this.emailService.sendInvoiceEmailHtml(to, name, data.invoiceNumber, buffer);
           break;
+        case 'send-ticket-update':
+          await this.emailService.sendTicketUpdateEmail(to, name, data.ticketId, data.updateMessage);
+          break;
         default:
           this.logger.warn(`Unknown email job type: ${job.name}`);
       }

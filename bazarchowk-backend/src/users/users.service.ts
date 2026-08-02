@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -55,11 +59,20 @@ export class UsersService {
       },
     });
 
+    await this.auditService.logAction({
+      actorId: userId,
+      action: 'UPDATE_PROFILE',
+      entity: 'User',
+      entityId: userId,
+      newValue: JSON.stringify(updateProfileDto),
+      ipAddress: 'System'
+    });
+
     return user;
   }
 
   async deleteAccount(userId: string) {
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         isActive: false,
@@ -68,6 +81,17 @@ export class UsersService {
         phone: `deleted_${userId}`
       }
     });
+
+    await this.auditService.logAction({
+      actorId: userId,
+      action: 'DELETE_ACCOUNT',
+      entity: 'User',
+      entityId: userId,
+      newValue: JSON.stringify({ deleted: true }),
+      ipAddress: 'System'
+    });
+
+    return updated;
   }
 
   async updateKycStatus(userId: string, status: string) {

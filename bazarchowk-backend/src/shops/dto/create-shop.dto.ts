@@ -50,4 +50,14 @@ export class CreateShopDto {
   @IsOptional()
   @IsString()
   partnerType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  hasProducts?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  hasServices?: boolean;
 }

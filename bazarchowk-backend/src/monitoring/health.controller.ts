@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheckService, HttpHealthIndicator, PrismaHealthIndicator, HealthCheck } from '@nestjs/terminus';
+import { HealthCheckService, HttpHealthIndicator, PrismaHealthIndicator, HealthCheck, MemoryHealthIndicator, DiskHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -11,6 +11,8 @@ export class HealthController {
     private http: HttpHealthIndicator,
     private prisma: PrismaService,
     private prismaHealth: PrismaHealthIndicator,
+    private memoryHealth: MemoryHealthIndicator,
+    private diskHealth: DiskHealthIndicator,
   ) {}
 
   @Get()
@@ -19,9 +21,9 @@ export class HealthController {
   check() {
     return this.health.check([
       () => this.prismaHealth.pingCheck('database', this.prisma),
-      () => this.http.pingCheck('nestjs-docs', 'https://docs.nestjs.com'),
-      // Example of adding memory heap checks in production:
-      // () => this.memoryHealth.checkHeap('memory_heap', 150 * 1024 * 1024),
+      () => this.memoryHealth.checkHeap('memory_heap', 500 * 1024 * 1024), // 500MB
+      () => this.memoryHealth.checkRSS('memory_rss', 1000 * 1024 * 1024), // 1GB
+      () => this.diskHealth.checkStorage('storage', { path: '/', thresholdPercent: 0.9 }),
     ]);
   }
 }

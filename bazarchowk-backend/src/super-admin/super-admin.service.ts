@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { CreateMarketDto, UpdateMarketDto, CreateCityConfigDto } from './dto/super-admin.dto';
 
 @Injectable()
 export class SuperAdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService
+  ) {}
 
   // ==================== PLATFORM DASHBOARD ====================
 
@@ -70,13 +74,24 @@ export class SuperAdminService {
     return { data: users, total, page, limit };
   }
 
-  async banUser(userId: string) {
+  async banUser(userId: string, adminId?: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { isActive: false },
     });
+    if (adminId) {
+      await this.auditService.logAction({
+        actorId: adminId,
+        action: 'BAN_USER',
+        entity: 'User',
+        entityId: userId,
+        newValue: JSON.stringify({ isActive: false }),
+        ipAddress: 'System',
+      });
+    }
+    return updated;
   }
 
   async unbanUser(userId: string) {
@@ -86,6 +101,36 @@ export class SuperAdminService {
       where: { id: userId },
       data: { isActive: true },
     });
+  }
+
+  async assignRole(userId: string, roleName: string, adminId?: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    let role = await this.prisma.role.findUnique({ where: { name: roleName } });
+    if (!role) {
+      role = await this.prisma.role.create({ data: { name: roleName } });
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { roleId: role.id },
+      include: { role: true }
+    });
+
+    if (adminId) {
+      await this.auditService.logAction({
+        actorId: adminId,
+        action: 'ASSIGN_ROLE',
+        entity: 'User',
+        entityId: userId,
+        oldValue: JSON.stringify({ roleId: user.roleId }),
+        newValue: JSON.stringify({ roleId: role.id, roleName }),
+        ipAddress: 'System',
+      });
+    }
+
+    return updated;
   }
 
   // ==================== SHOP MANAGEMENT ====================
@@ -108,13 +153,24 @@ export class SuperAdminService {
     return { data: shops, total, page, limit };
   }
 
-  async verifyShop(shopId: string) {
+  async verifyShop(shopId: string, adminId?: string) {
     const shop = await this.prisma.shop.findUnique({ where: { id: shopId } });
     if (!shop) throw new NotFoundException('Shop not found');
-    return this.prisma.shop.update({
+    const updated = await this.prisma.shop.update({
       where: { id: shopId },
       data: { isVerified: true },
     });
+    if (adminId) {
+      await this.auditService.logAction({
+        actorId: adminId,
+        action: 'VERIFY_SHOP',
+        entity: 'Shop',
+        entityId: shopId,
+        newValue: JSON.stringify({ isVerified: true }),
+        ipAddress: 'System',
+      });
+    }
+    return updated;
   }
 
   async suspendShop(shopId: string) {
@@ -126,7 +182,46 @@ export class SuperAdminService {
     });
   }
 
-  // ==================== REVENUE MANAGEMENT ====================
+  // ==================== ORDER MANAGEMENT ====================
+
+  async getAllOrders(page: number, limit: number, status?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+    
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where, skip, take: limit,
+        include: {
+          customer: { select: { firstName: true, email: true, phone: true } },
+          shop: { select: { name: true, city: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+    return { data: orders, total, page, limit };
+  }
+
+  // ==================== REVENUE & SETTLEMENT MANAGEMENT ====================
+
+  async getAllSettlements(page: number, limit: number, status?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [settlements, total] = await Promise.all([
+      this.prisma.shopSettlement.findMany({
+        where, skip, take: limit,
+        include: {
+          shop: { select: { name: true, owner: { select: { phone: true } } } }
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.shopSettlement.count({ where }),
+    ]);
+    return { data: settlements, total, page, limit };
+  }
 
   async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day') {
     const orders = await this.prisma.order.groupBy({
@@ -376,5 +471,22 @@ export class SuperAdminService {
       this.prisma.cashCollection.count({ where })
     ]);
     return { data: collections, total, page, limit };
+  }
+
+  // ==================== SYSTEM ERROR LOGS ====================
+
+  async getSystemErrorLogs(page: number, limit: number, statusCode?: number) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (statusCode) where.statusCode = statusCode;
+
+    const [logs, total] = await Promise.all([
+      this.prisma.systemErrorLog.findMany({
+        where, skip, take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.systemErrorLog.count({ where })
+    ]);
+    return { data: logs, total, page, limit };
   }
 }

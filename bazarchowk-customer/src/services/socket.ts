@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import * as SecureStore from 'expo-secure-store';
+import { TokenStorage } from '@/services/api';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -8,7 +8,7 @@ class SocketService {
   async connect() {
     if (this.socket?.connected) return;
 
-    const token = await SecureStore.getItemAsync('bazar_token');
+    const token = await TokenStorage.getAccessToken();
     if (!token) return;
 
     // Use /realtime namespace

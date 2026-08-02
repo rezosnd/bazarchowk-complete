@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateShopDto } from './dto/create-shop.dto';
@@ -13,6 +15,7 @@ export class ShopsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   // ==================== SHOP CRUD ====================
@@ -40,8 +43,18 @@ export class ShopsService {
     return shop;
   }
 
-  async findAll(lat?: number, lng?: number) {
-    const shops = await this.prisma.shop.findMany({ include: { timings: true } });
+  async findAll(lat?: number, lng?: number, includeUnverified = false) {
+    const cacheKey = `shops_all_${lat || 'none'}_${lng || 'none'}_${includeUnverified}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
+    const whereClause = includeUnverified ? {} : { isVerified: true, isActive: true };
+    const shops = await this.prisma.shop.findMany({ 
+      where: whereClause,
+      include: { timings: true } 
+    });
+    
+    let result = shops;
     if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
       const filteredShops = shops.map(shop => {
         if (shop.latitude == null || shop.longitude == null) return { ...shop, distanceKm: 999 };
@@ -55,10 +68,12 @@ export class ShopsService {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = R * c;
         return { ...shop, distanceKm: distance };
-      }).filter(shop => shop.distanceKm <= Math.max(shop.deliveryRadius || 0, 25.0));
-      return filteredShops.sort((a, b) => a.distanceKm - b.distanceKm);
+      }).filter(shop => shop.distanceKm <= (shop.deliveryRadius || 5.0));
+      result = filteredShops.sort((a, b) => a.distanceKm - b.distanceKm);
     }
-    return shops;
+    
+    await this.cacheManager.set(cacheKey, result, 60000);
+    return result;
   }
 
   async findMyShop(ownerId: string) {
@@ -79,16 +94,22 @@ export class ShopsService {
    * Customers will see "Open Now", "Closed", "Closes at 9 PM", or "Holiday: Diwali"
    */
   async findOne(id: string) {
+    const cacheKey = `shop_detail_${id}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     const shop = await this.prisma.shop.findUnique({
       where: { id },
       include: { timings: true, documents: true, holidays: true },
     });
     if (!shop) throw new NotFoundException('Shop not found');
 
-    return {
+    const result = {
       ...shop,
       status: this.computeShopStatus(shop.timings, shop.holidays),
     };
+    await this.cacheManager.set(cacheKey, result, 30000); // 30s cache for real-time status
+    return result;
   }
 
   /**
@@ -155,7 +176,13 @@ export class ShopsService {
     if (!isAdmin && shop.ownerId !== ownerId) {
       throw new ForbiddenException('You do not have permission to edit this shop');
     }
-    return this.prisma.shop.update({ where: { id }, data: updateShopDto });
+    const data: any = { ...updateShopDto };
+    if (updateShopDto.partnerType) {
+      data.partnerType = updateShopDto.partnerType as any;
+    }
+    const updated = await this.prisma.shop.update({ where: { id }, data });
+    await this.cacheManager.del(`shop_detail_${id}`);
+    return updated;
   }
 
   async verifyShop(id: string, adminId: string, isVerified: boolean) {

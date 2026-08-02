@@ -11,6 +11,8 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
 
+import { RealtimeService } from './realtime.service';
+
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/realtime',
@@ -28,7 +30,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   // Map of admin -> Set of socket IDs
   private connectedAdmins: Set<string> = new Set();
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly realtimeService: RealtimeService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -126,7 +131,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   // For Rider GPS Tracking - Rider sends location directly via socket
   @SubscribeMessage('update_location')
-  handleLocationUpdate(
+  async handleLocationUpdate(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { orderId: string; latitude: number; longitude: number; heading?: number }
   ) {
@@ -140,6 +145,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       ...data,
       timestamp: new Date().toISOString()
     });
+
+    try {
+      // Save point asynchronously to db
+      await this.realtimeService.saveTrackingPoint(
+        data.orderId,
+        user.sub,
+        data.latitude,
+        data.longitude,
+        data.heading
+      );
+    } catch (e) {
+      this.logger.error(`Failed to save tracking point: \${e.message}`);
+    }
   }
 
   // Customer joins room to track a specific order

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritasco x BazarChowk - Official Operations Manual</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @page { size: A4; margin: 20mm; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            color: #000; 
+            background: #e0e0e0; 
+            margin: 0; 
+            padding: 30px; 
+        }
+        
+        .download-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 25px;
+            background: #111;
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+        }
+        .download-btn:hover { background: #333; }
+
+        .document-container { 
+            max-width: 210mm; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 25mm; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15); 
+            line-height: 1.6; 
+            font-size: 14px; 
+        }
+
+        .header-logos { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 25px; 
+            margin-bottom: 40px; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 20px; 
+        }
+        .logo { max-height: 55px; max-width: 180px; }
+
+        .letter-title { 
+            text-align: center; 
+            font-weight: bold; 
+            font-size: 18px; 
+            text-decoration: underline; 
+            margin-bottom: 30px; 
+            text-transform: uppercase; 
+        }
+        
+        .section-title { 
+            font-size: 16px; 
+            font-weight: bold; 
+            text-decoration: underline; 
+            margin-top: 50px; 
+            margin-bottom: 15px; 
+            text-transform: uppercase; 
+            page-break-after: avoid;
+        }
+
+        .role-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            margin-bottom: 30px; 
+            page-break-inside: avoid; 
+        }
+        .role-table th, .role-table td { 
+            border: 1px solid #000; 
+            padding: 12px; 
+            vertical-align: top; 
+        }
+        .role-table th { 
+            background: #f0f0f0; 
+            font-weight: bold; 
+            width: 30%; 
+        }
+
+        .bold-name { 
+            font-weight: bold; 
+            background: #eef2f5; 
+            padding: 2px 5px; 
+            border: 1px solid #ccc; 
+        }
+
+        .alert-box { 
+            border: 2px solid #000; 
+            padding: 15px; 
+            font-weight: bold; 
+            text-align: center; 
+            margin: 50px 0; 
+            background-color: #f9f9f9; 
+            text-transform: uppercase; 
+            page-break-inside: avoid;
+        }
+
+        .signatures { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 80px; 
+            page-break-inside: avoid; 
+        }
+        .sign-line { 
+            border-top: 1px solid #000; 
+            width: 220px; 
+            text-align: center; 
+            padding-top: 5px; 
+            font-weight: bold; 
+            font-size: 13px;
+        }
+        
+        ul, ol { padding-left: 25px; margin-bottom: 20px; }
+        li { margin-bottom: 8px; text-align: justify; }
+        p { text-align: justify; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .document-container { box-shadow: none; margin: 0; max-width: 100%; padding: 0; }
+            .download-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="download-btn" onclick="generatePDF()">📥 Download Official PDF</button>
+
+<div class="document-container" id="pdf-content">
+
+    <div class="header-logos">
+        <img src="https://recheck.veritasco.tech/veritasco.png" alt="Veritasco" class="logo">
+        <span style="font-size: 24px; font-weight: bold;">X</span>
+        <img src="https://bazarchowk.com/logo.png" alt="BazarChowk" class="logo">
+    </div>
+
+    <p><strong>Date:</strong> <span class="current-date"></span></p>
+    <p><strong>To:</strong> All Concerned Team Members</p>
+
+    <div class="letter-title">Subject: Official Allocation of Operational Roles</div>
+
+    <p>Dear Team,</p>
+    <p>We are pleased to inform you that for the smooth functioning and successful deployment of the BazarChowk platform, we have formally documented the roles and responsibilities of all core team members. This allocation ensures that our daily operations are highly organized, efficient, and professional.</p>
+    
+    <p>Kindly note that BazarChowk is designed using scalable microservices architecture inspired by leading hyperlocal platforms. Because the technology running in the background supports real-time operations, it is very important that every team member clearly understands their specific duties.</p>
+
+    <p>The detailed terms of your responsibilities, system access levels, and daily duties are enclosed below. You are requested to carefully read and strictly follow the guidelines mentioned in your specific department's section.</p>
+
+    <p>Please note that your access to the respective administrative dashboards will be granted securely based on the Role-Based Access Control (RBAC) policy. Any unauthorized action will be permanently recorded in our audit logs.</p>
+
+
+    <!-- ANNEXURE A -->
+    <div class="section-title">Annexure A: Platform Technology Overview</div>
+    <ol>
+        <li><strong>Scalable Backend System:</strong> Designed using scalable microservices architecture inspired by leading hyperlocal platforms to handle traffic and incoming orders efficiently.</li>
+        <li><strong>Live Geospatial Tracking:</strong> Supports real-time order tracking and location services for delivery riders, ensuring seamless logistics.</li>
+        <li><strong>Artificial Intelligence Integration:</strong> AI-powered voice ordering capabilities under development, designed to assist users in adding items to their cart via spoken audio.</li>
+        <li><strong>Automated Financial Gateways:</strong> The platform uses automated settlement systems that calculate split-payments (for riders, restaurants, and taxes) efficiently to streamline payouts.</li>
+    </ol>
+
+
+    <!-- ANNEXURE B -->
+    <div class="section-title">Annexure B: Executive Leadership</div>
+    <p><strong>Team Member:</strong> <span class="bold-name">Aman Kumar</span> | <strong>Role:</strong> Chief Executive Officer (CEO)</p>
+    <p>As the CEO, <span class="bold-name">Aman Kumar</span> is responsible for the overall business strategy and taking final decisions on platform operations. He has complete access to the Master Dashboard.</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Business Strategy</th>
+            <td>Responsible for planning the future roadmap of the BazarChowk ecosystem. Will monitor the total sales and overall business growth through the analytics dashboard.</td>
+        </tr>
+        <tr>
+            <th>Commission Setup</th>
+            <td>Will use the dashboard to set up and modify the commission structures for different Partner Types (e.g., Restaurants vs. Salons).</td>
+        </tr>
+        <tr>
+            <th>HR & Risk Management</th>
+            <td>Takes care of all Human Resources (HR) operations and Risk Management. Ensures employee welfare and mitigates business or operational risks.</td>
+        </tr>
+        <tr>
+            <th>System Operations</th>
+            <td>Coordinates with the technical team during critical incidents and business continuity situations.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE C -->
+    <div class="section-title">Annexure C: Technical Architecture & Universal Support</div>
+    <p><strong>Team Member:</strong> <span class="bold-name">Rehan Suman</span> | <strong>Role:</strong> Chief Technical Architect & Universal Operations Lead</p>
+    <p><span class="bold-name">Rehan Suman</span> acts as the technical lead and problem-solver for the organization. He manages the servers and provides direct technical support for other departments when required.</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Server Management</th>
+            <td>Responsible for maintaining the cloud infrastructure to ensure high platform uptime for all users.</td>
+        </tr>
+        <tr>
+            <th>Universal Marketing Support</th>
+            <td>Assists the Marketing team by resolving push notification configurations and extracting relevant user data.</td>
+        </tr>
+        <tr>
+            <th>Universal Finance Support</th>
+            <td>Assists the Finance team during payment gateway issues or when manual database adjustments are needed to process blocked vendor payouts.</td>
+        </tr>
+        <tr>
+            <th>Universal Enquiry Support</th>
+            <td>Assists the Enquiry & Support team by manually unlocking live orders in the database or fixing chat connections.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE D -->
+    <div class="section-title">Annexure D: Finance & Accounts</div>
+    <p><strong>Team Members:</strong> <span class="bold-name">Rahuldeo Jha</span> & <span class="bold-name">Kumar Shivam</span> | <strong>Role:</strong> Lead Financial Controllers</p>
+    <p><span class="bold-name">Rahuldeo Jha</span> and <span class="bold-name">Kumar Shivam</span> manage the financial operations. They oversee the intricate Cash Flow architecture, ensuring both digital and physical cash collections are properly reconciled.</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Payment Processing</th>
+            <td>Responsible for checking the payment gateways. They track incoming customer payments and ensure the system operates smoothly during daily transactions.</td>
+        </tr>
+        <tr>
+            <th>Vendor Settlements</th>
+            <td>Calculates how much money needs to be paid to restaurants after deducting commissions. Approves routine payouts.</td>
+        </tr>
+        <tr>
+            <th>Fraud Prevention</th>
+            <td>Monitors the Fraud Detection system. Investigates suspicious transactions to secure platform funds.</td>
+        </tr>
+        <tr>
+            <th>Invoicing & Taxation</th>
+            <td>Checks automated PDF invoices generated by the server, ensuring proper GST and tax amounts are reflected on customer bills.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE E (NEW FINANCIAL DEPTH WITH CODEBASE DETAILS) -->
+    <div class="section-title">Annexure E: Financial Logistics & Cash Flow Mechanics</div>
+    <p>To ensure complete transparency, the following rules dictate exactly how cash flows between Customers, Riders, Partners, and the Company, exactly as programmed in our backend Settlement Module.</p>
+    <ul>
+        <li><strong>Rider Cash Collection (COD Protocol):</strong> Every Rider has a digital wallet built into the Rider App. When a customer pays ₹500 in physical cash for an order, the rider keeps the cash in hand, but their digital wallet balance immediately drops by ₹500. If their wallet balance drops below the allowed negative limit (e.g., -₹2000), our backend system will automatically block their account, meaning they cannot receive any new orders. To unblock the account, the rider must click "Deposit Cash" in their app and pay the pending amount back to BazarChowk using our integrated Razorpay UPI portal.</li>
+        <li><strong>Restaurant/Partner Payouts:</strong> Every time a restaurant or salon completes an order, it is recorded safely in our Prisma Database. Every night at 12:00 AM, our backend cron job automatically runs the Settlement Module. The system calculates the total sales for the day, deducts the BazarChowk Platform Commission (based on the specific Partner Type), and deducts the applicable GST. The remaining final payout amount is then pushed to the Razorpay Route API, which automatically deposits the money into the Partner's registered bank account on a T+1 (next day) basis.</li>
+        <li><strong>Rider Earnings Calculation:</strong> Riders do not keep the COD cash as their salary. Instead, they earn a Base Delivery Fee plus a Distance Fee, which is calculated accurately using live map tracking data in the backend. These earnings are safely stored in their "Earnings Wallet" and are transferred automatically to their personal bank accounts every week.</li>
+    </ul>
+
+
+    <!-- ANNEXURE F -->
+    <div class="section-title">Annexure F: Marketing & Growth</div>
+    <p><strong>Team Members:</strong> <span class="bold-name">Shubham Singh</span> & <span class="bold-name">Saishree Das</span> | <strong>Role:</strong> Marketing Strategy Leads</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Social Media & Instagram</th>
+            <td>Responsible for creating and managing all Instagram posts, stories, and overall social media content to maintain a strong digital presence.</td>
+        </tr>
+        <tr>
+            <th>Push Notifications</th>
+            <td>Uses the dashboard to send promotional messages. The system distributes these notifications to users' phones to boost orders.</td>
+        </tr>
+        <tr>
+            <th>Data Analytics</th>
+            <td>Reviews app analytics to understand user behavior and identify drop-off points during checkout to suggest UI improvements.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE G -->
+    <div class="section-title">Annexure G: Enquiry & Partner Relations</div>
+    <p><strong>Team Members:</strong> <span class="bold-name">Preetesh Chaudhary</span> & <span class="bold-name">Tanmay Raj</span> | <strong>Role:</strong> Enquiry & Support Managers</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Partner Onboarding</th>
+            <td>Helps new restaurants and shops join the platform. Guides them on how to upload menus and manage their services.</td>
+        </tr>
+        <tr>
+            <th>Live Order Tracking</th>
+            <td>Monitors the live tracking dashboard. Coordinates with the rider and the customer to resolve any delivery delays.</td>
+        </tr>
+        <tr>
+            <th>Ticket Management</th>
+            <td>Handles all email enquiries, ensuring that customers and vendors receive timely and professional replies.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE H -->
+    <div class="section-title">Annexure H: Administration & HR</div>
+    <p><strong>Team Members:</strong> <span class="bold-name">Sarthak Singh</span> & <span class="bold-name">Ujjawal</span> | <strong>Role:</strong> Admin & Operations Managers</p>
+
+    <table class="role-table">
+        <tr>
+            <th>Secure Account Creation</th>
+            <td>Securely creates official company emails for new members and provides them with necessary access credentials.</td>
+        </tr>
+        <tr>
+            <th>Access Management (RBAC)</th>
+            <td>Responsible for controlling dashboard access. Ensures team members only access data relevant to their department.</td>
+        </tr>
+        <tr>
+            <th>Internal Coordination</th>
+            <td>Manages daily team discipline, tracks attendance, and ensures professional communication between all departments.</td>
+        </tr>
+    </table>
+
+
+    <!-- ANNEXURE I -->
+    <div class="section-title">Annexure I: Important Rules & Declaration</div>
+    <ol>
+        <li><strong>No Password Sharing:</strong> You must never share your Dashboard password or Access Tier credentials with anyone.</li>
+        <li><strong>Audit Logs:</strong> Actions taken on the dashboard (such as approving a payment or viewing an order) are recorded in secure logs.</li>
+        <li><strong>Professional Conduct:</strong> You are expected to maintain the highest level of professionalism when communicating with customers or partners.</li>
+        <li style="color: red;"><strong>Confidentiality Clause:</strong> All source code, designs, business strategies, customer information, pricing models, and internal documents remain the exclusive intellectual property of Veritasco and BazarChowk.</li>
+        <li><strong>Performance & Inactivity Protocol:</strong> We expect complete dedication from all members. If any team member is found to be consistently inactive, unresponsive, or fails to perform their designated duties efficiently, the management reserves the right to immediately revoke their dashboard access and explore alternative options (such as replacing the team member) to ensure the smooth functioning of the platform.</li>
+        <li><strong>Disclaimer:</strong> This role allocation document is intended for internal operational purposes and does not constitute employment, salary commitment, equity allocation, or legal partnership unless separately documented.</li>
+    </ol>
+
+    <div class="alert-box">
+        DASHBOARD ACCESS CREDENTIALS WILL BE PROVIDED TO THE RESPECTIVE TEAM MEMBERS WITHIN FIVE (5) WORKING DAYS, SUBJECT TO ROLE VERIFICATION AND APPROVAL.
+    </div>
+
+    <div class="signatures">
+        <div>
+            <div class="sign-line"><span class="bold-name">Aman Kumar</span></div>
+            <p style="text-align: center; margin-top: 5px; font-size: 13px;">Chief Executive Officer</p>
+        </div>
+        <div>
+            <div class="sign-line"><span class="bold-name">Rehan Suman</span></div>
+            <p style="text-align: center; margin-top: 5px; font-size: 13px;">Chief Technical Architect</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Set current date automatically
+    const dateSpans = document.querySelectorAll('.current-date');
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    dateSpans.forEach(span => span.textContent = today.replace(/\//g, '-'));
+
+    // PDF Download Logic
+    function generatePDF() {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+            margin:       [15, 15, 15, 15],
+            filename:     'Veritasco_BazarChowk_Roles.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+</body>
+</html>

@@ -14,4 +14,9 @@ export class CreateOrderDto {
   @ApiProperty({ description: 'ID of the delivery address' })
   @IsString()
   deliveryAddressId: string;
+
+  @ApiPropertyOptional({ description: 'Idempotency key to prevent duplicate orders (UUID)' })
+  @IsOptional()
+  @IsString()
+  idempotencyKey?: string;
 }

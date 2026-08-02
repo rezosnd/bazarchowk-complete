@@ -1,4 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateCountryDto,
@@ -11,75 +13,123 @@ import {
 
 @Injectable()
 export class MarketsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   // --- COUNTRY --- //
   async createCountry(dto: CreateCountryDto) {
-    return this.prisma.country.create({ data: dto });
+    const res = await this.prisma.country.create({ data: dto });
+    await this.cacheManager.del('countries');
+    return res;
   }
 
   async getCountries() {
-    return this.prisma.country.findMany({ include: { states: true } });
+    const cached = await this.cacheManager.get('countries');
+    if (cached) return cached;
+    const res = await this.prisma.country.findMany({ include: { states: true } });
+    await this.cacheManager.set('countries', res, 3600000); // 1 hour
+    return res;
   }
 
   // --- STATE --- //
   async createState(dto: CreateStateDto) {
-    return this.prisma.state.create({ data: dto });
+    const res = await this.prisma.state.create({ data: dto });
+    await this.cacheManager.del(`states_${dto.countryId}`);
+    return res;
   }
 
   async getStatesByCountry(countryId: string) {
-    return this.prisma.state.findMany({
+    const cacheKey = `states_${countryId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const res = await this.prisma.state.findMany({
       where: { countryId },
       include: { districts: true }
     });
+    await this.cacheManager.set(cacheKey, res, 3600000);
+    return res;
   }
 
   // --- DISTRICT --- //
   async createDistrict(dto: CreateDistrictDto) {
-    return this.prisma.district.create({ data: dto });
+    const res = await this.prisma.district.create({ data: dto });
+    await this.cacheManager.del(`districts_${dto.stateId}`);
+    return res;
   }
 
   async getDistrictsByState(stateId: string) {
-    return this.prisma.district.findMany({
+    const cacheKey = `districts_${stateId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const res = await this.prisma.district.findMany({
       where: { stateId },
       include: { cities: true }
     });
+    await this.cacheManager.set(cacheKey, res, 3600000);
+    return res;
   }
 
   // --- CITY --- //
   async createCity(dto: CreateCityDto) {
-    return this.prisma.city.create({ data: dto });
+    const res = await this.prisma.city.create({ data: dto });
+    await this.cacheManager.del(`cities_${dto.districtId}`);
+    return res;
   }
 
   async getCitiesByDistrict(districtId: string) {
-    return this.prisma.city.findMany({
+    const cacheKey = `cities_${districtId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const res = await this.prisma.city.findMany({
       where: { districtId },
       include: { villages: true }
     });
+    await this.cacheManager.set(cacheKey, res, 3600000);
+    return res;
   }
 
   // --- VILLAGE --- //
   async createVillage(dto: CreateVillageDto) {
-    return this.prisma.village.create({ data: dto });
+    const res = await this.prisma.village.create({ data: dto });
+    await this.cacheManager.del(`villages_${dto.cityId}`);
+    return res;
   }
 
   async getVillagesByCity(cityId: string) {
-    return this.prisma.village.findMany({
+    const cacheKey = `villages_${cityId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const res = await this.prisma.village.findMany({
       where: { cityId },
       include: { markets: true }
     });
+    await this.cacheManager.set(cacheKey, res, 3600000);
+    return res;
   }
 
   // --- MARKET --- //
   async createMarket(dto: CreateMarketDto) {
-    return this.prisma.market.create({ data: dto });
+    const res = await this.prisma.market.create({ data: dto });
+    await this.cacheManager.del(`markets_village_${dto.villageId}`);
+    return res;
   }
 
   async getMarketsByVillage(villageId: string) {
-    return this.prisma.market.findMany({ where: { villageId } });
+    const cacheKey = `markets_village_${villageId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const res = await this.prisma.market.findMany({ where: { villageId } });
+    await this.cacheManager.set(cacheKey, res, 3600000);
+    return res;
   }
 
   async getMarketDetails(id: string) {
+    const cacheKey = `market_details_${id}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const market = await this.prisma.market.findUnique({
       where: { id },
       include: {
@@ -102,6 +152,7 @@ export class MarketsService {
     });
 
     if (!market) throw new NotFoundException('Market not found');
+    await this.cacheManager.set(cacheKey, market, 3600000);
     return market;
   }
 }

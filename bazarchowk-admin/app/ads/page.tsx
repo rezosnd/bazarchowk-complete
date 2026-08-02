@@ -1,0 +1,178 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Megaphone, Eye, MousePointerClick } from 'lucide-react';
+import api from '@/lib/api';
+
+export default function AdsAdminDashboard() {
+  const [ads, setAds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // New Plan form state
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [planName, setPlanName] = useState('');
+  const [planType, setPlanType] = useState('FEATURED_SHOP');
+  const [durationDays, setDurationDays] = useState('7');
+  const [price, setPrice] = useState('499');
+
+  const fetchAds = async () => {
+    try {
+      const res = await api.get('/ads/admin/all');
+      setAds(res.data);
+    } catch (error) {
+      console.error('Failed to fetch ads', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAds();
+  }, []);
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.patch(`/ads/${id}/approve`);
+      fetchAds();
+    } catch (e) {
+      console.error('Failed to approve', e);
+      alert('Failed to approve ad');
+    }
+  };
+
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/ads/plans', {
+        name: planName,
+        type: planType,
+        durationDays: parseInt(durationDays),
+        price: parseFloat(price)
+      });
+      alert('Ad Plan created successfully!');
+      setShowPlanForm(false);
+      setPlanName('');
+    } catch (err) {
+      alert('Failed to create plan');
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Advertisement Network</h1>
+          <p className="text-slate-500 mt-2">Manage and approve local business promotions</p>
+        </div>
+        <div className="flex gap-4">
+          <Button onClick={() => setShowPlanForm(!showPlanForm)} variant="outline" className="bg-white">
+            {showPlanForm ? 'Hide Form' : 'Create Ad Plan'}
+          </Button>
+          <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-semibold flex items-center gap-2">
+            <Megaphone className="w-5 h-5" />
+            {ads.filter(a => a.status === 'ACTIVE').length} Active Ads
+          </div>
+        </div>
+      </div>
+
+      {showPlanForm && (
+        <Card className="border-emerald-200 bg-emerald-50/50">
+          <CardHeader>
+            <CardTitle>Create New Ad Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreatePlan} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Plan Name</label>
+                <input required value={planName} onChange={e=>setPlanName(e.target.value)} placeholder="e.g. Premium Banner" className="w-full border rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Ad Type</label>
+                <select value={planType} onChange={e=>setPlanType(e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white">
+                  <option value="FEATURED_SHOP">Featured Shop</option>
+                  <option value="IMAGE_BANNER">Image Banner</option>
+                  <option value="PUSH_CAMPAIGN">Push Campaign</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Duration (Days)</label>
+                <input type="number" required value={durationDays} onChange={e=>setDurationDays(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Price (₹)</label>
+                <input type="number" required value={price} onChange={e=>setPrice(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              </div>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 h-10 w-full">Create Plan</Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          <div className="col-span-full py-12 text-center text-slate-500">Loading Ads...</div>
+        ) : ads.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed rounded-xl">No advertisements found.</div>
+        ) : (
+          ads.map(ad => (
+            <Card key={ad.id} className="overflow-hidden border-slate-200">
+              <CardHeader className="bg-slate-50 border-b pb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{ad.shop?.name || 'Unknown Shop'}</CardTitle>
+                    <p className="text-sm font-medium text-emerald-600 mt-1">{ad.plan?.name}</p>
+                  </div>
+                  <Badge 
+                    variant={ad.status === 'ACTIVE' ? 'default' : ad.status === 'PENDING' ? 'secondary' : 'outline'}
+                    className={
+                      ad.status === 'ACTIVE' ? 'bg-emerald-500 hover:bg-emerald-600' : 
+                      ad.status === 'PENDING' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : ''
+                    }
+                  >
+                    {ad.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                {ad.title && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase font-semibold">Ad Title</p>
+                    <p className="text-slate-900 font-medium">{ad.title}</p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
+                      <Eye className="w-3 h-3" /> Impressions
+                    </div>
+                    <span className="text-xl font-bold text-slate-900">{ad.impressions.toLocaleString()}</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
+                      <MousePointerClick className="w-3 h-3" /> Clicks
+                    </div>
+                    <span className="text-xl font-bold text-slate-900">{ad.clicks.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {ad.status === 'PENDING' && (
+                  <Button 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700" 
+                    onClick={() => handleApprove(ad.id)}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Approve & Activate
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

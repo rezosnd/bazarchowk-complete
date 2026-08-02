@@ -9,7 +9,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring } from 'react-native-reanimated';
@@ -20,6 +20,20 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useAIStore } from '@/store/aiStore';
 import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
+import type { Audio as AudioType } from 'expo-av';
+let Speech: any = null;
+let Audio: any = null;
+let FileSystem: any = null;
+
+try {
+  Speech = require('expo-speech');
+  Audio = require('expo-av').Audio;
+  FileSystem = require('expo-file-system');
+} catch (e) {
+  console.log('Voice packages not available in Expo Go');
+}
+
+import { TextInput } from 'react-native-gesture-handler';
 
 const { width: W } = Dimensions.get('window');
 
@@ -201,9 +215,13 @@ function AIHero() {
         <View style={styles.aiMicContainerLarge}>
           <Animated.View style={[styles.aiMicGlowLarge, glowStyle, { backgroundColor: '#00D64D' }]} />
           
-          <View style={styles.aiMicBtnLarge}>
+          <TouchableOpacity 
+            style={styles.aiMicBtnLarge} 
+            activeOpacity={0.8}
+            onPress={() => useAIStore.getState().startListening()}
+          >
             <Ionicons name="mic" size={32} color="#FFF" />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -214,7 +232,7 @@ function AIHero() {
           t('ai.pills.vegetables'),
           t('ai.pills.plumber'),
           t('ai.pills.doctor'),
-          t('ai.pills.cake'),
+          t('ai.pills.pandit'),
           t('ai.pills.medicine')
         ].map((txt, i) => (
           <TouchableOpacity key={i} style={styles.aiPill} activeOpacity={0.7}>
@@ -243,30 +261,28 @@ function GlobalSearch() {
   );
 }
 
-// Accessible yet premium Category Grid for all users
-function CategoryGrid() {
-  const router = useRouter();
+function CategoriesGrid() {
   const { t } = useTranslation();
-  const { data: categories = [], isLoading } = useQuery({ queryKey: ['categories'], queryFn: HomeService.getCategories });
-
-  // Map backend categories to our UI grid, and always append a View All
-  const gridItems = categories.slice(0, 3).map((c: any) => ({
-    id: c.id,
-    name: c.name,
-    icon: c.icon || 'basket'
-  }));
-
-  gridItems.push({ id: 'view_all', name: t('categories.more'), icon: 'grid', isViewAll: true } as any);
+  
+  const HOME_CATEGORIES = [
+    { id: 'grocery', name: t('categories.grocery') || 'Grocery', icon: 'cart' },
+    { id: 'food', name: t('categories.food') || 'Food', icon: 'restaurant' },
+    { id: 'medicine', name: t('categories.medicine') || 'Medicine', icon: 'medkit' },
+    { id: 'salon', name: t('categories.salon') || 'Salon', icon: 'cut' },
+    { id: 'more', name: t('categories.more') || 'More', icon: 'grid', isViewAll: true }
+  ];
 
   return (
     <View style={styles.categoryGrid}>
-      {gridItems.map(c => (
+      {HOME_CATEGORIES.map(c => (
         <TouchableOpacity
           key={c.id}
           style={styles.catItem}
           activeOpacity={0.7}
           onPress={() => {
             if (c.isViewAll) {
+              router.push('/(tabs)/categories');
+            } else {
               router.push('/(tabs)/categories');
             }
           }}
@@ -475,6 +491,120 @@ function RecommendedSection() {
   );
 }
 
+function VoiceChatOverlay() {
+  const { i18n } = useTranslation();
+  const { isListening, stopListening } = useAIStore();
+  const [aiResponse, setAiResponse] = useState('How can I help you today?');
+  const [processing, setProcessing] = useState(false);
+  const [recording, setRecording] = useState<AudioType.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const router = useRouter();
+
+  if (!isListening) return null;
+
+  const startRecording = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        alert('Voice ordering is not available on the web. Please use the mobile app.');
+        return;
+      }
+      if (!Audio) {
+        alert('Voice packages are not available in Expo Go. Please use a development build.');
+        return;
+      }
+      setAiResponse('Listening...');
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      setAiResponse('Microphone permission denied.');
+    }
+  };
+
+  const stopRecordingAndSubmit = async () => {
+    if (Platform.OS === 'web') return;
+    setAiResponse('Thinking...');
+    setIsRecording(false);
+    if (!recording || !FileSystem || !Speech) return;
+
+    setProcessing(true);
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      if (!uri) throw new Error('No audio URI');
+      
+      const audioBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      
+      const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+      const langCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
+      const res = await api.post('/voice-ordering/process', {
+        audioBase64,
+        sessionId,
+        language: langCode
+      });
+
+      const data = res.data;
+      setAiResponse(data.aiVoiceReply);
+      
+      // Speak the response using AI Voice
+      Speech.speak(data.aiVoiceReply, { language: langCode, rate: 0.9 });
+
+      // Handle actions automatically
+      if (data.action === 'ADD_TO_CART' && data.cartResults?.length > 0) {
+        setTimeout(() => router.push('/cart'), 3000); 
+      } else if (data.action === 'BOOKED') {
+        setTimeout(() => router.push('/appointments' as any), 3000);
+      }
+    } catch (e: any) {
+      const errMessage = e.response?.data?.message || 'Something went wrong processing audio';
+      setAiResponse(errMessage);
+      const errLangCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
+      Speech.speak(errMessage, { language: errLangCode });
+    } finally {
+      setProcessing(false);
+      setRecording(null);
+    }
+  };
+
+
+
+  return (
+    <View style={[StyleSheet.absoluteFill, { zIndex: 9999, justifyContent: 'flex-end' }]}>
+      <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
+      <TouchableOpacity style={StyleSheet.absoluteFill} onPress={stopListening} activeOpacity={1} />
+      
+      <View style={styles.voicePanel}>
+        <View style={styles.voiceHandle} />
+        
+        <View style={styles.aiAvatarBox}>
+          <Ionicons name="color-wand" size={28} color="#FFF" />
+        </View>
+        
+        <Text style={styles.aiVoiceReplyText}>{aiResponse}</Text>
+        
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <TouchableOpacity 
+            style={[styles.aiMicBtnLarge, { width: 80, height: 80, borderRadius: 40, backgroundColor: isRecording ? '#EF4444' : EMERALD }]} 
+            onPressIn={startRecording}
+            onPressOut={stopRecordingAndSubmit}
+            disabled={processing}
+          >
+            {processing ? <ActivityIndicator size="large" color="#FFF" /> : <Ionicons name="mic" size={40} color="#FFF" />}
+          </TouchableOpacity>
+        </View>
+        <Text style={{ textAlign: 'center', color: TEXT_MUTED, marginBottom: 12 }}>Hold to speak, release to send</Text>
+
+      </View>
+    </View>
+  );
+}
+
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
@@ -524,7 +654,7 @@ export default function HomeScreen() {
         >
           <AIHero />
           <GlobalSearch />
-          <CategoryGrid />
+          <CategoriesGrid />
 
           <NearbyShops />
           <PopularMarkets />
@@ -533,11 +663,13 @@ export default function HomeScreen() {
         </ScrollView>
         
         {/* Subtle backdrop reaction when listening */}
-        <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]} pointerEvents="none">
+        <Animated.View style={[StyleSheet.absoluteFill, overlayStyle, { pointerEvents: 'none' as any }]}>
           <BlurView intensity={8} style={StyleSheet.absoluteFill} tint="dark" />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.08)' }]} />
         </Animated.View>
       </Animated.View>
+
+      <VoiceChatOverlay />
     </View>
   );
 }
@@ -724,14 +856,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 80,
   },
-  aiLogoBox: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   aiGreeting: {
     marginTop: 20,
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -797,6 +921,72 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 13,
     fontWeight: '500',
+  },
+
+  voicePanel: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  voiceHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+    marginBottom: 24,
+  },
+  aiAvatarBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: EMERALD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: EMERALD,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  },
+  aiVoiceReplyText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_MAIN,
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  voiceInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 24,
+    width: '100%',
+    padding: 4,
+  },
+  voiceInput: {
+    flex: 1,
+    height: 48,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: TEXT_MAIN,
+  },
+  voiceSendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: EMERALD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
   },
 
   // Search Bar
