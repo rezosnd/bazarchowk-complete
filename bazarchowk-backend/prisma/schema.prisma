@@ -119,9 +119,10 @@ model Address {
 
   isDefault Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  appointments Appointment[]
 
   @@index([userId])
 }
@@ -455,13 +456,13 @@ model Order {
   payment       Payment?
 
   // Billing Breakdown
-  subtotal    Float @default(0)
-  taxAmount   Float @default(0) // SGST + CGST
-  deliveryFee Float @default(0)
-  discount    Float @default(0)
-  platformFee Float @default(0)
+  subtotal         Float @default(0)
+  taxAmount        Float @default(0) // SGST + CGST
+  deliveryFee      Float @default(0)
+  discount         Float @default(0)
+  platformFee      Float @default(0)
   walletAmountUsed Float @default(0)
-  totalAmount Float
+  totalAmount      Float
 
   status OrderStatus @default(PLACED)
 
@@ -641,8 +642,10 @@ model Appointment {
   timeSlotId String // Removed @unique — multiple customers can share one slot
   timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id])
 
-  status AppointmentStatus @default(PENDING)
-  notes  String?
+  status           AppointmentStatus @default(PENDING)
+  notes            String?
+  serviceAddressId String?
+  serviceAddress   Address?          @relation(fields: [serviceAddressId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -174,11 +174,13 @@ export class AppointmentsService {
           timeSlotId: dto.timeSlotId,
           status: AppointmentStatus.CONFIRMED,
           notes: dto.notes,
+          serviceAddressId: dto.serviceAddressId,
         },
         include: {
           provider: { include: { shop: true } },
           serviceOffering: true,
           timeSlot: true,
+          serviceAddress: true,
         }
       });
 
@@ -232,6 +234,7 @@ export class AppointmentsService {
         provider: true,
         serviceOffering: true,
         timeSlot: true,
+        serviceAddress: true,
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -277,6 +280,7 @@ export class AppointmentsService {
         provider: true,
         serviceOffering: true,
         timeSlot: true,
+        serviceAddress: true,
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -289,6 +293,7 @@ export class AppointmentsService {
         provider: { include: { shop: { select: { name: true } } } },
         serviceOffering: true,
         timeSlot: true,
+        serviceAddress: true,
       },
       orderBy: { createdAt: 'desc' }
     });

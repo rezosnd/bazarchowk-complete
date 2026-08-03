@@ -21,6 +21,11 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'ID of the address where service is needed (for at-home services)' })
+  @IsOptional()
+  @IsString()
+  serviceAddressId?: string;
 }
 
 export class CreateTimeSlotDto {
