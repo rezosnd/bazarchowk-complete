@@ -110,6 +110,40 @@ export class MarketsService {
   }
 
   // --- MARKET --- //
+  async getAllMarkets(lat?: number, lng?: number) {
+    const cacheKey = `markets_all_${lat || 'none'}_${lng || 'none'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+    
+    let markets = await this.prisma.market.findMany({
+      include: {
+        village: {
+          include: { city: true }
+        }
+      }
+    });
+
+    if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
+      markets = markets.filter(market => {
+        if (market.latitude == null || market.longitude == null) return false;
+        const R = 6371;
+        const dLat = (market.latitude - lat) * (Math.PI / 180);
+        const dLon = (market.longitude - lng) * (Math.PI / 180);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat * (Math.PI / 180)) * Math.cos(market.latitude * (Math.PI / 180)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = R * c;
+        (market as any).distanceKm = distanceKm;
+        return distanceKm <= 30; // 30km radius for markets
+      }).sort((a, b) => (a as any).distanceKm - (b as any).distanceKm);
+    }
+
+    await this.cacheManager.set(cacheKey, markets, 60000);
+    return markets;
+  }
+
   async createMarket(dto: CreateMarketDto) {
     const res = await this.prisma.market.create({ data: dto });
     await this.cacheManager.del(`markets_village_${dto.villageId}`);

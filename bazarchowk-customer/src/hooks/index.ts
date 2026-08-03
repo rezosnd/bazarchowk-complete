@@ -4,3 +4,4 @@ export * from './use-color-scheme';
 export * from './useAddress';
 export * from './useCategories';
 export * from './useShops';
+export * from './useCurrentLocation';

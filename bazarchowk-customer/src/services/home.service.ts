@@ -38,8 +38,10 @@ export interface Ad {
 }
 
 export const HomeService = {
-  getCategories: async (): Promise<Category[]> => {
-    const res = await api.get('/categories');
+  getCategories: async (city?: string): Promise<Category[]> => {
+    let url = '/categories';
+    if (city) url += `?city=${encodeURIComponent(city)}`;
+    const res = await api.get(url);
     return res.data;
   },
   getNearbyShops: async (lat?: number, lng?: number): Promise<Shop[]> => {
@@ -50,12 +52,20 @@ export const HomeService = {
     const res = await api.get(url);
     return res.data;
   },
-  getMarkets: async (): Promise<Market[]> => {
-    const res = await api.get('/markets');
+  getMarkets: async (lat?: number, lng?: number): Promise<Market[]> => {
+    let url = '/markets';
+    if (lat !== undefined && lng !== undefined) {
+      url += `?lat=${lat}&lng=${lng}`;
+    }
+    const res = await api.get(url);
     return res.data;
   },
-  getRecommendedProducts: async (): Promise<Product[]> => {
-    const res = await api.get('/products');
+  getRecommendedProducts: async (lat?: number, lng?: number): Promise<Product[]> => {
+    let url = '/products';
+    if (lat !== undefined && lng !== undefined) {
+      url += `?lat=${lat}&lng=${lng}`;
+    }
+    const res = await api.get(url);
     return res.data;
   },
   getActiveAds: async (type: string = 'BANNER'): Promise<Ad[]> => {

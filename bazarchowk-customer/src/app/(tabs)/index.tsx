@@ -277,12 +277,12 @@ function GlobalSearch() {
   );
 }
 
-function CategoriesGrid() {
+function CategoriesGrid({ city }: { city?: string }) {
   const { t } = useTranslation();
   
   const { data: fetchedCategories = [], isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: HomeService.getCategories
+    queryKey: ['categories', city],
+    queryFn: () => HomeService.getCategories(city)
   });
 
   const displayCategories = fetchedCategories.slice(0, 4);
@@ -349,45 +349,13 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-function NearbyShops() {
+function NearbyShops({ lat, lng }: { lat?: number, lng?: number }) {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthStore();
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-
-  const { data: addresses = [] } = useQuery({
-    queryKey: ['addresses'],
-    queryFn: async () => {
-      const res = await api.get('/addresses');
-      return res.data;
-    },
-    enabled: isAuthenticated
-  });
-
-  useEffect(() => {
-    (async () => {
-      const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
-      if (defaultAddress && defaultAddress.latitude && defaultAddress.longitude) {
-        setLocation({ lat: defaultAddress.latitude, lng: defaultAddress.longitude });
-        return;
-      }
-
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return;
-      }
-      try {
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      } catch (e) {
-        console.warn('Failed to get location', e);
-      }
-    })();
-  }, [addresses]);
 
   const { data: shops = [], isLoading } = useQuery({ 
-    queryKey: ['shops', location?.lat, location?.lng], 
-    queryFn: () => HomeService.getNearbyShops(location?.lat, location?.lng),
-    enabled: !!location // Only fetch when location is determined
+    queryKey: ['shops', lat, lng], 
+    queryFn: () => HomeService.getNearbyShops(lat, lng),
+    enabled: !!lat // Only fetch when location is determined
   });
 
   if (isLoading || shops.length === 0) return null;
@@ -420,9 +388,13 @@ function NearbyShops() {
   );
 }
 
-function PopularMarkets() {
+function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
   const { t } = useTranslation();
-  const { data: markets = [], isLoading } = useQuery({ queryKey: ['markets'], queryFn: HomeService.getMarkets });
+  const { data: markets = [], isLoading } = useQuery({ 
+    queryKey: ['markets', lat, lng], 
+    queryFn: () => HomeService.getMarkets(lat, lng),
+    enabled: !!lat 
+  });
 
   if (isLoading || markets.length === 0) return null;
 
@@ -509,9 +481,13 @@ function TodaysOffers() {
   );
 }
 
-function RecommendedSection() {
+function RecommendedSection({ lat, lng }: { lat?: number, lng?: number }) {
   const { t } = useTranslation();
-  const { data: products = [], isLoading } = useQuery({ queryKey: ['recommendedProducts'], queryFn: HomeService.getRecommendedProducts });
+  const { data: products = [], isLoading } = useQuery({ 
+    queryKey: ['recommendedProducts', lat, lng], 
+    queryFn: () => HomeService.getRecommendedProducts(lat, lng),
+    enabled: !!lat 
+  });
 
   if (isLoading || products.length === 0) return null;
 
@@ -540,9 +516,12 @@ function RecommendedSection() {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
+import { useCurrentLocation } from '@/hooks';
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isListening = useAIStore(state => state.isListening);
+  const location = useCurrentLocation();
 
   const scale = useSharedValue(1);
   const overlayOpacity = useSharedValue(0);
@@ -587,13 +566,13 @@ export default function HomeScreen() {
         >
           <AIHero />
           <GlobalSearch />
-          <CategoriesGrid />
+          <CategoriesGrid city={location?.city} />
 
-          <NearbyShops />
-          <PopularMarkets />
+          <NearbyShops lat={location?.lat} lng={location?.lng} />
+          <PopularMarkets lat={location?.lat} lng={location?.lng} />
           <TodaysOffers />
           
-          <RecommendedSection />
+          <RecommendedSection lat={location?.lat} lng={location?.lng} />
         </ScrollView>
         
         {/* Subtle backdrop reaction when listening */}

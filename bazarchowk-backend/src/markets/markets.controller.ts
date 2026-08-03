@@ -99,6 +99,12 @@ export class MarketsController {
   }
 
   // --- MARKETS --- //
+  @Get()
+  @ApiOperation({ summary: 'Get all markets (optionally filtered by location)' })
+  getAllMarkets(@Query('lat') lat?: string, @Query('lng') lng?: string) {
+    return this.marketsService.getAllMarkets(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
   @ApiBearerAuth()

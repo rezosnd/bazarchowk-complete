@@ -65,7 +65,10 @@ export default function CheckoutScreen() {
         useWallet
       });
       setBillDetails(res.data);
-      if (res.data.payableAmount === 0 && useWallet) {
+      if (res.data.walletBalance > 0 && !useWallet) {
+        setUseWallet(true); // Auto-apply wallet if balance exists
+      }
+      if (res.data.payableAmount === 0 && (useWallet || res.data.walletBalance > 0)) {
         setPaymentMethod('WALLET');
       } else if (paymentMethod === 'WALLET') {
         setPaymentMethod('COD'); // Fallback if wallet doesn't cover full amount

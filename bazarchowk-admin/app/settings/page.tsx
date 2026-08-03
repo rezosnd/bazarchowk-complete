@@ -15,28 +15,32 @@ export default function SettingsPage() {
   // Fee state
   const [tiers, setTiers] = useState<FeeTier[]>([]);
   const [defaultFee, setDefaultFee] = useState<number>(20);
+  const [taxPercent, setTaxPercent] = useState<number>(5);
   const [loading, setLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchCities();
   }, []);
 
+  const getToken = () => {
+    if (typeof document !== 'undefined') {
+      const cookie = document.cookie.split(';').find(c => c.trim().startsWith('admin_token='));
+      if (cookie) return cookie.split('=')[1];
+    }
+    return localStorage.getItem('admin_token') || '';
+  };
+
   const fetchCities = async () => {
     try {
-      const token = localStorage.getItem('admin_token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/cities/admin/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setCities(data);
-        if (data.length > 0) {
-          // If we already have a selected city, preserve it, otherwise select the first one
-          setCities(prevCities => {
-            // Need to use the current selectedCityId, so we use functional state update if needed, but we can just use the outer selectedCityId
-            return data;
-          });
-        }
+        if (data.length > 0) handleSelectCity(data[0]);
       }
     } catch (e) {
       console.error('Failed to fetch cities');
@@ -55,10 +59,10 @@ export default function SettingsPage() {
   const handleSelectCity = (city: any) => {
     setSelectedCityId(city.id);
     setDefaultFee(city.defaultDeliveryFee || 20);
+    setTaxPercent(city.taxPercent || 5);
     if (city.distanceFeeTiers && Array.isArray(city.distanceFeeTiers)) {
       setTiers(city.distanceFeeTiers);
     } else {
-      // Setup some defaults if empty
       setTiers([
         { uptoKm: 1, fee: 20 },
         { uptoKm: 2, fee: 30 },
@@ -90,8 +94,9 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!selectedCityId) return;
     setLoading(true);
+    setStatusMsg(null);
     try {
-      const token = localStorage.getItem('admin_token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/cities/admin/${selectedCityId}`, {
         method: 'PATCH',
         headers: { 
@@ -100,28 +105,37 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({ 
           defaultDeliveryFee: defaultFee,
+          taxPercent: taxPercent,
           distanceFeeTiers: [...tiers].sort((a, b) => a.uptoKm - b.uptoKm)
         }),
       });
       
       if (res.ok) {
-        alert('Distance fees updated successfully!');
+        setStatusMsg({ type: 'success', text: '✅ Configuration saved successfully!' });
         fetchCities(); // Refresh
       } else {
         const error = await res.json();
-        alert('Failed: ' + error.message);
+        setStatusMsg({ type: 'error', text: '❌ Failed: ' + (error.message || 'Unknown error') });
       }
     } catch (e) {
-      alert('Network Error');
+      setStatusMsg({ type: 'error', text: '❌ Network error. Please try again.' });
     }
     setLoading(false);
   };
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
-      <h1 className="text-2xl font-extrabold text-gray-900">Rider Delivery Fee Configuration</h1>
-      <p className="text-sm text-gray-500 mt-1">Configure dynamic rider charges based on exact delivery radius.</p>
+      <h1 className="text-2xl font-extrabold text-gray-900">Delivery & Tax Configuration</h1>
+      <p className="text-sm text-gray-500 mt-1">Configure dynamic delivery fees and tax rates per city. Changes apply immediately to all orders.</p>
       
+      {statusMsg && (
+        <div className={`mt-4 px-4 py-3 rounded-lg text-sm font-medium ${
+          statusMsg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {statusMsg.text}
+        </div>
+      )}
+
       <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-4xl">
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">Select Region / City</label>
@@ -134,12 +148,13 @@ export default function SettingsPage() {
               <option key={c.id} value={c.id}>{c.name} ({c.state})</option>
             ))}
           </select>
+          {cities.length === 0 && <p className="text-sm text-amber-600 mt-2">⚠️ No cities configured. Please add cities from the Super Admin panel.</p>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Distance-Based Rider Fees</h3>
-            <p className="text-xs text-gray-500 mb-6">These rules evaluate from top to bottom. If distance is greater than all tiers, the default fee applies.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Distance-Based Delivery Fees</h3>
+            <p className="text-xs text-gray-500 mb-6">Rules evaluate top-to-bottom. If distance exceeds all tiers, the default fee applies.</p>
             
             <div className="space-y-4">
               {tiers.map((tier, idx) => (
@@ -175,20 +190,37 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-fit">
-            <h3 className="text-md font-bold text-gray-900 mb-2">Default Base Fee</h3>
-            <p className="text-xs text-gray-500 mb-4">Fallback delivery charge if distance exceeds all configured tiers.</p>
-            <div className="flex items-center">
-              <span className="text-gray-500 font-bold mr-2">₹</span>
-              <input 
-                type="number" 
-                value={defaultFee === 0 ? '' : defaultFee} 
-                onChange={(e) => setDefaultFee(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                className="w-full bg-white border border-slate-200 px-4 py-3 rounded-lg font-bold text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-fit space-y-6">
+            <div>
+              <h3 className="text-md font-bold text-gray-900 mb-2">Default Base Fee</h3>
+              <p className="text-xs text-gray-500 mb-3">Fallback fee when distance exceeds all configured tiers.</p>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-bold">₹</span>
+                <input 
+                  type="number" 
+                  value={defaultFee === 0 ? '' : defaultFee} 
+                  onChange={(e) => setDefaultFee(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                  className="w-full bg-white border border-slate-200 px-4 py-3 rounded-lg font-bold text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
 
-            <div className="mt-8">
+            <div>
+              <h3 className="text-md font-bold text-gray-900 mb-2">Tax Rate (GST %)</h3>
+              <p className="text-xs text-gray-500 mb-3">Applied as a percentage on top of item total.</p>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  min={0} max={28}
+                  value={taxPercent === 0 ? '' : taxPercent} 
+                  onChange={(e) => setTaxPercent(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                  className="w-full bg-white border border-slate-200 px-4 py-3 rounded-lg font-bold text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="text-gray-500 font-bold">%</span>
+              </div>
+            </div>
+
+            <div>
               <button 
                 onClick={handleSave}
                 disabled={loading}

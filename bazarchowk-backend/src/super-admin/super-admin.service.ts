@@ -224,27 +224,45 @@ export class SuperAdminService {
   }
 
   async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day') {
-    const orders = await this.prisma.order.groupBy({
-      by: ['createdAt'],
-      _sum: { totalAmount: true },
-      _count: { id: true },
-      where: {
-        status: 'DELIVERED',
-        createdAt: { gte: startDate, lte: endDate },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
+    const [orders, topShopsRaw, totalOrderCount] = await Promise.all([
+      this.prisma.order.groupBy({
+        by: ['createdAt'],
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: {
+          status: 'DELIVERED',
+          createdAt: { gte: startDate, lte: endDate },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.order.groupBy({
+        by: ['shopId'],
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } },
+        orderBy: { _sum: { totalAmount: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.order.count({
+        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } }
+      }),
+    ]);
 
-    const topShops = await this.prisma.order.groupBy({
-      by: ['shopId'],
-      _sum: { totalAmount: true },
-      _count: { id: true },
-      where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } },
-      orderBy: { _sum: { totalAmount: 'desc' } },
-      take: 10,
+    // Enrich topShops with shop names
+    const shopIds = topShopsRaw.map(s => s.shopId);
+    const shops = await this.prisma.shop.findMany({
+      where: { id: { in: shopIds } },
+      select: { id: true, name: true, city: true, logoUrl: true }
     });
+    const shopMap = new Map(shops.map(s => [s.id, s]));
+    const topShops = topShopsRaw.map(s => ({
+      ...s,
+      shop: shopMap.get(s.shopId) || { id: s.shopId, name: 'Unknown Shop', city: '' }
+    }));
 
-    return { dailyRevenue: orders, topShops };
+    const totalRevenue = orders.reduce((sum, o) => sum + (o._sum.totalAmount || 0), 0);
+
+    return { dailyRevenue: orders, topShops, totalRevenue, totalOrderCount };
   }
 
   // ==================== ADVERTISEMENT MANAGEMENT ====================

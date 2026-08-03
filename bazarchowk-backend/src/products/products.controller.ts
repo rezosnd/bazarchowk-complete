@@ -31,13 +31,17 @@ export class ProductsController {
   @ApiQuery({ name: 'query', required: false, description: 'Search keywords' })
   @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'subCategoryId', required: false })
+  @ApiQuery({ name: 'lat', required: false })
+  @ApiQuery({ name: 'lng', required: false })
   findAll(
     @Query('shopId') shopId?: string, 
     @Query('query') query?: string,
     @Query('categoryId') categoryId?: string,
     @Query('subCategoryId') subCategoryId?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
   ) {
-    return this.productsService.findAll(shopId, query, categoryId, subCategoryId);
+    return this.productsService.findAll(shopId, query, categoryId, subCategoryId, lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
   }
 
   @Get(':id')

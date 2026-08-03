@@ -60,7 +60,9 @@ export default function CartScreen() {
     return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
   }
 
-  const items = cart?.items || [];
+  // Assume single shop checkout for now (Module 7 rule)
+  const shopId = cart?.items?.[0]?.productVariant?.product?.shopId;
+  const items = (cart?.items || []).filter((item: any) => item.productVariant?.product?.shopId === shopId);
   
   if (items.length === 0) {
     return (
@@ -83,9 +85,6 @@ export default function CartScreen() {
   // Calculate Totals
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.quantity * item.productVariant.price), 0);
   const total = subtotal; // Delivery and tax calculated at checkout
-
-  // Assume single shop checkout for now (Module 7 rule)
-  const shopId = items[0]?.productVariant?.product?.shopId;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

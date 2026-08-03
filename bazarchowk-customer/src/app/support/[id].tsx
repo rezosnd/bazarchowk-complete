@@ -79,12 +79,17 @@ export default function TicketDetailScreen() {
 
   const fetchTicketDetails = async () => {
     try {
-      const res = await api.get(`/support/tickets/${id}`);
-      setTicket(res.data);
-      // Auto-scroll on poll if new messages exist
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
+      const res = await api.get(`/support/tickets/${id}?t=${Date.now()}`);
+      
+      setTicket(prev => {
+        // Only scroll to bottom if we actually got new messages
+        if (!prev || res.data.messages.length > prev.messages.length) {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+        return res.data;
+      });
     } catch (error) {
       console.error('Failed to fetch ticket details:', error);
     } finally {
