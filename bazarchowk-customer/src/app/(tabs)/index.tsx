@@ -427,6 +427,43 @@ function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
   );
 }
 
+function PromoCarousel({ lat, lng }: { lat?: number, lng?: number }) {
+  const { data: ads = [], isLoading } = useQuery({
+    queryKey: ['ads', 'BANNER', lat, lng],
+    queryFn: () => HomeService.getActiveAds('BANNER'),
+  });
+
+  if (isLoading || ads.length === 0) return null;
+
+  return (
+    <View style={[styles.section, { paddingTop: 0, paddingBottom: 16 }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll} pagingEnabled snapToInterval={W - 32} decelerationRate="fast">
+        {ads.map((ad: any) => (
+          <TouchableOpacity 
+            key={ad.id} 
+            activeOpacity={0.9} 
+            style={{ width: W - 48, height: 160, marginRight: 16 }}
+            onPress={() => {
+              if (ad.shop?.id) {
+                router.push(`/shop/${ad.shop.id}`);
+              } else if (ad.targetUrl) {
+                // If there's a target URL but no shop ID, we could handle it, but for now we just log
+                console.log('Target URL:', ad.targetUrl);
+              }
+            }}
+          >
+            <Image 
+              source={{ uri: ad.imageUrl || PLACEHOLDER_IMG }} 
+              style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+              contentFit="cover" 
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 function TodaysOffers() {
   const { t } = useTranslation();
   return (
@@ -566,6 +603,7 @@ export default function HomeScreen() {
         >
           <AIHero />
           <GlobalSearch />
+          <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <CategoriesGrid city={location?.city} />
 
           <NearbyShops lat={location?.lat} lng={location?.lng} />
