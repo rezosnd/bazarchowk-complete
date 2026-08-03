@@ -18,6 +18,14 @@ export class AdsController {
     return this.adsService.getActiveAds(type, lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('shop/:shopId')
+  @ApiOperation({ summary: 'Get all ads for a specific shop' })
+  getShopAds(@Param('shopId') shopId: string) {
+    return this.adsService.getShopAds(shopId);
+  }
+
   @Post(':id/click')
   @ApiOperation({ summary: 'Record ad click' })
   recordClick(@Param('id') id: string) {

@@ -8,6 +8,8 @@ import { BazarChowkSplashOverlay } from '../components/splash-screen';
 import * as SplashScreen from 'expo-splash-screen';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
+import '../../global.css';
+
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({

@@ -176,6 +176,14 @@ export class AdsService {
     return ads;
   }
 
+  async getShopAds(shopId: string) {
+    return this.prisma.advertisement.findMany({
+      where: { shopId },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   async recordImpression(adId: string) {
     await this.prisma.advertisement.update({
       where: { id: adId },

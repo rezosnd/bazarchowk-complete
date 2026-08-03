@@ -20,7 +20,7 @@ export default function AdsDashboardScreen() {
       const shopId = await SecureStore.getItemAsync('bazar_shop_id');
       const [plansRes, myAdsRes] = await Promise.all([
         api.get('/ads/plans'),
-        api.get(`/shops/${shopId}/ads`)
+        api.get(`/ads/shop/${shopId}`)
       ]);
       setPlans(plansRes.data);
       setMyAds(myAdsRes.data);
