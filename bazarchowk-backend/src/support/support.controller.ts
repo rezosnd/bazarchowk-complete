@@ -16,25 +16,25 @@ export class SupportController {
   @Post('tickets')
   @ApiOperation({ summary: 'Create a new support ticket (Customer/Shop)' })
   createTicket(@Req() req: any, @Body() dto: CreateTicketDto) {
-    return this.supportService.createTicket(req.user.userId, dto);
+    return this.supportService.createTicket(req.user.id, dto);
   }
 
   @Get('tickets')
   @ApiOperation({ summary: 'Get all tickets for the logged-in user' })
   getUserTickets(@Req() req: any) {
-    return this.supportService.getUserTickets(req.user.userId);
+    return this.supportService.getUserTickets(req.user.id);
   }
 
   @Get('tickets/:id')
   @ApiOperation({ summary: 'Get full ticket details and chat history' })
   getTicketDetails(@Req() req: any, @Param('id') ticketId: string) {
-    return this.supportService.getTicketDetails(req.user.userId, ticketId, false);
+    return this.supportService.getTicketDetails(req.user.id, ticketId, false);
   }
 
   @Post('tickets/:id/messages')
   @ApiOperation({ summary: 'Reply to a ticket' })
   addMessage(@Req() req: any, @Param('id') ticketId: string, @Body() dto: AddMessageDto) {
-    return this.supportService.addMessage(req.user.userId, ticketId, dto, 'USER');
+    return this.supportService.addMessage(req.user.id, ticketId, dto, 'USER');
   }
 
   // Admin Endpoints
@@ -51,7 +51,7 @@ export class SupportController {
   @Get('admin/tickets/:id')
   @ApiOperation({ summary: 'Get full ticket details (Admin)' })
   getAdminTicketDetails(@Req() req: any, @Param('id') ticketId: string) {
-    return this.supportService.getTicketDetails(req.user.userId, ticketId, true);
+    return this.supportService.getTicketDetails(req.user.id, ticketId, true);
   }
 
   @UseGuards(RolesGuard)
@@ -59,7 +59,7 @@ export class SupportController {
   @Post('admin/tickets/:id/messages')
   @ApiOperation({ summary: 'Reply to a ticket as Support Agent' })
   addAdminMessage(@Req() req: any, @Param('id') ticketId: string, @Body() dto: AddMessageDto) {
-    return this.supportService.addMessage(req.user.userId, ticketId, dto, 'ADMIN');
+    return this.supportService.addMessage(req.user.id, ticketId, dto, 'ADMIN');
   }
 
   @UseGuards(RolesGuard)
