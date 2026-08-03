@@ -98,8 +98,8 @@ export default function AdsAdminDashboard() {
                 <label className="text-sm font-semibold mb-1 block">Ad Type</label>
                 <select value={planType} onChange={e=>setPlanType(e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white">
                   <option value="FEATURED_SHOP">Featured Shop</option>
-                  <option value="IMAGE_BANNER">Image Banner</option>
-                  <option value="PUSH_CAMPAIGN">Push Campaign</option>
+                  <option value="BANNER">Image Banner</option>
+                  <option value="FEATURED_PRODUCT">Featured Product</option>
                 </select>
               </div>
               <div>
