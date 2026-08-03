@@ -565,10 +565,8 @@ export default function HomeScreen() {
           <CategoriesGrid />
 
           <NearbyShops />
-          
-          {/* Hiding demo placeholder sections as requested by user */}
-          {/* <PopularMarkets /> */}
-          {/* <TodaysOffers /> */}
+          <PopularMarkets />
+          <TodaysOffers />
           
           <RecommendedSection />
         </ScrollView>
