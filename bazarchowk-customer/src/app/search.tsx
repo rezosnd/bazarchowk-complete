@@ -6,6 +6,9 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import api from '@/services/api';
 
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/store';
+
 const PRIMARY = '#00B140';
 
 export default function SearchScreen() {
@@ -16,8 +19,7 @@ export default function SearchScreen() {
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // Use AuthStore and useQuery to get the default location
-  const { isAuthenticated } = require('@/store').useAuthStore();
-  const { useQuery } = require('@tanstack/react-query');
+  const { isAuthenticated } = useAuthStore();
   const { data: addresses = [] } = useQuery({
     queryKey: ['addresses'],
     queryFn: async () => {
