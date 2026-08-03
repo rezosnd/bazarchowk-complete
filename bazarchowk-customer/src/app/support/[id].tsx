@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/theme';
 import api from '@/services/api';
 import { useAuthStore } from '@/store';
+import { socketService } from '@/services/socket';
 
 interface SupportMessage {
   id: string;
@@ -39,6 +40,35 @@ export default function TicketDetailScreen() {
 
   useEffect(() => {
     fetchTicketDetails();
+    
+    // Setup socket connection
+    socketService.connect();
+    
+    const handleNewMessage = (data: any) => {
+      if (data.ticketId === id) {
+        setTicket(prev => {
+          if (!prev) return prev;
+          // Avoid duplicate messages if we just sent it
+          if (prev.messages.some(m => m.id === data.message.id)) return prev;
+          
+          return {
+            ...prev,
+            messages: [...prev.messages, data.message]
+          };
+        });
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    };
+    
+    socketService.on('new_ticket_message', handleNewMessage);
+    
+    return () => {
+      socketService.off('new_ticket_message', handleNewMessage);
+    };
   }, [id]);
 
   const fetchTicketDetails = async () => {
@@ -56,14 +86,30 @@ export default function TicketDetailScreen() {
     if (!message.trim() || sending) return;
     
     setSending(true);
+    const content = message.trim();
+    setMessage('');
+    
     try {
-      await api.post(`/support/tickets/${id}/messages`, {
-        content: message.trim()
+      const res = await api.post(`/support/tickets/${id}/messages`, {
+        content: content
       });
-      setMessage('');
-      fetchTicketDetails(); // Refresh messages
+      
+      // Optimistically update
+      setTicket(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: [...prev.messages, res.data]
+        };
+      });
+      
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      
     } catch (error) {
       console.error('Failed to send message:', error);
+      setMessage(content); // Restore on error
     } finally {
       setSending(false);
     }

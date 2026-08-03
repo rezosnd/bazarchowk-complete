@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateTicketDto, AddMessageDto, UpdateTicketStatusDto } from './dto/support.dto';
 
 @Injectable()
@@ -9,7 +10,8 @@ export class SupportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queueService: QueueService,
-    private readonly notifications: NotificationsService
+    private readonly notifications: NotificationsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async createTicket(userId: string, dto: CreateTicketDto) {
@@ -95,6 +97,11 @@ export class SupportService {
           updateMessage: dto.content
         });
       }
+      // Broadcast to user
+      this.realtimeGateway.sendToUser(ticket.userId, 'new_ticket_message', { ticketId, message });
+    } else {
+      // Broadcast to admins
+      this.realtimeGateway.sendToAdmins('new_ticket_message', { ticketId, message });
     }
 
     return message;

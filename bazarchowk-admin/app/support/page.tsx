@@ -48,13 +48,17 @@ export default function SupportPage() {
 
   // Socket connection
   useEffect(() => {
-    const s = io(`${API}/chat`, {
+    const s = io(`${API}/realtime`, {
       auth: { token: tok() },
       transports: ['websocket']
     });
     s.on('connect', () => console.log('Support socket connected'));
-    s.on('newMessage', (msg: any) => {
-      setMessages(prev => [...prev, msg]);
+    s.on('new_ticket_message', (data: any) => {
+      setMessages(prev => {
+        // Prevent duplicates if we just sent it optimistically
+        if (prev.some(m => m.id === data.message.id)) return prev;
+        return [...prev, data.message];
+      });
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     });
     setSocket(s);
@@ -63,21 +67,19 @@ export default function SupportPage() {
 
   // Load messages for selected ticket
   const selectTicket = async (ticket: any) => {
-    if (socket && activeTicket) socket.emit('leaveConversation', { conversationId: activeTicket.id });
     setActiveTicket(ticket);
     setMsgLoading(true);
     setMessages([]);
     try {
-      const res = await fetch(`${API}/support/tickets/${ticket.id}/messages`, {
+      const res = await fetch(`${API}/support/admin/tickets/${ticket.id}`, {
         headers: { Authorization: `Bearer ${tok()}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages(Array.isArray(data) ? data : data.messages || []);
+        setMessages(data.messages || []);
       }
     } catch (e) { console.error(e); }
     finally { setMsgLoading(false); }
-    if (socket) socket.emit('joinConversation', { conversationId: ticket.id });
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 200);
   };
 
@@ -86,10 +88,11 @@ export default function SupportPage() {
     const text = input.trim();
     setInput('');
     // Optimistic UI
-    setMessages(prev => [...prev, { content: text, senderType: 'ADMIN', createdAt: new Date().toISOString() }]);
+    const tempMsg = { id: Date.now().toString(), content: text, senderType: 'ADMIN', createdAt: new Date().toISOString() };
+    setMessages(prev => [...prev, tempMsg]);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     try {
-      await fetch(`${API}/support/tickets/${activeTicket.id}/reply`, {
+      await fetch(`${API}/support/admin/tickets/${activeTicket.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` },
         body: JSON.stringify({ content: text })
@@ -99,7 +102,7 @@ export default function SupportPage() {
 
   const updateStatus = async (ticketId: string, status: string) => {
     try {
-      const res = await fetch(`${API}/support/tickets/${ticketId}/status`, {
+      const res = await fetch(`${API}/support/admin/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` },
         body: JSON.stringify({ status })
