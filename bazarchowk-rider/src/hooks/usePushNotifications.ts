@@ -47,6 +47,14 @@ export function usePushNotifications() {
 
     notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
       console.log('Received Push Notification:', notification);
+      const title = notification?.request?.content?.title;
+      const body = notification?.request?.content?.body;
+      if (title || body) {
+        // Also show an in-app alert just in case the OS suppresses the top banner
+        import('react-native').then(({ Alert }) => {
+          Alert.alert(title || 'New Notification', body || '');
+        });
+      }
     });
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
