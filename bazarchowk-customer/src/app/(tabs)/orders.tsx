@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
+import { router } from 'expo-router';
 
 const PRIMARY = '#00B140';
 
@@ -60,7 +61,12 @@ export default function OrdersScreen() {
           </View>
         ) : (
           orders.map((order) => (
-            <TouchableOpacity key={order.id} style={styles.orderCard} activeOpacity={0.7}>
+            <TouchableOpacity 
+              key={order.id} 
+              style={styles.orderCard} 
+              activeOpacity={0.7}
+              onPress={() => router.push(`/order/${order.id}` as any)}
+            >
               <View style={styles.orderHeader}>
                 <View>
                   <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
