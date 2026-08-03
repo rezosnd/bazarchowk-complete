@@ -42,7 +42,7 @@ function GridCard({ item, index }: { item: any; index: number }) {
     <Animated.View entering={FadeInUp.delay(index * 30).springify().damping(18)} style={styles.gridCardWrapper}>
       <TouchableOpacity
         activeOpacity={1}
-        onPress={() => router.push({ pathname: '/category/[id]', params: { id: item.id, name: item.name } })}
+        onPress={() => router.push(`/category/${item.id}?name=${encodeURIComponent(item.name || 'Category')}` as any)}
         onPressIn={() => { scale.value = withSpring(0.95, { damping: 14 }); }}
         onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
       >
