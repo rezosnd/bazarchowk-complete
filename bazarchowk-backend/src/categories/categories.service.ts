@@ -32,22 +32,15 @@ export class CategoriesService {
   }
 
   async findAllCategories(city?: string) {
-    // Always return ALL active categories regardless of city.
-    // Filtering categories by city caused a broken UX where a category appeared
-    // on the home screen (due to an unpublished/inactive product in a nearby shop)
-    // but then showed 0 results when clicked because the products endpoint
-    // only returns published items. Location-based filtering belongs on the
-    // products/shops queries, not on the category listing (per Swiggy/Blinkit pattern).
+    // Always return ALL active categories regardless of whether they have products.
+    // When the database is fresh / products are being added, categories must still
+    // appear so partners can assign them during onboarding.
     const cacheKey = 'all_categories_v2';
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;
 
     const categories = await this.prisma.category.findMany({
-      where: {
-        isActive: true,
-        // Only show categories that have at least one published product
-        products: { some: { isPublished: true } }
-      },
+      where: { isActive: true },
       include: { subCategories: { where: { isActive: true }, orderBy: { name: 'asc' } } },
       orderBy: { name: 'asc' },
     });

@@ -77,7 +77,8 @@ export default function ShopProfileScreen() {
           method: 'POST',
           body: formData,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            // NOTE: Do NOT set Content-Type manually for multipart/form-data.
+            // The browser/RN fetch must auto-generate it with the proper boundary.
             'Authorization': `Bearer ${token}`
           }
         });
@@ -90,11 +91,11 @@ export default function ShopProfileScreen() {
         } else {
           const errText = await uploadRes.text();
           console.error(errText);
-          alert('Failed to upload image. Backend returned an error.');
+          alert('Upload failed. Please check your internet and try again.');
         }
       } catch (err: any) {
-        console.error(err?.response?.data || err.message);
-        alert('Network error while uploading');
+        console.error(err?.message);
+        alert('Network error while uploading. Please check your connection.');
       } finally {
         setUploading(false);
       }
