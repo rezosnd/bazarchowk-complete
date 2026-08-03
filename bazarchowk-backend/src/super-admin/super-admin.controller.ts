@@ -18,7 +18,7 @@ import {
 @ApiTags('Super Admin Platform (Ecosystem Management)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('SUPER_ADMIN')
+@Roles('SUPER_ADMIN', 'ADMIN')
 @Controller('super-admin')
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}

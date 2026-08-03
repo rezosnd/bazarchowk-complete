@@ -74,7 +74,7 @@ export class AdsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiBearerAuth()
   @Patch(':id/approve')
   @ApiOperation({ summary: 'Admin approves an ad campaign' })
@@ -83,7 +83,7 @@ export class AdsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiBearerAuth()
   @Get('admin/all')
   @ApiOperation({ summary: 'Admin fetch all ads' })
@@ -92,7 +92,7 @@ export class AdsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiBearerAuth()
   @Post('plans')
   @ApiOperation({ summary: 'Admin creates a new ad plan' })

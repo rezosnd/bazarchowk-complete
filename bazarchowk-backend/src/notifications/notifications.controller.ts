@@ -46,7 +46,7 @@ export class NotificationsController {
 
   @Post('broadcast')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Admin only: Broadcast notification to specific groups' })
   async broadcastNotification(
     @Body('targetAudience') targetAudience: 'ALL' | 'CUSTOMER' | 'PARTNER' | 'RIDER',

@@ -11,7 +11,46 @@ import { CreateCityDto, UpdateCityDto, CreateRegionalPromotionDto } from './dto/
 export class CityController {
   constructor(private readonly cityService: CityService) {}
 
-  // ---- PUBLIC ENDPOINTS ----
+  // ---- ADMIN ENDPOINTS ----
+  // NOTE: These must be defined BEFORE /:slug to avoid NestJS treating 'admin' as a slug param
+
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Admin: Get all cities including inactive ones' })
+  getAllCitiesAdmin() {
+    return this.cityService.getAllCitiesAdmin();
+  }
+
+  @Post('admin')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Admin: Create a new city configuration' })
+  createCity(@Body() dto: CreateCityDto) {
+    return this.cityService.createCity(dto);
+  }
+
+  @Patch('admin/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Admin: Update city config (pricing, launch status, etc.)' })
+  updateCity(@Param('id') id: string, @Body() dto: UpdateCityDto) {
+    return this.cityService.updateCity(id, dto);
+  }
+
+  @Post('admin/:cityId/promotions')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Admin: Add a regional promotion to a city' })
+  addPromotion(@Param('cityId') cityId: string, @Body() dto: CreateRegionalPromotionDto) {
+    return this.cityService.addPromotion(cityId, dto);
+  }
+
+  // ---- PUBLIC ENDPOINTS ---- (must be after admin routes to avoid slug conflict)
 
   @Get()
   @ApiOperation({ summary: 'Get all active cities (for city selector in app)' })
@@ -30,42 +69,3 @@ export class CityController {
   getCityBySlug(@Param('slug') slug: string) {
     return this.cityService.getCityBySlug(slug);
   }
-
-  // ---- ADMIN ENDPOINTS ----
-
-  @Get('admin/all')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Admin: Get all cities including inactive ones' })
-  getAllCitiesAdmin() {
-    return this.cityService.getAllCitiesAdmin();
-  }
-
-  @Post('admin')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
-  @ApiOperation({ summary: 'Admin: Create a new city configuration' })
-  createCity(@Body() dto: CreateCityDto) {
-    return this.cityService.createCity(dto);
-  }
-
-  @Patch('admin/:id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
-  @ApiOperation({ summary: 'Admin: Update city config (pricing, launch status, etc.)' })
-  updateCity(@Param('id') id: string, @Body() dto: UpdateCityDto) {
-    return this.cityService.updateCity(id, dto);
-  }
-
-  @Post('admin/:cityId/promotions')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Admin: Add a regional promotion to a city' })
-  addPromotion(@Param('cityId') cityId: string, @Body() dto: CreateRegionalPromotionDto) {
-    return this.cityService.addPromotion(cityId, dto);
-  }
-}
