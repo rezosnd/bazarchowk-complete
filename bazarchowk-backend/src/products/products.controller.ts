@@ -29,8 +29,15 @@ export class ProductsController {
   @ApiOperation({ summary: 'Search and list products' })
   @ApiQuery({ name: 'shopId', required: false })
   @ApiQuery({ name: 'query', required: false, description: 'Search keywords' })
-  findAll(@Query('shopId') shopId?: string, @Query('query') query?: string) {
-    return this.productsService.findAll(shopId, query);
+  @ApiQuery({ name: 'categoryId', required: false })
+  @ApiQuery({ name: 'subCategoryId', required: false })
+  findAll(
+    @Query('shopId') shopId?: string, 
+    @Query('query') query?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('subCategoryId') subCategoryId?: string,
+  ) {
+    return this.productsService.findAll(shopId, query, categoryId, subCategoryId);
   }
 
   @Get(':id')

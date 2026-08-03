@@ -31,13 +31,15 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(shopId?: string, query?: string) {
-    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}`;
+  async findAll(shopId?: string, query?: string, categoryId?: string, subCategoryId?: string) {
+    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}_${categoryId || 'none'}_${subCategoryId || 'none'}`;
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
     const whereClause: any = {};
     if (shopId) whereClause.shopId = shopId;
+    if (categoryId) whereClause.categoryId = categoryId;
+    if (subCategoryId) whereClause.subCategoryId = subCategoryId;
     if (query) {
       const tsQuery = query.trim().split(/\s+/).join(' & ');
       whereClause.OR = [

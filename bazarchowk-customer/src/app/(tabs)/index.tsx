@@ -252,7 +252,7 @@ function GlobalSearch() {
   const { t } = useTranslation();
   return (
     <View style={styles.searchWrapper}>
-      <TouchableOpacity style={styles.searchBar} activeOpacity={0.9}>
+      <TouchableOpacity style={styles.searchBar} activeOpacity={0.9} onPress={() => router.push('/search')}>
         <Ionicons name="search" size={22} color={TEXT_MUTED} />
         <Text style={styles.searchPlaceholder} numberOfLines={1}>{t('search.placeholder')}</Text>
         <Ionicons name="mic-outline" size={24} color={TEXT_MAIN} style={{ marginRight: 12 }} />
@@ -565,8 +565,11 @@ export default function HomeScreen() {
           <CategoriesGrid />
 
           <NearbyShops />
-          <PopularMarkets />
-          <TodaysOffers />
+          
+          {/* Hiding demo placeholder sections as requested by user */}
+          {/* <PopularMarkets /> */}
+          {/* <TodaysOffers /> */}
+          
           <RecommendedSection />
         </ScrollView>
         
