@@ -36,7 +36,7 @@ export class ProductsService {
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
-    const whereClause: any = {};
+    const whereClause: any = { isPublished: true };
     if (shopId) whereClause.shopId = shopId;
     if (categoryId) whereClause.categoryId = categoryId;
     if (subCategoryId) whereClause.subCategoryId = subCategoryId;

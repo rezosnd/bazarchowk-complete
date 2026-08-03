@@ -128,7 +128,10 @@ function ProductCard({ product, index }: { product: any; index: number }) {
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function CategoryDetailScreen() {
-  const { id, name } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  // useLocalSearchParams can return string | string[] — always normalize to string
+  const id = Array.isArray(params.id) ? params.id[0] : (params.id as string);
+  const name = Array.isArray(params.name) ? params.name[0] : (params.name as string);
   const insets = useSafeAreaInsets();
 
   const [products, setProducts] = useState<any[]>([]);
@@ -141,11 +144,20 @@ export default function CategoryDetailScreen() {
   useEffect(() => { fetchCart(); }, []);
 
   const fetchProducts = useCallback(async () => {
+    if (!id) return;
     setLoading(true);
     try {
+      // Dynamic service categories (e.g. dyn-salon) don't have real DB products
+      // For them we query shops by partner type instead
+      if (id.startsWith('dyn-')) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
       const [subRes, catRes] = await Promise.all([
-        api.get(`/products?subCategoryId=${id}&limit=100`).catch(() => ({ data: [] })),
-        api.get(`/products?categoryId=${id}&limit=100`).catch(() => ({ data: [] })),
+        api.get(`/products?subCategoryId=${id}`).catch(() => ({ data: [] })),
+        api.get(`/products?categoryId=${id}`).catch(() => ({ data: [] })),
       ]);
       const subData = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.items || []);
       const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.items || []);
@@ -160,6 +172,7 @@ export default function CategoryDetailScreen() {
   }, [id]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
 
   const sorted = [...products].sort((a, b) => {
     const pa = a.variants?.[0]?.price ?? a.basePrice ?? 0;
