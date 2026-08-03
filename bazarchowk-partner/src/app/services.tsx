@@ -158,6 +158,24 @@ export default function PartnerServicesScreen() {
                   </View>
                 </View>
 
+                {b.serviceAddress && (
+                  <View className="flex-row items-start mb-4 bg-gray-50 p-3 rounded-lg">
+                    <Feather name="map-pin" size={16} color="#00B140" className="mt-1" />
+                    <View className="ml-2 flex-1">
+                      <Text className="text-gray-900 font-bold text-sm">Service Location:</Text>
+                      <Text className="text-gray-600 text-sm mt-1">
+                        {b.serviceAddress.streetAddress}, {b.serviceAddress.city}, {b.serviceAddress.state} - {b.serviceAddress.pincode}
+                      </Text>
+                      <TouchableOpacity 
+                        className="mt-2"
+                        onPress={() => Alert.alert('Navigate', `Opening maps to navigate to customer's location.`)}
+                      >
+                        <Text className="text-blue-600 font-bold text-sm">Get Directions</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
                 {b.status === 'PENDING' && (
                   <View className="flex-row space-x-2">
                     <TouchableOpacity 

@@ -14,6 +14,7 @@ export default function ShopServicesScreen() {
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const { data: services, isLoading: loadingServices } = useQuery({
     queryKey: ['shop-services', shopId],
@@ -31,6 +32,23 @@ export default function ShopServicesScreen() {
     enabled: !!selectedProviderId,
   });
 
+  const { data: addresses } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const res = await api.get('/addresses');
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Auto-select default address when loaded
+  React.useEffect(() => {
+    if (addresses && addresses.length > 0 && !selectedAddressId) {
+      const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+      setSelectedAddressId(defaultAddress.id);
+    }
+  }, [addresses]);
+
   const bookMutation = useMutation({
     mutationFn: async (slotId: string) => {
       if (!isAuthenticated) {
@@ -39,10 +57,15 @@ export default function ShopServicesScreen() {
         ]);
         return Promise.reject(new Error('Login Required'));
       }
+      if (!selectedAddressId) {
+        Alert.alert('Address Required', 'Please select a service location.');
+        return Promise.reject(new Error('Address Required'));
+      }
       return api.post('/appointments', {
         serviceOfferingId: selectedServiceId,
         providerId: selectedProviderId,
         timeSlotId: slotId,
+        serviceAddressId: selectedAddressId,
         notes: "Booked via BazarChowk App"
       });
     },
@@ -118,10 +141,45 @@ export default function ShopServicesScreen() {
           </>
         )}
 
-        {/* Step 3: Select Time Slot */}
+        {/* Step 3: Select Service Location */}
         {selectedProviderId && (
           <>
-            <Text className="text-lg font-bold text-gray-900 mb-3">3. Available Time Slots</Text>
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-lg font-bold text-gray-900">3. Select Service Location</Text>
+              <TouchableOpacity onPress={() => router.push('/addresses/new' as any)}>
+                <Text className="text-blue-600 font-bold">+ Add New</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View className="mb-6 space-y-3">
+              {addresses?.map((addr: any) => (
+                <TouchableOpacity
+                  key={addr.id}
+                  onPress={() => setSelectedAddressId(addr.id)}
+                  className={`p-4 rounded-xl border ${selectedAddressId === addr.id ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-200'}`}
+                >
+                  <View className="flex-row items-center">
+                    <Feather name="map-pin" size={18} color={selectedAddressId === addr.id ? '#3b82f6' : '#6b7280'} />
+                    <View className="ml-3 flex-1">
+                      <Text className={`font-bold ${selectedAddressId === addr.id ? 'text-blue-900' : 'text-gray-900'}`}>{addr.type}</Text>
+                      <Text className="text-gray-500 text-sm mt-1" numberOfLines={2}>
+                        {addr.streetAddress}, {addr.city}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {(!addresses || addresses.length === 0) && (
+                <Text className="text-gray-500 text-center py-4">No addresses found. Please add an address.</Text>
+              )}
+            </View>
+          </>
+        )}
+
+        {/* Step 4: Select Time Slot & Book */}
+        {selectedAddressId && selectedProviderId && (
+          <>
+            <Text className="text-lg font-bold text-gray-900 mb-3">4. Select Time & Book</Text>
             {loadingSlots ? (
                <Text className="text-gray-500">Loading schedule...</Text>
             ) : (
