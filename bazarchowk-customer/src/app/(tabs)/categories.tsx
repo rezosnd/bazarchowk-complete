@@ -169,9 +169,22 @@ export default function CategoriesScreen() {
                 />
                 
                 <View style={styles.grid2Col}>
-                  {category.subCategories?.map((sub: any, idx: number) => (
-                    <GridCard key={sub.id} item={sub} index={idx} />
-                  ))}
+                  {category.subCategories && category.subCategories.length > 0 ? (
+                    category.subCategories.map((sub: any, idx: number) => (
+                      <GridCard key={sub.id} item={sub} index={idx} />
+                    ))
+                  ) : (
+                    <GridCard 
+                      key={category.id} 
+                      item={{ 
+                        id: category.id, 
+                        name: 'All Items', 
+                        description: `View all items in ${category.name}`,
+                        imageUrl: category.imageUrl
+                      }} 
+                      index={0} 
+                    />
+                  )}
                 </View>
               </View>
             ))
