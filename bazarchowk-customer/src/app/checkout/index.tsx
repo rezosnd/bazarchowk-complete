@@ -80,21 +80,19 @@ export default function CheckoutScreen() {
       console.warn('Failed to fetch bill details', e);
       // Graceful fallback: compute from local cart so UI is still usable
       if (status === 404 || status === 400 || !status) {
-        const shopItems = (cart?.items || []).filter(
-          (item: any) => !shopId || item.shopId === shopId || true
-        );
-        const subtotal = shopItems.reduce(
+        const shopItems = (cart?.items || []);
+        const itemTotal = shopItems.reduce(
           (sum: number, item: any) =>
             sum + (item.price || item.variant?.price || item.product?.basePrice || 0) * item.quantity,
           0
         );
+        // Use field names that match what the UI renders
         setBillDetails({
-          subtotal,
+          itemTotal,
+          taxAmount: 0,
           deliveryFee: 0,
-          tax: 0,
-          discount: 0,
-          walletDeduction: 0,
-          payableAmount: subtotal,
+          walletAmountUsed: 0,
+          payableAmount: itemTotal,
           walletBalance: 0,
           note: 'Preview unavailable — final amount confirmed at delivery',
         });
@@ -278,25 +276,28 @@ export default function CheckoutScreen() {
             <View style={styles.billCard}>
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Item Total</Text>
-                <Text style={styles.billValue}>₹{billDetails.itemTotal.toFixed(2)}</Text>
+                <Text style={styles.billValue}>₹{(billDetails.itemTotal ?? 0).toFixed(2)}</Text>
               </View>
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Taxes & Charges</Text>
-                <Text style={styles.billValue}>₹{billDetails.taxAmount.toFixed(2)}</Text>
+                <Text style={styles.billValue}>₹{(billDetails.taxAmount ?? 0).toFixed(2)}</Text>
               </View>
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Delivery Fee</Text>
-                <Text style={styles.billValue}>₹{billDetails.deliveryFee.toFixed(2)}</Text>
+                <Text style={styles.billValue}>₹{(billDetails.deliveryFee ?? 0).toFixed(2)}</Text>
               </View>
-              {billDetails.walletAmountUsed > 0 && (
+              {(billDetails.walletAmountUsed ?? 0) > 0 && (
                 <View style={styles.billRow}>
                   <Text style={[styles.billLabel, { color: PRIMARY }]}>Wallet Applied</Text>
-                  <Text style={[styles.billValue, { color: PRIMARY }]}>-₹{billDetails.walletAmountUsed.toFixed(2)}</Text>
+                  <Text style={[styles.billValue, { color: PRIMARY }]}>-₹{(billDetails.walletAmountUsed ?? 0).toFixed(2)}</Text>
                 </View>
+              )}
+              {billDetails.note && (
+                <Text style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 4 }}>{billDetails.note}</Text>
               )}
               <View style={[styles.billRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>To Pay</Text>
-                <Text style={styles.totalValue}>₹{billDetails.payableAmount.toFixed(2)}</Text>
+                <Text style={styles.totalValue}>₹{(billDetails.payableAmount ?? 0).toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -312,7 +313,7 @@ export default function CheckoutScreen() {
             <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start' }} />
           ) : (
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A' }}>
-              ₹{billDetails ? billDetails.payableAmount.toFixed(2) : '--'}
+              ₹{billDetails ? (billDetails.payableAmount ?? 0).toFixed(2) : '--'}
             </Text>
           )}
         </View>
