@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "516271217857",
+    "project_id": "bazarchowk-bfa4c",
+    "storage_bucket": "bazarchowk-bfa4c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516271217857:android:4f213ade9adc41e7a4c840",
+        "android_client_info": {
+          "package_name": "tech.veritasco.bazarchowk.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPy-Z5wurS-mFrK8Dn_gSOpq_pJBTzKb0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516271217857:android:4f213ade9adc41e7a4c841",
+        "android_client_info": {
+          "package_name": "com.veritasco.bazarchowkpartner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPy-Z5wurS-mFrK8Dn_gSOpq_pJBTzKb0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516271217857:android:4f213ade9adc41e7a4c842",
+        "android_client_info": {
+          "package_name": "com.veritasco.bazarchowkrider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPy-Z5wurS-mFrK8Dn_gSOpq_pJBTzKb0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.veritasco.bazarchowkpartner"
+      "package": "com.veritasco.bazarchowkpartner",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",

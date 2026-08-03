@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/APP-ICON.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.veritasco.bazarchowkrider"
+      "package": "com.veritasco.bazarchowkrider",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
