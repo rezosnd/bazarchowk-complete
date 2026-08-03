@@ -60,7 +60,7 @@ export class CityService {
    * ADMIN: Create new city
    */
   async createCity(dto: CreateCityDto) {
-    const city = await this.prisma.cityConfig.create({ data: dto });
+    const city = await this.prisma.cityConfig.create({ data: dto as any });
     await this.cache.del('cities:active');
     return city;
   }
@@ -72,7 +72,7 @@ export class CityService {
     const city = await this.prisma.cityConfig.findUnique({ where: { id } });
     if (!city) throw new NotFoundException('City config not found');
 
-    const updated = await this.prisma.cityConfig.update({ where: { id }, data: dto });
+    const updated = await this.prisma.cityConfig.update({ where: { id }, data: dto as any });
 
     // Invalidate caches
     await this.cache.del('cities:active');

@@ -101,7 +101,7 @@ export class DeliveryService {
 
     let orderStatus: OrderStatus | undefined;
     if (status === DeliveryStatus.PICKED_UP) orderStatus = OrderStatus.PICKED_UP;
-    if (status === DeliveryStatus.IN_TRANSIT) orderStatus = OrderStatus.OUT_FOR_DELIVERY;
+    if (status === DeliveryStatus.IN_TRANSIT) orderStatus = OrderStatus.PICKED_UP;
     if (status === DeliveryStatus.DELIVERED) orderStatus = OrderStatus.DELIVERED;
 
     if (orderStatus) {

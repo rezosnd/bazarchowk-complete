@@ -31,7 +31,6 @@ export default function OrderTrackingScreen() {
   const [loading, setLoading] = useState(true);
   
   const [riderLocation, setRiderLocation] = useState<{ lat: number; lng: number, heading: number } | null>(null);
-  const riderAnimatedRegion = useRef(new AnimatedRegion({ latitude: 0, longitude: 0, latitudeDelta: 0, longitudeDelta: 0 })).current;
   const [routeCoords, setRouteCoords] = useState<{latitude: number, longitude: number}[]>([]);
   const [eta, setEta] = useState<string>('--');
   const [distance, setDistance] = useState<string>('--');
@@ -59,25 +58,20 @@ export default function OrderTrackingScreen() {
       socketService.on('rider_location', (data) => {
         setRiderLocation({ lat: data.latitude, lng: data.longitude, heading: data.heading || 0 });
         
-        // Smoothly animate rider marker
-        if (Platform.OS === 'android') {
-          riderAnimatedRegion.timing({
-            latitude: data.latitude,
-            longitude: data.longitude,
-            duration: 2000,
-            useNativeDriver: false
-          }).start();
-        } else {
-          riderAnimatedRegion.setValue({ latitude: data.latitude, longitude: data.longitude, latitudeDelta: 0, longitudeDelta: 0 });
+        if (mapRef.current) {
+          const script = `
+            if (typeof riderMarker !== 'undefined') {
+              riderMarker.setLatLng([${data.latitude}, ${data.longitude}]);
+              map.setView([${data.latitude}, ${data.longitude}]);
+            } else {
+              var riderIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3209/3209800.png', iconSize: [40, 40] });
+              window.riderMarker = L.marker([${data.latitude}, ${data.longitude}], {icon: riderIcon}).addTo(map);
+              map.setView([${data.latitude}, ${data.longitude}]);
+            }
+            true;
+          `;
+          mapRef.current.injectJavaScript(script);
         }
-
-        // Make camera follow rider
-        mapRef.current?.animateCamera({
-          center: { latitude: data.latitude, longitude: data.longitude },
-          heading: data.heading || 0,
-          pitch: 45,
-          zoom: 17,
-        }, { duration: 2000 });
       });
 
       fetchRoute();
@@ -136,6 +130,7 @@ export default function OrderTrackingScreen() {
           </View>
         ) : (
           <WebView
+            ref={mapRef}
             style={StyleSheet.absoluteFill}
             scrollEnabled={false}
             source={{
@@ -171,7 +166,7 @@ export default function OrderTrackingScreen() {
 
                     ${riderLocation ? `
                       var riderIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3209/3209800.png', iconSize: [40, 40] });
-                      L.marker([${riderLocation.lat}, ${riderLocation.lng}], {icon: riderIcon}).addTo(map);
+                      window.riderMarker = L.marker([${riderLocation.lat}, ${riderLocation.lng}], {icon: riderIcon}).addTo(map);
                     ` : ''}
                   </script>
                 </body>
