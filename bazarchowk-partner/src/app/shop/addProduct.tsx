@@ -143,12 +143,13 @@ export default function AddProductScreen() {
             body: formData,
             headers: {
               'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${token}`,
             },
           });
 
           if (uploadRes.ok) {
             const uploadData = await uploadRes.json();
-            
+            const uploadedUrl = uploadData.url || uploadData.secure_url;
             // Attach image to product
             await fetch(`${API_BASE}/products/${product.id}/images`, {
               method: 'POST',
@@ -157,7 +158,7 @@ export default function AddProductScreen() {
                 'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({
-                imageUrl: uploadData.url,
+                imageUrl: uploadedUrl,
                 isPrimary: true
               }),
             });

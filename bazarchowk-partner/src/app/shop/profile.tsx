@@ -71,6 +71,7 @@ export default function ShopProfileScreen() {
           name: asset.fileName || 'upload.jpg',
           type: asset.mimeType || 'image/jpeg',
         } as any);
+        formData.append('folder', 'shops');
 
         const uploadRes = await fetch(`${API_BASE}/upload`, {
           method: 'POST',
@@ -83,8 +84,9 @@ export default function ShopProfileScreen() {
 
         if (uploadRes.ok) {
           const data = await uploadRes.json();
-          if (type === 'logo') setLogoUrl(data.url);
-          else setBannerUrl(data.url);
+          const uploadedUrl = data.url || data.secure_url;
+          if (type === 'logo') setLogoUrl(uploadedUrl);
+          else setBannerUrl(uploadedUrl);
         } else {
           const errText = await uploadRes.text();
           console.error(errText);

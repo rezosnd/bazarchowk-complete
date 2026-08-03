@@ -522,7 +522,7 @@ export default function CategoriesAdminPage() {
                             const formData = new FormData();
                             formData.append('file', file);
                             formData.append('folder', 'categories');
-                            const res = await fetch(`${API_BASE}/cloudinary/upload`, {
+                            const res = await fetch(`${API_BASE}/upload`, {
                               method: 'POST',
                               headers: { 'Authorization': `Bearer ${token}` },
                               body: formData
