@@ -92,26 +92,28 @@ export class OrdersService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distanceKm = R * c;
 
-    // 4. Resolve Dynamic Delivery Fee based on distance tiers configured by Super Admin
+    // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)
     let calculatedDeliveryFee = 20; // Hard fallback
-    const rule = await this.prisma.deliveryRule.findFirst({
-      where: { OR: [{ marketId: shop.marketId || undefined }, { marketId: 'DEFAULT_MARKET' }] },
-      orderBy: { marketId: 'desc' } // Prioritize specific market over default
+    const cityConfig = await this.prisma.cityConfig.findFirst({
+      where: { name: { equals: shop.city, mode: 'insensitive' } }
     });
 
-    if (rule) {
-      if (distanceKm <= rule.tier1MaxKm) {
-        calculatedDeliveryFee = rule.tier1Fee;
-      } else if (distanceKm <= rule.tier2MaxKm) {
-        calculatedDeliveryFee = rule.tier2Fee;
-      } else if (distanceKm <= rule.tier3MaxKm) {
-        calculatedDeliveryFee = rule.tier3Fee;
-      } else {
-        // Beyond tier 3, add base + extra per km
-        calculatedDeliveryFee = rule.tier3Fee + Math.ceil(distanceKm - rule.tier3MaxKm) * 10;
+    if (cityConfig) {
+      calculatedDeliveryFee = cityConfig.defaultDeliveryFee; // Set default first
+      if (cityConfig.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers)) {
+        // Tiers should be sorted by uptoKm, but let's sort them just to be safe
+        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+        
+        for (const tier of tiers) {
+          if (distanceKm <= tier.uptoKm) {
+            calculatedDeliveryFee = tier.fee;
+            break;
+          }
+        }
+        // If distance exceeds all tiers, it falls back to defaultDeliveryFee
       }
     } else {
-      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5); // Fallback if no rule
+      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5); // Fallback if no city rule
     }
 
     // Add Delivery Fee to total
