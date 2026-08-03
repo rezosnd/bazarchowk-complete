@@ -1,7 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { AbuseDetectionGuard } from './abuse.guard';
 
 @Global()
@@ -14,7 +13,7 @@ import { AbuseDetectionGuard } from './abuse.guard';
           limit: 100,
         }
       ],
-      storage: process.env.REDIS_URL ? new ThrottlerStorageRedisService(process.env.REDIS_URL) : undefined
+      // Redis storage removed — uses in-memory to prevent Upstash request limit crashes
     }),
   ],
   providers: [
@@ -29,3 +28,4 @@ import { AbuseDetectionGuard } from './abuse.guard';
   ],
 })
 export class SecurityModule {}
+
