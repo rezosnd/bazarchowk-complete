@@ -65,6 +65,27 @@ export default function ActiveDeliveryScreen() {
     };
   }, [order?.delivery?.status, order?.id]);
 
+  // Auto-fetch payment status when QR is showing
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showQR && order?.paymentStatus !== 'PAID') {
+      interval = setInterval(() => {
+        fetchOrderDetails();
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showQR, order?.paymentStatus]);
+
+  // If order becomes PAID while QR is shown, hide it automatically
+  useEffect(() => {
+    if (order?.paymentStatus === 'PAID' && showQR) {
+      setShowQR(false);
+      Alert.alert('Payment Received!', 'The customer has successfully paid.');
+    }
+  }, [order?.paymentStatus, showQR]);
+
   const fetchOrderDetails = async () => {
     try {
       const token = await SecureStore.getItemAsync('rider_token');
