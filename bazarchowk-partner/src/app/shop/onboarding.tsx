@@ -16,6 +16,7 @@ export default function ShopOnboardingScreen() {
   
   // Selection
   const [offerType, setOfferType] = useState<'PRODUCTS' | 'SERVICES' | 'BOTH' | ''>('');
+  const [partnerType, setPartnerType] = useState('OTHER');
 
   // Form Fields
   const [name, setName] = useState('');
@@ -111,7 +112,7 @@ export default function ShopOnboardingScreen() {
         deliveryRadius: parseFloat(deliveryRadius),
         hasProducts,
         hasServices,
-        partnerType: 'OTHER' // Optional legacy compatibility
+        partnerType
       };
 
       const res = await fetch(`${API_BASE}/shops`, {
@@ -238,6 +239,22 @@ export default function ShopOnboardingScreen() {
         <View className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm mb-5">
           <Text className="text-lg font-extrabold text-gray-900 mb-5">{isProfessional ? 'Professional Details' : 'Business Details'}</Text>
           
+          <Text className="text-sm font-bold text-gray-500 mb-2">Business Category *</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ paddingRight: 20 }}>
+            {(offerType === 'SERVICES' 
+              ? ['SALON', 'PLUMBER', 'ELECTRICIAN', 'CARPENTER', 'AC_REPAIR', 'CLEANING', 'TUTOR', 'MECHANIC', 'PANDIT', 'OTHER'] 
+              : ['GROCERY', 'PHARMACY', 'RESTAURANT', 'OTHER']
+            ).map(pt => (
+              <TouchableOpacity
+                key={pt}
+                onPress={() => setPartnerType(pt)}
+                className={`px-4 py-2.5 mr-2 rounded-xl border ${partnerType === pt ? 'bg-emerald-50 border-emerald-500' : 'bg-gray-50 border-gray-200'}`}
+              >
+                <Text className={`font-bold ${partnerType === pt ? 'text-emerald-700' : 'text-gray-600'}`}>{pt.replace('_', ' ')}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
           <Text className="text-sm font-bold text-gray-500 mb-2">{isProfessional ? 'Your Full Name / Brand *' : 'Business/Shop Name *'}</Text>
           <TextInput 
             className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-base text-gray-900 font-medium mb-4" 
