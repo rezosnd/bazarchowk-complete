@@ -143,7 +143,8 @@ export default function AddProductScreen() {
             body: formData,
             // NOTE: Do NOT set Content-Type manually for multipart/form-data.
             // The browser/RN fetch must auto-generate it with the proper boundary.
-            'Authorization': `Bearer ${token}`,
+            headers: {
+              'Authorization': `Bearer ${token}`,
             },
           });
 
