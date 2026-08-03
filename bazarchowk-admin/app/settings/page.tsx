@@ -141,8 +141,9 @@ export default function SettingsPage() {
           name: newCityName.trim(),
           state: 'General',
           slug: newCityName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          defaultDeliveryFee: 20,
-          taxPercent: 5
+          defaultDeliveryFee: defaultFee,
+          taxPercent: taxPercent,
+          distanceFeeTiers: [...tiers].sort((a, b) => a.uptoKm - b.uptoKm)
         }),
       });
       
