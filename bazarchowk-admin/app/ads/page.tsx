@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+// Removed shadcn imports because they don't exist
 import { CheckCircle, Megaphone, Eye, MousePointerClick } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -75,9 +73,9 @@ export default function AdsAdminDashboard() {
           <p className="text-slate-500 mt-2">Manage and approve local business promotions</p>
         </div>
         <div className="flex gap-4">
-          <Button onClick={() => setShowPlanForm(!showPlanForm)} variant="outline" className="bg-white">
+          <button onClick={() => setShowPlanForm(!showPlanForm)} className="border px-4 py-2 rounded-md font-semibold bg-white hover:bg-slate-50">
             {showPlanForm ? 'Hide Form' : 'Create Ad Plan'}
-          </Button>
+          </button>
           <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full font-semibold flex items-center gap-2">
             <Megaphone className="w-5 h-5" />
             {ads.filter(a => a.status === 'ACTIVE').length} Active Ads
@@ -86,11 +84,11 @@ export default function AdsAdminDashboard() {
       </div>
 
       {showPlanForm && (
-        <Card className="border-emerald-200 bg-emerald-50/50">
-          <CardHeader>
-            <CardTitle>Create New Ad Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-emerald-100">
+            <h3 className="text-lg font-semibold">Create New Ad Plan</h3>
+          </div>
+          <div className="p-6">
             <form onSubmit={handleCreatePlan} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               <div>
                 <label className="text-sm font-semibold mb-1 block">Plan Name</label>
@@ -112,10 +110,10 @@ export default function AdsAdminDashboard() {
                 <label className="text-sm font-semibold mb-1 block">Price (₹)</label>
                 <input type="number" required value={price} onChange={e=>setPrice(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
               </div>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 h-10 w-full">Create Plan</Button>
+              <button type="submit" className="bg-emerald-600 text-white hover:bg-emerald-700 h-10 w-full rounded-lg font-semibold">Create Plan</button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* ── Active & Pending Ads Section ── */}
@@ -128,25 +126,24 @@ export default function AdsAdminDashboard() {
             <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed rounded-xl">No advertisements purchased by shops yet.</div>
           ) : (
             ads.map(ad => (
-              <Card key={ad.id} className="overflow-hidden border-slate-200">
-                <CardHeader className="bg-slate-50 border-b pb-4">
+              <div key={ad.id} className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+                <div className="bg-slate-50 border-b p-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{ad.shop?.name || 'Unknown Shop'}</CardTitle>
+                      <h3 className="text-lg font-semibold">{ad.shop?.name || 'Unknown Shop'}</h3>
                       <p className="text-sm font-medium text-emerald-600 mt-1">{ad.plan?.name}</p>
                     </div>
-                    <Badge 
-                      variant={ad.status === 'ACTIVE' ? 'default' : ad.status === 'PENDING' ? 'secondary' : 'outline'}
-                      className={
-                        ad.status === 'ACTIVE' ? 'bg-emerald-500 hover:bg-emerald-600' : 
-                        ad.status === 'PENDING' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : ''
-                      }
+                    <span 
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        ad.status === 'ACTIVE' ? 'bg-emerald-500 text-white' : 
+                        ad.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'
+                      }`}
                     >
                       {ad.status}
-                    </Badge>
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4">
+                </div>
+                <div className="p-6 space-y-4">
                   {ad.title && (
                     <div>
                       <p className="text-xs text-slate-500 uppercase font-semibold">Ad Title</p>
@@ -173,15 +170,15 @@ export default function AdsAdminDashboard() {
                     <p className="text-xs text-slate-500 mb-1 font-semibold uppercase">Status Info</p>
                     <p className="text-sm font-medium text-slate-700">Ends: {new Date(ad.endDate).toLocaleDateString()}</p>
                   </div>
-                </CardContent>
+                </div>
                 {ad.status === 'PENDING' && (
                   <div className="p-4 bg-slate-50 border-t flex justify-end">
-                    <Button onClick={() => handleApprove(ad.id)} className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2">
+                    <button onClick={() => handleApprove(ad.id)} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" /> Approve Ad
-                    </Button>
+                    </button>
                   </div>
                 )}
-              </Card>
+              </div>
             ))
           )}
         </div>
@@ -197,11 +194,11 @@ export default function AdsAdminDashboard() {
             <div className="col-span-full py-6 text-center text-slate-500 border-2 border-dashed rounded-xl">No plans configured. Create one above!</div>
           ) : (
             plans.map(plan => (
-              <Card key={plan.id} className="border-slate-200">
-                <CardHeader className="bg-slate-50 border-b pb-4">
-                  <CardTitle className="text-lg">{plan.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-2">
+              <div key={plan.id} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <div className="bg-slate-50 border-b p-6 pb-4">
+                  <h3 className="text-lg font-semibold">{plan.name}</h3>
+                </div>
+                <div className="p-6 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Type</span>
                     <span className="font-semibold text-slate-900">{plan.type}</span>
@@ -214,8 +211,8 @@ export default function AdsAdminDashboard() {
                     <span className="text-slate-500">Price</span>
                     <span className="font-semibold text-emerald-600">₹{plan.price}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>
