@@ -93,7 +93,7 @@ export class ProductsService {
       include: {
         shop: { select: { name: true, city: true, latitude: true, longitude: true, deliveryRadius: true } },
         category: { select: { name: true } },
-        images: { where: { isPrimary: true }, take: 1 },
+        images: { orderBy: { isPrimary: 'desc' }, take: 1 },
         variants: true,
       },
       orderBy: { createdAt: 'desc' },

@@ -95,9 +95,9 @@ export default function CheckoutScreen() {
       setBillDetails({
         itemTotal,
         taxAmount: Math.round(itemTotal * 0.05 * 100) / 100, // 5% tax estimate
-        deliveryFee: 20, // default delivery fee
+        deliveryFee: 0, // default delivery fee
         walletAmountUsed: 0,
-        payableAmount: itemTotal + Math.round(itemTotal * 0.05 * 100) / 100 + 20,
+        payableAmount: itemTotal + Math.round(itemTotal * 0.05 * 100) / 100 + 0,
         walletBalance: 0,
       });
     } finally {

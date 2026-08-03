@@ -41,9 +41,9 @@ function ProductCard({ product, index }: { product: any; index: number }) {
   const price = firstVariant?.price ?? product.basePrice ?? 0;
 
   // Check how many of this item are in cart
-  const cartQty = cart?.items?.filter(
-    (i: any) => i.productVariant?.productId === product.id
-  ).reduce((s: number, i: any) => s + i.quantity, 0) || 0;
+  const cartQty = (cart?.items || [])
+    .filter((i: any) => i.productVariant?.productId === product.id)
+    .reduce((s: number, i: any) => s + i.quantity, 0);
 
   const handleAdd = async () => {
     if (!isAuthenticated) {

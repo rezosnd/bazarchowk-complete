@@ -328,7 +328,7 @@ export default function ActiveDeliveryScreen() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>Scan to Pay ₹{order.totalAmount}</Text>
               <View style={{ padding: 8, backgroundColor: '#FFF', borderRadius: 12 }}>
                 <QRCode
-                  value={`upi://pay?pa=bazarchowk@upi&pn=BazarChowk&am=${order.totalAmount}&cu=INR`}
+                  value={`upi://pay?pa=rzpy.bazarchowk@icici&pn=BazarChowk&am=${Number(order.totalAmount).toFixed(2)}&cu=INR&tn=Payment_for_Order_${order.id}`}
                   size={150}
                 />
               </View>
