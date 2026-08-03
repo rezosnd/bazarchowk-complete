@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, OrderStatus, TransactionType, TransactionReason } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
@@ -232,7 +232,7 @@ export class OrdersService {
     // 5. Create Order via Transaction
     const orderNumber = this.generateOrderNumber();
 
-    const order = await this.prisma.$transaction(async (prisma) => {
+    const order = (await this.prisma.$transaction(async (prisma) => {
       // If paying by wallet, deduct now
       if (paymentMethod === 'WALLET' && walletAmountUsed > 0) {
         const wallet = await prisma.wallet.findUnique({ where: { userId: customerId } });
@@ -297,9 +297,9 @@ export class OrdersService {
         await prisma.walletTransaction.create({
           data: {
             walletId: updatedWallet.id,
-            type: 'DEBIT',
+            type: TransactionType.DEBIT,
             amount: totalAmount,
-            reason: 'PURCHASE',
+            reason: TransactionReason.PURCHASE,
             description: `Payment for order ${orderNumber}`,
             referenceId: newOrder.id,
             balanceAfter: updatedWallet.balance,
@@ -339,7 +339,7 @@ export class OrdersService {
       }
 
       return newOrder;
-    });
+    })) as any;
 
     // 4. Send Notifications
     // To Shop Owner
