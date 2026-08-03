@@ -69,3 +69,4 @@ export class CityController {
   getCityBySlug(@Param('slug') slug: string) {
     return this.cityService.getCityBySlug(slug);
   }
+}

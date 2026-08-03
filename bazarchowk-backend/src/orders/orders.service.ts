@@ -206,7 +206,7 @@ export class OrdersService {
 
     // Check Wallet Balance if WALLET is selected or useWallet is true
     let walletAmountUsed = 0;
-    let paymentStatus = PaymentStatus.PENDING;
+    let paymentStatus: PaymentStatus = PaymentStatus.PENDING;
     let paymentMethod = createDto.paymentMethod;
 
     if (createDto.useWallet || paymentMethod === 'WALLET') {
@@ -248,7 +248,7 @@ export class OrdersService {
             walletId: wallet.id,
             type: 'DEBIT',
             amount: walletAmountUsed,
-            reason: 'ORDER_PAYMENT',
+            reason: 'PURCHASE',
             description: `Payment for order ${orderNumber}`,
             referenceId: orderNumber,
             balanceAfter: wallet.balance - walletAmountUsed
