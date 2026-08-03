@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   // Core Product
   const [name, setName] = useState('');
@@ -40,6 +43,19 @@ export default function AddProductScreen() {
       }
     } catch (e) {
       console.warn('Failed to fetch categories');
+    }
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
     }
   };
 
@@ -107,6 +123,50 @@ export default function AddProductScreen() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      // Upload Image if present
+      if (imageUri) {
+        try {
+          const formData = new FormData();
+          const filename = imageUri.split('/').pop() || 'image.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : `image`;
+
+          formData.append('file', {
+            uri: imageUri,
+            name: filename,
+            type,
+          } as any);
+          formData.append('folder', 'products');
+
+          const uploadRes = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            
+            // Attach image to product
+            await fetch(`${API_BASE}/products/${product.id}/images`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                imageUrl: uploadData.url,
+                isPrimary: true
+              }),
+            });
+          }
+        } catch (imgError) {
+          console.error('Failed to upload image', imgError);
+        }
+      }
+
       alert('Product Added Successfully!');
       router.back();
     } catch (e: any) {
@@ -129,6 +189,17 @@ export default function AddProductScreen() {
         
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
+
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.pickedImage} contentFit="cover" />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera-outline" size={32} color="#94A3B8" />
+                <Text style={styles.imagePickerText}>Add Product Image</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           
           <Text style={styles.label}>Product Name *</Text>
           <TextInput style={styles.input} placeholder="e.g. Organic Tomatoes" value={name} onChangeText={setName} />
@@ -229,5 +300,9 @@ const styles = StyleSheet.create({
   categoryChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 10, borderWidth: 1, borderColor: 'transparent' },
   categoryChipSelected: { backgroundColor: '#DCFCE7', borderColor: '#00B140' },
   categoryChipText: { fontSize: 14, color: '#64748B', fontWeight: '600' },
-  categoryChipTextSelected: { color: '#00B140', fontWeight: '700' }
+  categoryChipTextSelected: { color: '#00B140', fontWeight: '700' },
+  imagePicker: { alignSelf: 'center', marginBottom: 24 },
+  imagePlaceholder: { width: 120, height: 120, borderRadius: 16, backgroundColor: '#F1F5F9', borderWidth: 2, borderColor: '#E2E8F0', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  imagePickerText: { fontSize: 12, color: '#64748B', marginTop: 8, fontWeight: '600', textAlign: 'center' },
+  pickedImage: { width: 120, height: 120, borderRadius: 16 }
 });

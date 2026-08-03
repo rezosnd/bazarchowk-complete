@@ -24,6 +24,9 @@ export default function CheckoutScreen() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI' | 'RAZORPAY' | 'WALLET'>('COD');
+  const [useWallet, setUseWallet] = useState(false);
+  const [billDetails, setBillDetails] = useState<any>(null);
+  const [fetchingBill, setFetchingBill] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -47,6 +50,33 @@ export default function CheckoutScreen() {
     }
   };
 
+  useEffect(() => {
+    if (selectedAddressId && shopId) {
+      fetchBillDetails();
+    }
+  }, [selectedAddressId, useWallet, shopId]);
+
+  const fetchBillDetails = async () => {
+    try {
+      setFetchingBill(true);
+      const res = await api.post('/orders/checkout-preview', {
+        shopId,
+        deliveryAddressId: selectedAddressId,
+        useWallet
+      });
+      setBillDetails(res.data);
+      if (res.data.payableAmount === 0 && useWallet) {
+        setPaymentMethod('WALLET');
+      } else if (paymentMethod === 'WALLET') {
+        setPaymentMethod('COD'); // Fallback if wallet doesn't cover full amount
+      }
+    } catch (e) {
+      console.warn('Failed to fetch bill details', e);
+    } finally {
+      setFetchingBill(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       Alert.alert('Error', 'Please select a delivery address');
@@ -62,6 +92,7 @@ export default function CheckoutScreen() {
         shopId,
         deliveryAddressId: selectedAddressId,
         paymentMethod,
+        useWallet
       });
 
       const orderId = res.data.id;
@@ -185,16 +216,21 @@ export default function CheckoutScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.paymentCard, paymentMethod === 'WALLET' && styles.paymentCardActive]}
-            onPress={() => setPaymentMethod('WALLET')}
-          >
-            <Ionicons name="wallet-outline" size={24} color={paymentMethod === 'WALLET' ? PRIMARY : '#64748B'} />
-            <Text style={[styles.paymentText, paymentMethod === 'WALLET' && styles.paymentTextActive]}>BazarChowk Wallet</Text>
-            <View style={[styles.radio, paymentMethod === 'WALLET' && styles.radioActive]}>
-              {paymentMethod === 'WALLET' && <View style={styles.radioInner} />}
-            </View>
-          </TouchableOpacity>
+          {billDetails?.walletBalance > 0 && (
+            <TouchableOpacity 
+              style={[styles.paymentCard, useWallet && styles.paymentCardActive]}
+              onPress={() => setUseWallet(!useWallet)}
+            >
+              <Ionicons name="wallet-outline" size={24} color={useWallet ? PRIMARY : '#64748B'} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.paymentText, useWallet && styles.paymentTextActive, { marginLeft: 0 }]}>Use BazarChowk Wallet</Text>
+                <Text style={{ fontSize: 12, color: PRIMARY, fontWeight: '600' }}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</Text>
+              </View>
+              <View style={[styles.checkbox, useWallet && styles.checkboxActive]}>
+                {useWallet && <Ionicons name="checkmark" size={14} color="#FFF" />}
+              </View>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity 
             style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
@@ -208,10 +244,51 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Bill Details */}
+        {billDetails && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Bill Details</Text>
+            <View style={styles.billCard}>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Item Total</Text>
+                <Text style={styles.billValue}>₹{billDetails.itemTotal.toFixed(2)}</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Taxes & Charges</Text>
+                <Text style={styles.billValue}>₹{billDetails.taxAmount.toFixed(2)}</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Delivery Fee</Text>
+                <Text style={styles.billValue}>₹{billDetails.deliveryFee.toFixed(2)}</Text>
+              </View>
+              {billDetails.walletAmountUsed > 0 && (
+                <View style={styles.billRow}>
+                  <Text style={[styles.billLabel, { color: PRIMARY }]}>Wallet Applied</Text>
+                  <Text style={[styles.billValue, { color: PRIMARY }]}>-₹{billDetails.walletAmountUsed.toFixed(2)}</Text>
+                </View>
+              )}
+              <View style={[styles.billRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>To Pay</Text>
+                <Text style={styles.totalValue}>₹{billDetails.payableAmount.toFixed(2)}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
       </ScrollView>
 
       {/* Action Bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 24 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>{paymentMethod}</Text>
+          {fetchingBill ? (
+            <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start' }} />
+          ) : (
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A' }}>
+              ₹{billDetails ? billDetails.payableAmount.toFixed(2) : '--'}
+            </Text>
+          )}
+        </View>
         <TouchableOpacity 
           style={[styles.placeOrderBtn, (!selectedAddressId || placingOrder) && { opacity: 0.5 }]} 
           disabled={!selectedAddressId || placingOrder}
@@ -266,8 +343,21 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9',
     paddingHorizontal: 20, paddingTop: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10,
   },
-  placeOrderBtn: { backgroundColor: PRIMARY, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  placeOrderBtn: { flex: 1, backgroundColor: PRIMARY, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   placeOrderText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+
+  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
+  checkboxActive: { borderColor: PRIMARY, backgroundColor: PRIMARY },
+
+  billCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', marginTop: 8 },
+  billTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  billLabel: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  billValue: { fontSize: 14, color: '#0F172A', fontWeight: '600' },
+  totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', marginBottom: 0 },
+  totalLabel: { fontSize: 16, color: '#0F172A', fontWeight: '800' },
+  totalValue: { fontSize: 18, color: PRIMARY, fontWeight: '800' },
 });

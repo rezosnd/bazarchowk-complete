@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query, Delete } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -71,5 +71,14 @@ export class ProductsController {
   @ApiOperation({ summary: 'Add an image to a product' })
   addImage(@Param('id') id: string, @Body() imageDto: CreateProductImageDto, @CurrentUser() user: any) {
     return this.productsService.addImage(id, user.id, imageDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a product (Shop Owner only)' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.productsService.removeProduct(id, user.id);
   }
 }

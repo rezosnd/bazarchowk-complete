@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
@@ -33,6 +34,33 @@ export default function ShopProductsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (productId: string) => {
+    Alert.alert('Delete Product', 'Are you sure you want to delete this product?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await SecureStore.getItemAsync('partner_token');
+            const res = await fetch(`${API_BASE}/products/${productId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              setProducts(prev => prev.filter(p => p.id !== productId));
+              Alert.alert('Success', 'Product deleted');
+            } else {
+              Alert.alert('Error', 'Failed to delete product');
+            }
+          } catch (e) {
+            Alert.alert('Error', 'Network error');
+          }
+        }
+      }
+    ]);
   };
 
   if (loading) {
@@ -93,7 +121,15 @@ export default function ShopProductsScreen() {
                     )}
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                
+                <View style={{ gap: 12 }}>
+                  <TouchableOpacity onPress={() => alert('Editing products via Partner App is coming soon!')} style={{ padding: 8, backgroundColor: '#F1F5F9', borderRadius: 8 }}>
+                    <Ionicons name="pencil" size={20} color="#64748B" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(product.id)} style={{ padding: 8, backgroundColor: '#FEE2E2', borderRadius: 8 }}>
+                    <Ionicons name="trash" size={20} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
             );
           })

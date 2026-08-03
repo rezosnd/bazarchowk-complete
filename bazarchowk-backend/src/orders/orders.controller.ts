@@ -21,6 +21,17 @@ export class OrdersController {
     return this.ordersService.createOrder(user.id, dto);
   }
 
+  @Post('checkout-preview')
+  @ApiOperation({ summary: 'Preview order totals and delivery fee before placing' })
+  checkoutPreview(
+    @Body('shopId') shopId: string, 
+    @Body('deliveryAddressId') deliveryAddressId: string, 
+    @Body('useWallet') useWallet: boolean, 
+    @CurrentUser() user: any
+  ) {
+    return this.ordersService.checkoutPreview(user.id, { shopId, deliveryAddressId, useWallet });
+  }
+
   @Get('my-orders')
   @ApiOperation({ summary: 'Get current customer orders' })
   getCustomerOrders(@CurrentUser() user: any) {

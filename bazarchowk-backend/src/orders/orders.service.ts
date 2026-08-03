@@ -24,6 +24,82 @@ export class OrdersService {
     return 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
   }
 
+  async checkoutPreview(customerId: string, dto: { shopId: string, deliveryAddressId: string, useWallet?: boolean }) {
+    const [cart, deliveryAddress] = await Promise.all([
+      this.prisma.cart.findUnique({
+        where: { userId: customerId },
+        include: { items: { include: { productVariant: { include: { product: true } } } } }
+      }),
+      this.prisma.address.findUnique({ where: { id: dto.deliveryAddressId } })
+    ]);
+
+    if (!deliveryAddress || deliveryAddress.userId !== customerId) throw new BadRequestException('Invalid address');
+    if (!cart || cart.items.length === 0) throw new BadRequestException('Cart is empty');
+
+    const shopItems = cart.items.filter(item => item.productVariant.product.shopId === dto.shopId);
+    if (shopItems.length === 0) throw new BadRequestException('No items for this shop');
+
+    let itemTotal = 0;
+    for (const item of shopItems) {
+      if (item.productVariant.stock < item.quantity) throw new BadRequestException(`Insufficient stock for ${item.productVariant.name}`);
+      itemTotal += (item.productVariant.price * item.quantity);
+    }
+
+    const shop = await this.prisma.shop.findUnique({ where: { id: dto.shopId } });
+    if (!shop) throw new NotFoundException('Shop not found');
+
+    const R = 6371;
+    const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
+    const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
+    const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(deliveryAddress.latitude*Math.PI/180)*Math.cos(shop.latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distanceKm = R * c;
+
+    let deliveryFee = 20;
+    const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
+    if (cityConfig) {
+      deliveryFee = cityConfig.defaultDeliveryFee;
+      if (cityConfig.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers)) {
+        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+        for (const tier of tiers) {
+          if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
+        }
+      }
+    } else {
+      deliveryFee = Math.max(20, Math.ceil(distanceKm) * 5);
+    }
+
+    let taxAmount = 0;
+    if (cityConfig && cityConfig.taxPercent) {
+      taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+    } else {
+      taxAmount = (itemTotal * 5) / 100;
+    }
+
+    const totalAmount = itemTotal + taxAmount + deliveryFee;
+
+    let walletBalance = 0;
+    let walletAmountUsed = 0;
+    
+    const userWallet = await this.prisma.wallet.findUnique({ where: { userId: customerId } });
+    if (userWallet) walletBalance = userWallet.balance;
+
+    if (dto.useWallet && walletBalance > 0) {
+      walletAmountUsed = walletBalance >= totalAmount ? totalAmount : walletBalance;
+    }
+
+    return {
+      itemTotal,
+      taxAmount,
+      deliveryFee,
+      totalAmount,
+      walletBalance,
+      walletAmountUsed,
+      payableAmount: totalAmount - walletAmountUsed,
+      distanceKm: parseFloat(distanceKm.toFixed(1))
+    };
+  }
+
   async createOrder(customerId: string, createDto: CreateOrderDto) {
     if (createDto.idempotencyKey) {
       const cacheKey = `order_idempotency_${createDto.idempotencyKey}`;
@@ -116,13 +192,68 @@ export class OrdersService {
       calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5); // Fallback if no city rule
     }
 
-    // Add Delivery Fee to total
-    totalAmount += calculatedDeliveryFee;
+    let taxAmount = 0;
+    if (cityConfig && cityConfig.taxPercent) {
+      taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+    } else {
+      taxAmount = (totalAmount * 5) / 100; // 5% default
+    }
+
+    const subtotal = totalAmount;
+    totalAmount = subtotal + taxAmount + calculatedDeliveryFee;
+
+    // Check Wallet Balance if WALLET is selected or useWallet is true
+    let walletAmountUsed = 0;
+    let paymentStatus = PaymentStatus.PENDING;
+    let paymentMethod = createDto.paymentMethod;
+
+    if (createDto.useWallet || paymentMethod === 'WALLET') {
+      const userWallet = await this.prisma.wallet.findUnique({ where: { userId: customerId } });
+      if (userWallet && userWallet.balance > 0) {
+        // If the balance covers the entire order
+        if (userWallet.balance >= totalAmount) {
+          walletAmountUsed = totalAmount;
+          paymentMethod = 'WALLET'; // Force to wallet since it's fully covered
+          paymentStatus = PaymentStatus.PAID;
+        } else {
+          // Partial payment
+          if (paymentMethod === 'WALLET') {
+            throw new BadRequestException('Insufficient wallet balance to fully pay for this order. Please select another payment method for the remainder.');
+          }
+          walletAmountUsed = userWallet.balance;
+        }
+      } else if (paymentMethod === 'WALLET') {
+        throw new BadRequestException('Insufficient wallet balance to place this order.');
+      }
+    }
 
     // 5. Create Order via Transaction
     const orderNumber = this.generateOrderNumber();
 
     const order = await this.prisma.$transaction(async (prisma) => {
+      // If paying by wallet, deduct now
+      if (paymentMethod === 'WALLET' && walletAmountUsed > 0) {
+        const wallet = await prisma.wallet.findUnique({ where: { userId: customerId } });
+        if (!wallet || wallet.balance < walletAmountUsed) throw new BadRequestException('Insufficient wallet balance during transaction.');
+        
+        await prisma.wallet.update({
+          where: { userId: customerId },
+          data: { balance: { decrement: walletAmountUsed } }
+        });
+        
+        await prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'DEBIT',
+            amount: walletAmountUsed,
+            reason: 'ORDER_PAYMENT',
+            description: `Payment for order ${orderNumber}`,
+            referenceId: orderNumber,
+            balanceAfter: wallet.balance - walletAmountUsed
+          }
+        });
+      }
+
       // Create Order
       const newOrder = await prisma.order.create({
         data: {
@@ -130,11 +261,14 @@ export class OrdersService {
           customerId,
           shopId: createDto.shopId,
           deliveryAddressId: createDto.deliveryAddressId,
-          paymentMethod: createDto.paymentMethod,
-          paymentStatus: createDto.paymentMethod === 'WALLET' ? PaymentStatus.PAID : PaymentStatus.PENDING,
+          paymentMethod,
+          paymentStatus,
           status: OrderStatus.PLACED,
-          totalAmount,
+          subtotal,
+          taxAmount,
           deliveryFee: calculatedDeliveryFee,
+          walletAmountUsed,
+          totalAmount,
           items: {
             create: orderItemsData,
           },
@@ -290,13 +424,17 @@ export class OrdersService {
   }
 
   async updateOrderStatus(orderId: string, userId: string, dto: UpdateOrderStatusDto) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { shop: true } });
+    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { shop: true, rider: true } });
     if (!order) throw new NotFoundException('Order not found');
 
-    // Need to make sure the user is allowed to update this order (Shop Owner or Rider or Admin). 
-    // We will assume for now if they are the shop owner, they can update.
-    if (order.shop.ownerId !== userId) {
-      // In a real app, also check if user.role.name === 'ADMIN' or 'RIDER'
+    const userObj = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+    if (!userObj) throw new NotFoundException('User not found');
+
+    const isAdmin = userObj.role?.name === 'ADMIN';
+    const isOwner = order.shop.ownerId === userId;
+    const isAssignedRider = order.riderId === userId;
+
+    if (!isAdmin && !isOwner && !isAssignedRider) {
       throw new ForbiddenException('Not authorized to update this order');
     }
 

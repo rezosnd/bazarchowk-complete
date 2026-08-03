@@ -7,6 +7,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import { socketService } from '../../services/socket';
 import { WebView } from 'react-native-webview';
+import QRCode from 'react-native-qrcode-svg';
 import api from '../../services/api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
@@ -18,6 +19,7 @@ export default function ActiveDeliveryScreen() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [riderLocation, setRiderLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
   useEffect(() => {
@@ -123,18 +125,34 @@ export default function ActiveDeliveryScreen() {
   };
 
     const handleGeneratePayment = async () => {
-    try {
-      setUpdating(true);
-      // Mock sending a payment link to the customer
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      Alert.alert('Payment Link Sent!', 'A secure Razorpay payment link has been sent to the customer via SMS/WhatsApp. Waiting for them to complete the payment...');
-      // In a real flow, you would listen via websocket for payment success
-      // and then call fetchOrderDetails() to see the updated payment status.
-    } catch (error: any) {
-      Alert.alert('Failed', 'Could not send payment link.');
-    } finally {
-      setUpdating(false);
-    }
+    setShowQR(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    Alert.alert('Confirm Payment', 'Have you verified the customer paid successfully?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Confirm', 
+        onPress: async () => {
+          try {
+            setUpdating(true);
+            const res = await api.patch(`/orders/${id}/status`, {
+              status: order.status,
+              paymentStatus: 'PAID'
+            });
+            if (res.data) {
+              Alert.alert('Success', 'Payment marked as PAID');
+              setShowQR(false);
+              fetchOrderDetails();
+            }
+          } catch (e) {
+            Alert.alert('Error', 'Failed to update payment status');
+          } finally {
+            setUpdating(false);
+          }
+        }
+      }
+    ]);
   };
 
   if (loading) {
@@ -275,22 +293,54 @@ export default function ActiveDeliveryScreen() {
           </View>
         </View>
 
-        {/* Order Amount */}
+        {/* Order Amount & Payment */}
         <View style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Collect Cash from Customer?</Text>
-          <Text style={[styles.amountValue, order.paymentMethod === 'COD' ? {color: '#DC2626'} : {color: '#00B140'}]}>
-            {order.paymentMethod === 'COD' ? `YES: ₹${order.totalAmount}` : 'NO (Prepaid Online)'}
+          <Text style={styles.amountLabel}>Payment Status</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: 12 }}>
+            <Ionicons 
+              name={order.paymentStatus === 'PAID' ? 'checkmark-circle' : 'time'} 
+              size={24} 
+              color={order.paymentStatus === 'PAID' ? '#00B140' : '#F59E0B'} 
+            />
+            <Text style={[styles.amountValue, { color: order.paymentStatus === 'PAID' ? '#00B140' : '#F59E0B' }]}>
+              {order.paymentStatus === 'PAID' ? 'PAID' : 'PENDING'}
+            </Text>
+          </View>
+          
+          <Text style={styles.amountLabel}>Amount to Collect / Paid</Text>
+          <Text style={[styles.amountValue, { color: '#0F172A', marginBottom: 16 }]}>
+            ₹{order.totalAmount}
           </Text>
           
-          {order.paymentMethod === 'COD' && deliveryStatus === 'IN_TRANSIT' && (
+          {order.paymentStatus !== 'PAID' && deliveryStatus === 'IN_TRANSIT' && !showQR && (
             <TouchableOpacity 
               style={styles.qrBtn} 
               onPress={handleGeneratePayment}
               disabled={updating}
             >
               <Ionicons name="qr-code" size={20} color="#FFF" />
-              <Text style={styles.qrBtnText}>Customer wants to Pay Online</Text>
+              <Text style={styles.qrBtnText}>Show QR to Customer</Text>
             </TouchableOpacity>
+          )}
+
+          {showQR && (
+            <View style={{ alignItems: 'center', marginTop: 16, padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, width: '100%' }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>Scan to Pay ₹{order.totalAmount}</Text>
+              <View style={{ padding: 8, backgroundColor: '#FFF', borderRadius: 12 }}>
+                <QRCode
+                  value={`upi://pay?pa=bazarchowk@upi&pn=BazarChowk&am=${order.totalAmount}&cu=INR`}
+                  size={150}
+                />
+              </View>
+              <TouchableOpacity 
+                style={[styles.qrBtn, { marginTop: 16, backgroundColor: '#00B140', width: '100%' }]} 
+                onPress={handleConfirmPayment}
+                disabled={updating}
+              >
+                <Ionicons name="checkmark-done" size={20} color="#FFF" />
+                <Text style={styles.qrBtnText}>Mark as PAID (Received)</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 

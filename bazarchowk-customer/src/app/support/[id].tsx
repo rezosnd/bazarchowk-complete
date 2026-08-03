@@ -41,6 +41,11 @@ export default function TicketDetailScreen() {
   useEffect(() => {
     fetchTicketDetails();
     
+    // Polling fallback
+    const interval = setInterval(() => {
+      fetchTicketDetails();
+    }, 3000);
+    
     // Setup socket connection
     socketService.connect();
     
@@ -67,6 +72,7 @@ export default function TicketDetailScreen() {
     socketService.on('new_ticket_message', handleNewMessage);
     
     return () => {
+      clearInterval(interval);
       socketService.off('new_ticket_message', handleNewMessage);
     };
   }, [id]);
@@ -75,6 +81,10 @@ export default function TicketDetailScreen() {
     try {
       const res = await api.get(`/support/tickets/${id}`);
       setTicket(res.data);
+      // Auto-scroll on poll if new messages exist
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 100);
     } catch (error) {
       console.error('Failed to fetch ticket details:', error);
     } finally {

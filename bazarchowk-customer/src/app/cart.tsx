@@ -82,9 +82,7 @@ export default function CartScreen() {
 
   // Calculate Totals
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.quantity * item.productVariant.price), 0);
-  const tax = subtotal * 0.05; // 5% GST
-  const delivery = 40;
-  const total = subtotal + tax + delivery;
+  const total = subtotal; // Delivery and tax calculated at checkout
 
   // Assume single shop checkout for now (Module 7 rule)
   const shopId = items[0]?.productVariant?.product?.shopId;
@@ -145,15 +143,11 @@ export default function CartScreen() {
             <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Taxes & Charges</Text>
-            <Text style={styles.billValue}>₹{tax.toFixed(2)}</Text>
-          </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billValue}>₹{delivery.toFixed(2)}</Text>
+            <Text style={styles.billLabel}>Taxes & Delivery</Text>
+            <Text style={styles.billValue}>Calculated at checkout</Text>
           </View>
           <View style={[styles.billRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>To Pay</Text>
+            <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
           </View>
         </View>
@@ -162,7 +156,7 @@ export default function CartScreen() {
       {/* Checkout Bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 24 }]}>
         <View style={styles.payInfo}>
-          <Text style={styles.payLabel}>Total Amount</Text>
+          <Text style={styles.payLabel}>Subtotal</Text>
           <Text style={styles.payAmount}>₹{total.toFixed(2)}</Text>
         </View>
         <TouchableOpacity 

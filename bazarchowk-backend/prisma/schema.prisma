@@ -460,6 +460,7 @@ model Order {
   deliveryFee Float @default(0)
   discount    Float @default(0)
   platformFee Float @default(0)
+  walletAmountUsed Float @default(0)
   totalAmount Float
 
   status OrderStatus @default(PLACED)

@@ -19,4 +19,8 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   idempotencyKey?: string;
+
+  @ApiPropertyOptional({ description: 'Whether to use wallet balance for partial or full payment' })
+  @IsOptional()
+  useWallet?: boolean;
 }

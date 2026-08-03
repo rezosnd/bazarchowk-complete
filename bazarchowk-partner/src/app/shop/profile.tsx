@@ -72,19 +72,22 @@ export default function ShopProfileScreen() {
           type: asset.mimeType || 'image/jpeg',
         } as any);
 
-        const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
+        const uploadRes = await fetch(`${API_BASE}/upload`, {
+          method: 'POST',
+          body: formData,
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (uploadRes.status === 200 || uploadRes.status === 201) {
-          const data = uploadRes.data;
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
           if (type === 'logo') setLogoUrl(data.url);
           else setBannerUrl(data.url);
         } else {
-          console.error(uploadRes.data);
+          const errText = await uploadRes.text();
+          console.error(errText);
           alert('Failed to upload image. Backend returned an error.');
         }
       } catch (err: any) {

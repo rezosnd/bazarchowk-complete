@@ -52,6 +52,8 @@ export class ProductsService {
     const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
+        shop: { select: { name: true } },
+        category: { select: { name: true } },
         images: { where: { isPrimary: true }, take: 1 },
         variants: true,
       },
@@ -135,5 +137,19 @@ export class ProductsService {
         productId,
       },
     });
+  }
+
+  async removeProduct(productId: string, ownerId: string) {
+    const product = await this.findOne(productId);
+    if (product.shop.ownerId !== ownerId) {
+      throw new ForbiddenException('You do not own this product');
+    }
+
+    await this.prisma.product.delete({
+      where: { id: productId },
+    });
+    
+    await this.cacheManager.del(`product_detail_${productId}`);
+    return { success: true, message: 'Product deleted' };
   }
 }
