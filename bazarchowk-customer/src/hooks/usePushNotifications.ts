@@ -97,20 +97,9 @@ async function registerForPushNotificationsAsync() {
     }
 
     try {
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ??
-        Constants?.easConfig?.projectId;
-
-      if (!projectId) {
-         // Using standard FCM fallback if EAS is not configured
-         token = (await Notifications.getDevicePushTokenAsync()).data;
-      } else {
-        token = (
-          await Notifications.getExpoPushTokenAsync({
-            projectId,
-          })
-        ).data;
-      }
+        // Bypass Expo Push servers and get the raw FCM token directly
+        // The backend is configured with firebase-admin to push directly to Google servers
+        token = (await Notifications.getDevicePushTokenAsync()).data;
     } catch (e: any) {
       console.warn('Failed to get push token. Note: Push Notifications do not work in Expo Go in SDK 53+. Use a development build.', e.message);
       return null;
