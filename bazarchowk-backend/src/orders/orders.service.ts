@@ -170,38 +170,42 @@ export class OrdersService {
 
     if (!shop) throw new NotFoundException('Shop not found');
 
-    const R = 6371; // Earth's radius in km
-    const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
-    const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(deliveryAddress.latitude * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distanceKm = R * c;
+    // Only compute distance if BOTH shop and address have valid non-zero coordinates
+    const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);
+    const addrHasCoords = deliveryAddress.latitude && deliveryAddress.longitude && (deliveryAddress.latitude !== 0 || deliveryAddress.longitude !== 0);
+
+    let distanceKm = 0;
+    if (shopHasCoords && addrHasCoords) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
+      const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deliveryAddress.latitude * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      distanceKm = R * c;
+    }
 
     // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)
-    let calculatedDeliveryFee = 20; // Hard fallback
     const cityConfig = await this.prisma.cityConfig.findFirst({
       where: { name: { equals: shop.city, mode: 'insensitive' } }
     });
 
-    if (cityConfig) {
-      calculatedDeliveryFee = cityConfig.defaultDeliveryFee; // Set default first
-      if (cityConfig.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers)) {
-        // Tiers should be sorted by uptoKm, but let's sort them just to be safe
-        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-        
-        for (const tier of tiers) {
-          if (distanceKm <= tier.uptoKm) {
-            calculatedDeliveryFee = tier.fee;
-            break;
-          }
+    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 20;
+
+    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+      // Tiers should be sorted by uptoKm, but let's sort them just to be safe
+      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+      for (const tier of tiers) {
+        if (distanceKm <= tier.uptoKm) {
+          calculatedDeliveryFee = tier.fee;
+          break;
         }
-        // If distance exceeds all tiers, it falls back to defaultDeliveryFee
       }
-    } else {
-      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5); // Fallback if no city rule
+    } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
+      // Fallback formula ONLY for reasonable distances within a city (≤30km)
+      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5);
     }
 
     let taxAmount = 0;
