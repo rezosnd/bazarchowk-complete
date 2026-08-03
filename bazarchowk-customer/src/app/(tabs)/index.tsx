@@ -280,35 +280,28 @@ function GlobalSearch() {
 function CategoriesGrid() {
   const { t } = useTranslation();
   
-  const HOME_CATEGORIES = [
-    { id: 'grocery', name: t('categories.grocery') || 'Grocery', icon: 'cart' },
-    { id: 'food', name: t('categories.food') || 'Food', icon: 'restaurant' },
-    { id: 'medicine', name: t('categories.medicine') || 'Medicine', icon: 'medkit' },
-    { id: 'salon', name: t('categories.salon') || 'Salon', icon: 'cut' },
-    { id: 'more', name: t('categories.more') || 'More', icon: 'grid', isViewAll: true }
-  ];
+  const { data: fetchedCategories = [], isLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: HomeService.getCategories
+  });
+
+  const displayCategories = fetchedCategories.slice(0, 4);
 
   return (
     <View style={styles.categoryGrid}>
-      {HOME_CATEGORIES.map(c => (
+      {displayCategories.map((c: any) => (
         <TouchableOpacity
           key={c.id}
           style={styles.catItem}
           activeOpacity={0.7}
-          onPress={() => {
-            if (c.isViewAll) {
-              router.push('/(tabs)/categories');
-            } else {
-              router.push('/(tabs)/categories');
-            }
-          }}
+          onPress={() => router.push(`/categories/${c.id}`)}
         >
-          <View style={[styles.catIconWrap, c.isViewAll && { backgroundColor: EMERALD }]}>
-            <Ionicons
-              name={c.icon as any}
-              size={26}
-              color={c.isViewAll ? '#FFFFFF' : EMERALD}
-            />
+          <View style={styles.catIconWrap}>
+            {c.imageUrl || c.iconUrl ? (
+              <Image source={{ uri: c.imageUrl || c.iconUrl }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+            ) : (
+              <Ionicons name="grid" size={26} color={EMERALD} />
+            )}
           </View>
           <Text
             style={styles.catText}
@@ -320,6 +313,25 @@ function CategoriesGrid() {
           </Text>
         </TouchableOpacity>
       ))}
+
+      {/* View All Button */}
+      <TouchableOpacity
+        style={styles.catItem}
+        activeOpacity={0.7}
+        onPress={() => router.push('/(tabs)/categories')}
+      >
+        <View style={[styles.catIconWrap, { backgroundColor: EMERALD }]}>
+          <Ionicons name="grid" size={26} color="#FFFFFF" />
+        </View>
+        <Text
+          style={styles.catText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
+          {t('categories.more') || 'More'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -509,7 +521,7 @@ function RecommendedSection() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {products.map((prod: any) => (
           <TouchableOpacity key={prod.id} style={styles.productCard} activeOpacity={0.9} onPress={() => router.push(`/product/${prod.id}`)}>
-            <Image source={{ uri: prod.images?.[0]?.url || PLACEHOLDER_IMG }} style={styles.productImg} contentFit="cover" />
+            <Image source={{ uri: prod.images?.[0]?.imageUrl || PLACEHOLDER_IMG }} style={styles.productImg} contentFit="cover" />
             <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
             <View style={styles.productPriceRow}>
               <Text style={styles.productPrice}>₹{prod.basePrice}</Text>
