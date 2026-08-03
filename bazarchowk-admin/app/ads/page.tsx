@@ -9,6 +9,7 @@ import api from '@/lib/api';
 
 export default function AdsAdminDashboard() {
   const [ads, setAds] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // New Plan form state
@@ -18,25 +19,30 @@ export default function AdsAdminDashboard() {
   const [durationDays, setDurationDays] = useState('7');
   const [price, setPrice] = useState('499');
 
-  const fetchAds = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get('/ads/admin/all');
-      setAds(res.data);
+      setLoading(true);
+      const [adsRes, plansRes] = await Promise.all([
+        api.get('/ads/admin/all'),
+        api.get('/ads/plans')
+      ]);
+      setAds(adsRes.data);
+      setPlans(plansRes.data);
     } catch (error) {
-      console.error('Failed to fetch ads', error);
+      console.error('Failed to fetch ads/plans', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAds();
+    fetchData();
   }, []);
 
   const handleApprove = async (id: string) => {
     try {
       await api.patch(`/ads/${id}/approve`);
-      fetchAds();
+      fetchData();
     } catch (e) {
       console.error('Failed to approve', e);
       alert('Failed to approve ad');
@@ -55,6 +61,7 @@ export default function AdsAdminDashboard() {
       alert('Ad Plan created successfully!');
       setShowPlanForm(false);
       setPlanName('');
+      fetchData();
     } catch (err) {
       alert('Failed to create plan');
     }
@@ -111,68 +118,109 @@ export default function AdsAdminDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <div className="col-span-full py-12 text-center text-slate-500">Loading Ads...</div>
-        ) : ads.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed rounded-xl">No advertisements found.</div>
-        ) : (
-          ads.map(ad => (
-            <Card key={ad.id} className="overflow-hidden border-slate-200">
-              <CardHeader className="bg-slate-50 border-b pb-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{ad.shop?.name || 'Unknown Shop'}</CardTitle>
-                    <p className="text-sm font-medium text-emerald-600 mt-1">{ad.plan?.name}</p>
-                  </div>
-                  <Badge 
-                    variant={ad.status === 'ACTIVE' ? 'default' : ad.status === 'PENDING' ? 'secondary' : 'outline'}
-                    className={
-                      ad.status === 'ACTIVE' ? 'bg-emerald-500 hover:bg-emerald-600' : 
-                      ad.status === 'PENDING' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : ''
-                    }
-                  >
-                    {ad.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                {ad.title && (
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Ad Title</p>
-                    <p className="text-slate-900 font-medium">{ad.title}</p>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
-                      <Eye className="w-3 h-3" /> Impressions
+      {/* ── Active & Pending Ads Section ── */}
+      <div>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Purchased Advertisements</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+            <div className="col-span-full py-12 text-center text-slate-500">Loading Ads...</div>
+          ) : ads.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed rounded-xl">No advertisements purchased by shops yet.</div>
+          ) : (
+            ads.map(ad => (
+              <Card key={ad.id} className="overflow-hidden border-slate-200">
+                <CardHeader className="bg-slate-50 border-b pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{ad.shop?.name || 'Unknown Shop'}</CardTitle>
+                      <p className="text-sm font-medium text-emerald-600 mt-1">{ad.plan?.name}</p>
                     </div>
-                    <span className="text-xl font-bold text-slate-900">{ad.impressions.toLocaleString()}</span>
+                    <Badge 
+                      variant={ad.status === 'ACTIVE' ? 'default' : ad.status === 'PENDING' ? 'secondary' : 'outline'}
+                      className={
+                        ad.status === 'ACTIVE' ? 'bg-emerald-500 hover:bg-emerald-600' : 
+                        ad.status === 'PENDING' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : ''
+                      }
+                    >
+                      {ad.status}
+                    </Badge>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
-                      <MousePointerClick className="w-3 h-3" /> Clicks
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  {ad.title && (
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase font-semibold">Ad Title</p>
+                      <p className="text-slate-900 font-medium">{ad.title}</p>
                     </div>
-                    <span className="text-xl font-bold text-slate-900">{ad.clicks.toLocaleString()}</span>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
+                        <Eye className="w-3 h-3" /> Impressions
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">{ad.impressions || 0}</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center text-slate-500 gap-1 text-xs uppercase font-semibold">
+                        <MousePointerClick className="w-3 h-3" /> Clicks
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">{ad.clicks || 0}</p>
+                    </div>
                   </div>
-                </div>
 
+                  <div className="pt-2">
+                    <p className="text-xs text-slate-500 mb-1 font-semibold uppercase">Status Info</p>
+                    <p className="text-sm font-medium text-slate-700">Ends: {new Date(ad.endDate).toLocaleDateString()}</p>
+                  </div>
+                </CardContent>
                 {ad.status === 'PENDING' && (
-                  <Button 
-                    className="w-full bg-emerald-600 hover:bg-emerald-700" 
-                    onClick={() => handleApprove(ad.id)}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve & Activate
-                  </Button>
+                  <div className="p-4 bg-slate-50 border-t flex justify-end">
+                    <Button onClick={() => handleApprove(ad.id)} className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" /> Approve Ad
+                    </Button>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          ))
-        )}
+              </Card>
+            ))
+          )}
+        </div>
       </div>
+
+      {/* ── Configured Ad Plans Section ── */}
+      <div className="mt-12">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Configured Ad Plans</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {loading ? (
+            <div className="col-span-full py-6 text-center text-slate-500">Loading Plans...</div>
+          ) : plans.length === 0 ? (
+            <div className="col-span-full py-6 text-center text-slate-500 border-2 border-dashed rounded-xl">No plans configured. Create one above!</div>
+          ) : (
+            plans.map(plan => (
+              <Card key={plan.id} className="border-slate-200">
+                <CardHeader className="bg-slate-50 border-b pb-4">
+                  <CardTitle className="text-lg">{plan.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Type</span>
+                    <span className="font-semibold text-slate-900">{plan.type}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Duration</span>
+                    <span className="font-semibold text-slate-900">{plan.durationDays} Days</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Price</span>
+                    <span className="font-semibold text-emerald-600">₹{plan.price}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

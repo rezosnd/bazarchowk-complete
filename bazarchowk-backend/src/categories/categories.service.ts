@@ -42,15 +42,12 @@ export class CategoriesService {
       // OR are service-based categories (we'll just return all active categories for now to not break service categories, but ideally we link service offerings to categories)
       whereClause = {
         isActive: true,
-        // Uncomment below to STRICTLY filter by product availability. 
-        // We leave it relaxed for now so Service Categories (which have no products) don't disappear.
-        /*
+        // STRICTLY filter by product availability in this city
         products: {
           some: {
             shop: { city: { equals: city, mode: 'insensitive' }, isActive: true }
           }
         }
-        */
       };
     }
 
