@@ -11,6 +11,8 @@ interface FeeTier {
 export default function SettingsPage() {
   const [cities, setCities] = useState<any[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string>('');
+  const [newCityName, setNewCityName] = useState('');
+  const [isAddingCity, setIsAddingCity] = useState(false);
   
   // Fee state
   const [tiers, setTiers] = useState<FeeTier[]>([]);
@@ -123,6 +125,42 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
+  const handleAddCity = async () => {
+    if (!newCityName.trim()) return;
+    setLoading(true);
+    setStatusMsg(null);
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/cities/admin`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          name: newCityName.trim(),
+          state: 'General',
+          slug: newCityName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          defaultDeliveryFee: 20,
+          taxPercent: 5
+        }),
+      });
+      
+      if (res.ok) {
+        setStatusMsg({ type: 'success', text: `✅ City "${newCityName}" added successfully!` });
+        setNewCityName('');
+        setIsAddingCity(false);
+        fetchCities();
+      } else {
+        const error = await res.json();
+        setStatusMsg({ type: 'error', text: '❌ Failed: ' + (error.message || 'Unknown error') });
+      }
+    } catch (e) {
+      setStatusMsg({ type: 'error', text: '❌ Network error. Please try again.' });
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
       <h1 className="text-2xl font-extrabold text-gray-900">Delivery & Tax Configuration</h1>
@@ -137,19 +175,57 @@ export default function SettingsPage() {
       )}
 
       <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-4xl">
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Select Region / City</label>
-          <select 
-            value={selectedCityId}
-            onChange={onCityChange}
-            className="w-full max-w-sm px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-          >
-            {cities.map(c => (
-              <option key={c.id} value={c.id}>{c.name} ({c.state})</option>
-            ))}
-          </select>
-          {cities.length === 0 && <p className="text-sm text-amber-600 mt-2">⚠️ No cities configured. Please add cities from the Super Admin panel.</p>}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Region / City</label>
+            {cities.length === 0 && !isAddingCity ? (
+              <div className="text-red-500 text-sm font-medium p-2 bg-red-50 rounded-md border border-red-200">⚠️ No cities configured. Please add one below.</div>
+            ) : (
+              <select 
+                value={selectedCityId}
+                onChange={onCityChange}
+                disabled={isAddingCity}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+              >
+                {cities.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.state})</option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="flex-none">
+            {!isAddingCity ? (
+              <button onClick={() => setIsAddingCity(true)} className="px-4 py-3 bg-emerald-100 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-200 transition">
+                + Add New City
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <input 
+                  autoFocus
+                  type="text" 
+                  placeholder="e.g. Dhanbad" 
+                  value={newCityName}
+                  onChange={e => setNewCityName(e.target.value)}
+                  className="px-4 py-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button onClick={handleAddCity} disabled={loading || !newCityName} className="px-4 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50">
+                  Save
+                </button>
+                <button onClick={() => setIsAddingCity(false)} className="px-4 py-3 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300">
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Global Fallback Toggle (Optional visual aid) */}
+        {cities.length > 0 && !isAddingCity && (
+          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <h3 className="text-sm font-semibold text-indigo-900 mb-1">Global Fallback Behavior</h3>
+            <p className="text-sm text-indigo-700">If a shop is located in a city that is <strong>not</strong> in this list, the system automatically applies a flat ₹20 default delivery fee and standard distance formula.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
           <div>
