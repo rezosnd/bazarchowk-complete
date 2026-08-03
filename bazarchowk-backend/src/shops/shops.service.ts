@@ -213,13 +213,17 @@ export class ShopsService {
     });
 
     if (existing) {
-      return this.prisma.shopTiming.update({
+      const updated = await this.prisma.shopTiming.update({
         where: { id: existing.id },
         data: timingDto,
       });
+      await this.cacheManager.del(`shop_detail_${shopId}`);
+      return updated;
     }
 
-    return this.prisma.shopTiming.create({ data: { ...timingDto, shopId } });
+    const created = await this.prisma.shopTiming.create({ data: { ...timingDto, shopId } });
+    await this.cacheManager.del(`shop_detail_${shopId}`);
+    return created;
   }
 
   /**
@@ -249,6 +253,7 @@ export class ShopsService {
     );
 
     this.logger.log(`Shop ${shopId} bulk updated ${dto.timings.length} day timings`);
+    await this.cacheManager.del(`shop_detail_${shopId}`);
     return results;
   }
 
@@ -285,11 +290,14 @@ export class ShopsService {
     today.setHours(0, 0, 0, 0);
     if (date < today) throw new BadRequestException('Cannot mark past dates as holidays');
 
-    return this.prisma.shopHoliday.upsert({
+    const result = await this.prisma.shopHoliday.upsert({
       where: { shopId_date: { shopId, date } },
       create: { shopId, date, reason: dto.reason },
       update: { reason: dto.reason },
     });
+    
+    await this.cacheManager.del(`shop_detail_${shopId}`);
+    return result;
   }
 
   async getHolidays(shopId: string) {
@@ -311,7 +319,9 @@ export class ShopsService {
     if (!holiday) throw new NotFoundException('Holiday not found');
     if (holiday.shopId !== shopId) throw new ForbiddenException('Not your holiday entry');
 
-    return this.prisma.shopHoliday.delete({ where: { id: holidayId } });
+    const result = await this.prisma.shopHoliday.delete({ where: { id: holidayId } });
+    await this.cacheManager.del(`shop_detail_${shopId}`);
+    return result;
   }
 
   // ==================== DOCUMENT MANAGEMENT ====================

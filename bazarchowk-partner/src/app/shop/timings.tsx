@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Switch, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,40 @@ export default function ShopTimingsScreen() {
     }))
   );
 
+  useEffect(() => {
+    fetchTimings();
+  }, []);
+
+  const fetchTimings = async () => {
+    try {
+      const shopId = await SecureStore.getItemAsync('bazar_shop_id');
+      if (!shopId) return;
+      
+      const res = await fetch(`${API_BASE}/shops/${shopId}/timings`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          // Merge fetched data with default skeleton (in case some days are missing)
+          const newSchedule = [...schedule];
+          data.forEach((timing: any) => {
+            const idx = newSchedule.findIndex(s => s.dayOfWeek === timing.dayOfWeek);
+            if (idx !== -1) {
+              newSchedule[idx] = {
+                dayOfWeek: timing.dayOfWeek,
+                openTime: timing.openTime,
+                closeTime: timing.closeTime,
+                isClosed: timing.isClosed
+              };
+            }
+          });
+          setSchedule(newSchedule);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch timings', e);
+    }
+  };
+
   const toggleDay = (index: number) => {
     const newSchedule = [...schedule];
     newSchedule[index].isClosed = !newSchedule[index].isClosed;
@@ -44,7 +78,24 @@ export default function ShopTimingsScreen() {
       if (!token) throw new Error('Authentication token missing.');
       if (!shopId) throw new Error('Shop ID not found in session');
 
-      const payload = { timings: schedule };
+      // Format time strings (e.g. "9:00" -> "09:00")
+      const formattedSchedule = schedule.map(t => {
+        let openTime = t.openTime;
+        let closeTime = t.closeTime;
+        
+        if (openTime.includes(':')) {
+          const [h, m] = openTime.split(':');
+          openTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+        }
+        if (closeTime.includes(':')) {
+          const [h, m] = closeTime.split(':');
+          closeTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+        }
+        
+        return { ...t, openTime, closeTime };
+      });
+
+      const payload = { timings: formattedSchedule };
 
       const res = await fetch(`${API_BASE}/shops/${shopId}/timings/bulk`, {
         method: 'POST',
@@ -56,11 +107,12 @@ export default function ShopTimingsScreen() {
       });
 
       if (res.ok) {
-        alert('Weekly Schedule Saved!');
+        alert('Weekly Schedule Saved Successfully!');
         router.push('/');
       } else {
-        alert('Schedule simulated save successful (Waiting for real shopId)');
-        router.push('/');
+        const err = await res.json();
+        const msg = err.message || 'Validation error';
+        alert(`Error: ${Array.isArray(msg) ? msg[0] : msg}`);
       }
     } catch (e) {
       alert('Network Error.');
