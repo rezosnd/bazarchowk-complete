@@ -46,9 +46,10 @@ const TEXT_MUTED = '#6B7280';
 // ─── Asset ───────────────────────────────────────────────────────────────────
 const LOGO_SRC = require('@/assets/images/APP-ICON.png');
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { HomeService } from '@/services/home.service';
 import api from '@/services/api';
+import { socketService } from '@/services/socket';
 
 // Reusing some placeholder images just in case backend data lacks images initially
 const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
@@ -62,6 +63,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store';
 
 function HomeHeader() {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { cart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
@@ -97,6 +99,17 @@ function HomeHeader() {
   
   const scale = useSharedValue(1);
   
+  useEffect(() => {
+    socketService.connect();
+    const handleNewNotif = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    };
+    socketService.on('new_notification', handleNewNotif);
+    return () => {
+      socketService.off('new_notification', handleNewNotif);
+    };
+  }, []);
+
   useEffect(() => {
     if (itemsCount > 0) {
       scale.value = withSequence(

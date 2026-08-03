@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { socketService } from '@/services/socket';
 
 const PRIMARY = '#00B140';
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
@@ -15,6 +16,21 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     fetchNotifications();
+    
+    socketService.connect();
+    
+    const handleNewNotification = (notification: any) => {
+      setNotifications(prev => {
+        if (prev.some(n => n.id === notification.id)) return prev;
+        return [notification, ...prev];
+      });
+    };
+    
+    socketService.on('new_notification', handleNewNotification);
+    
+    return () => {
+      socketService.off('new_notification', handleNewNotification);
+    };
   }, []);
 
   const fetchNotifications = async () => {

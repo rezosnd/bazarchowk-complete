@@ -2,13 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private firebaseInitialized = false;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {
     this.initializeFirebase();
   }
 
@@ -74,9 +78,12 @@ export class NotificationsService {
       },
     });
 
+    // Broadcast instantly over websockets
+    this.realtimeGateway.sendToUser(userId, 'new_notification', notification);
+
     // 2. Trigger FCM Push Notification asynchronously
     this.sendPushNotification(userId, title, message).catch(err => {
-      this.logger.error(`Failed to send push notification to user \${userId}`, err);
+      this.logger.error(`Failed to send push notification to user ${userId}`, err);
     });
 
     return notification;
@@ -163,6 +170,30 @@ export class NotificationsService {
     await this.prisma.notification.createMany({
       data: notificationData,
     });
+
+    // 2.5 Broadcast instantly over websockets
+    if (targetAudience === 'ALL') {
+      this.realtimeGateway.server.emit('new_notification', {
+        title,
+        message,
+        type: 'BROADCAST',
+        imageUrl,
+        linkUrl,
+        createdAt: new Date().toISOString(),
+      });
+    } else {
+      // Broadcast individually since we don't have role-based rooms set up for all targets easily yet
+      users.forEach(u => {
+        this.realtimeGateway.sendToUser(u.id, 'new_notification', {
+          title: parseTemplate(title, u),
+          message: parseTemplate(message, u),
+          type: 'BROADCAST',
+          imageUrl,
+          linkUrl,
+          createdAt: new Date().toISOString(),
+        });
+      });
+    }
 
     // 3. Send Push Notifications via FCM (Personalized)
     if (this.firebaseInitialized) {

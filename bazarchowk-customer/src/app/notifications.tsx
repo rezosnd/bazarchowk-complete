@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import api from '@/services/api';
+import { socketService } from '@/services/socket';
 
 const PRIMARY = '#00B140';
 
@@ -15,6 +16,23 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     fetchNotifications();
+    
+    // Setup socket connection for real-time notifications
+    socketService.connect();
+    
+    const handleNewNotification = (notification: any) => {
+      setNotifications(prev => {
+        // Avoid duplicates
+        if (prev.some(n => n.id === notification.id)) return prev;
+        return [notification, ...prev];
+      });
+    };
+    
+    socketService.on('new_notification', handleNewNotification);
+    
+    return () => {
+      socketService.off('new_notification', handleNewNotification);
+    };
   }, []);
 
   const fetchNotifications = async () => {
