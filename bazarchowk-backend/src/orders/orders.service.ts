@@ -50,26 +50,36 @@ export class OrdersService {
     const shop = await this.prisma.shop.findUnique({ where: { id: dto.shopId } });
     if (!shop) throw new NotFoundException('Shop not found');
 
-    const R = 6371;
-    const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
-    const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
-    const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(deliveryAddress.latitude*Math.PI/180)*Math.cos(shop.latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distanceKm = R * c;
+    // Only compute distance if BOTH shop and address have valid non-zero coordinates
+    const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);
+    const addrHasCoords = deliveryAddress.latitude && deliveryAddress.longitude && (deliveryAddress.latitude !== 0 || deliveryAddress.longitude !== 0);
 
-    let deliveryFee = 20;
+    let distanceKm = 0;
+    if (shopHasCoords && addrHasCoords) {
+      const R = 6371;
+      const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
+      const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
+      const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(deliveryAddress.latitude*Math.PI/180)*Math.cos(shop.latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      distanceKm = R * c;
+    }
+
     const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
-    if (cityConfig) {
-      deliveryFee = cityConfig.defaultDeliveryFee;
-      if (cityConfig.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers)) {
-        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-        for (const tier of tiers) {
-          if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
-        }
+
+    // Default to city's configured base fee, or ₹20 hardcoded fallback
+    let deliveryFee = cityConfig?.defaultDeliveryFee ?? 20;
+
+    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+      // Apply distance-tier pricing only when we have a real distance
+      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+      for (const tier of tiers) {
+        if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
       }
-    } else {
+    } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
+      // Fallback formula ONLY for reasonable distances within a city (≤30km)
       deliveryFee = Math.max(20, Math.ceil(distanceKm) * 5);
     }
+    // If distanceKm is 0 (coords missing), we already defaulted to city/20 above — no change needed
 
     let taxAmount = 0;
     if (cityConfig && cityConfig.taxPercent) {
