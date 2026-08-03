@@ -32,7 +32,7 @@ export class ProductsService {
   }
 
   async findAll(shopId?: string, query?: string, categoryId?: string, subCategoryId?: string, lat?: number, lng?: number) {
-    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}_${categoryId || 'none'}_${subCategoryId || 'none'}_${lat || 'none'}_${lng || 'none'}`;
+    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}_${categoryId || 'none'}_${subCategoryId || 'none'}_${lat?.toFixed(2) || 'none'}_${lng?.toFixed(2) || 'none'}`;
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -50,32 +50,48 @@ export class ProductsService {
     }
 
     if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng) && !shopId) {
-      // Find nearby shops first
+      // Find all active, verified shops that have location data
       const allShops = await this.prisma.shop.findMany({
         where: { isActive: true, isVerified: true },
         select: { id: true, latitude: true, longitude: true, deliveryRadius: true }
       });
-      const nearbyShopIds = allShops.filter(shop => {
-        if (shop.latitude == null || shop.longitude == null) return false;
-        const R = 6371;
-        const dLat = (shop.latitude - lat) * (Math.PI / 180);
-        const dLon = (shop.longitude - lng) * (Math.PI / 180);
-        const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c;
-        return distance <= (shop.deliveryRadius || 5.0);
-      }).map(s => s.id);
 
-      whereClause.shopId = { in: nearbyShopIds };
+      const shopsWithLocation = allShops.filter(s => s.latitude != null && s.longitude != null);
+
+      if (shopsWithLocation.length > 0) {
+        // Only filter by location if shops actually have GPS data
+        const nearbyShopIds = shopsWithLocation.filter(shop => {
+          const R = 6371;
+          const dLat = (shop.latitude - lat) * (Math.PI / 180);
+          const dLon = (shop.longitude - lng) * (Math.PI / 180);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return distance <= (shop.deliveryRadius || 10.0);
+        }).map(s => s.id);
+
+        // Also include shops that have NO coordinates set (treat as local/unverified)
+        const shopsWithoutLocation = allShops
+          .filter(s => s.latitude == null || s.longitude == null)
+          .map(s => s.id);
+
+        const combinedIds = [...nearbyShopIds, ...shopsWithoutLocation];
+        if (combinedIds.length > 0) {
+          whereClause.shopId = { in: combinedIds };
+        }
+        // If combinedIds is empty (no nearby shops + no location-less shops), don't add shopId filter
+        // This means: show all products (better UX than showing nothing)
+      }
+      // If no shops have location data at all, skip location filtering entirely
     }
 
     const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
-        shop: { select: { name: true } },
+        shop: { select: { name: true, city: true, latitude: true, longitude: true, deliveryRadius: true } },
         category: { select: { name: true } },
         images: { where: { isPrimary: true }, take: 1 },
         variants: true,

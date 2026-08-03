@@ -14,6 +14,7 @@ import Animated, {
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
+import { useCurrentLocation } from '@/hooks';
 
 const PRIMARY = '#00B140';
 const { width: W } = Dimensions.get('window');
@@ -133,6 +134,7 @@ export default function CategoryDetailScreen() {
   const id = Array.isArray(params.id) ? params.id[0] : (params.id as string);
   const name = Array.isArray(params.name) ? params.name[0] : (params.name as string);
   const insets = useSafeAreaInsets();
+  const location = useCurrentLocation();
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,16 +150,21 @@ export default function CategoryDetailScreen() {
     setLoading(true);
     try {
       // Dynamic service categories (e.g. dyn-salon) don't have real DB products
-      // For them we query shops by partner type instead
       if (id.startsWith('dyn-')) {
         setProducts([]);
         setLoading(false);
         return;
       }
 
+      // Build location params — backend will filter to nearby shops if lat/lng provided
+      // If shop has no GPS set yet, backend still includes it (no false negatives)
+      const locParams = location?.lat && location?.lng
+        ? `&lat=${location.lat}&lng=${location.lng}`
+        : '';
+
       const [subRes, catRes] = await Promise.all([
-        api.get(`/products?subCategoryId=${id}`).catch(() => ({ data: [] })),
-        api.get(`/products?categoryId=${id}`).catch(() => ({ data: [] })),
+        api.get(`/products?subCategoryId=${id}${locParams}`).catch(() => ({ data: [] })),
+        api.get(`/products?categoryId=${id}${locParams}`).catch(() => ({ data: [] })),
       ]);
       const subData = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.items || []);
       const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.items || []);
@@ -169,10 +176,9 @@ export default function CategoryDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, location?.lat, location?.lng]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
 
   const sorted = [...products].sort((a, b) => {
     const pa = a.variants?.[0]?.price ?? a.basePrice ?? 0;
@@ -237,9 +243,19 @@ export default function CategoryDetailScreen() {
           </View>
         ) : sorted.length === 0 ? (
           <View style={styles.centered}>
-            <Ionicons name="cube-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyTitle}>No items here yet</Text>
-            <Text style={styles.emptyText}>Check back soon!</Text>
+            <Ionicons name="location-outline" size={64} color="#CBD5E1" />
+            <Text style={styles.emptyTitle}>No shops near you</Text>
+            <Text style={styles.emptyText}>
+              {location?.city
+                ? `No shops in ${location.city} carry this category yet.`
+                : 'No products available in this category right now.'}
+            </Text>
+            <TouchableOpacity
+              onPress={fetchProducts}
+              style={{ marginTop: 16, backgroundColor: '#00B140', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 }}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '700' }}>Retry</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.grid}>
