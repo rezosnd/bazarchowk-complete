@@ -32,55 +32,27 @@ export class CategoriesService {
   }
 
   async findAllCategories(city?: string) {
-    const cacheKey = city ? `all_categories_\${city.toLowerCase()}` : 'all_categories';
+    // Always return ALL active categories regardless of city.
+    // Filtering categories by city caused a broken UX where a category appeared
+    // on the home screen (due to an unpublished/inactive product in a nearby shop)
+    // but then showed 0 results when clicked because the products endpoint
+    // only returns published items. Location-based filtering belongs on the
+    // products/shops queries, not on the category listing (per Swiggy/Blinkit pattern).
+    const cacheKey = 'all_categories_v2';
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;
 
-    let whereClause: any = { isActive: true };
-    if (city) {
-      // Find categories that either have active products in this city
-      // OR are service-based categories (we'll just return all active categories for now to not break service categories, but ideally we link service offerings to categories)
-      whereClause = {
-        isActive: true,
-        // STRICTLY filter by product availability in this city
-        products: {
-          some: {
-            shop: { city: { equals: city, mode: 'insensitive' }, isActive: true }
-          }
-        }
-      };
-    }
-
     const categories = await this.prisma.category.findMany({
-      where: whereClause,
+      where: {
+        isActive: true,
+        // Only show categories that have at least one published product
+        products: { some: { isPublished: true } }
+      },
       include: { subCategories: { where: { isActive: true }, orderBy: { name: 'asc' } } },
       orderBy: { name: 'asc' },
     });
-    
-    // Inject dynamic service categories based on active shops in the city
-    if (city) {
-      const activePartnerTypes = await this.prisma.shop.findMany({
-        where: { city: { equals: city, mode: 'insensitive' }, isActive: true, hasServices: true },
-        select: { partnerType: true },
-        distinct: ['partnerType']
-      });
 
-      const typeMap: Record<string, any> = {
-        SALON: { id: 'dyn-salon', name: 'Beauty & Salon', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3133/3133276.png', subCategories: [{ id: 'sub-salon', name: 'Salon Services' }] },
-        PLUMBER: { id: 'dyn-plumber', name: 'Plumbing', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png', subCategories: [{ id: 'sub-plumber', name: 'Plumber' }] },
-        ELECTRICIAN: { id: 'dyn-elec', name: 'Electrician', iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063810.png', subCategories: [{ id: 'sub-elec', name: 'Electrician' }] },
-        CLEANING: { id: 'dyn-clean', name: 'Cleaning', iconUrl: 'https://cdn-icons-png.flaticon.com/512/2954/2954893.png', subCategories: [{ id: 'sub-clean', name: 'Cleaning' }] }
-      };
-
-      for (const shop of activePartnerTypes) {
-        const dynCat = typeMap[shop.partnerType];
-        if (dynCat && !categories.find(c => c.name === dynCat.name)) {
-          categories.push(dynCat as any);
-        }
-      }
-    }
-
-    await this.cacheManager.set(cacheKey, categories, 3600000); // Cache for 1 hour
+    await this.cacheManager.set(cacheKey, categories, 300000); // Cache for 5 min
     return categories;
   }
 

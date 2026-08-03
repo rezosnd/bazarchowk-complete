@@ -277,15 +277,15 @@ function GlobalSearch() {
   );
 }
 
-function CategoriesGrid({ city }: { city?: string }) {
+function CategoriesGrid() {
   const { t } = useTranslation();
   
   const { data: fetchedCategories = [], isLoading } = useQuery({
-    queryKey: ['categories', city],
-    queryFn: () => HomeService.getCategories(city)
+    queryKey: ['categories'],
+    queryFn: () => HomeService.getCategories()
   });
 
-  const displayCategories = fetchedCategories.slice(0, 4);
+  const displayCategories = fetchedCategories.slice(0, 8);
 
   return (
     <View style={styles.categoryGrid}>
@@ -604,7 +604,7 @@ export default function HomeScreen() {
           <AIHero />
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
-          <CategoriesGrid city={location?.city} />
+          <CategoriesGrid />
 
           <NearbyShops lat={location?.lat} lng={location?.lng} />
           <PopularMarkets lat={location?.lat} lng={location?.lng} />
