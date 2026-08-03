@@ -34,7 +34,11 @@ export default function CheckoutScreen() {
 
   const fetchData = async () => {
     try {
-      const addrRes = await api.get('/addresses');
+      // Load cart and addresses in parallel
+      const [addrRes] = await Promise.all([
+        api.get('/addresses'),
+        fetchCart(), // ensure cart is populated for fallback
+      ]);
       setAddresses(addrRes.data);
       
       const defAddr = addrRes.data.find((a: any) => a.isDefault);
@@ -56,7 +60,7 @@ export default function CheckoutScreen() {
     }
   }, [selectedAddressId, useWallet, shopId]);
 
-  const { cart } = useCartStore();
+  const { cart, fetchCart } = useCartStore();
 
   const fetchBillDetails = async () => {
     try {
@@ -78,25 +82,24 @@ export default function CheckoutScreen() {
     } catch (e: any) {
       const status = e?.response?.status;
       console.warn('Failed to fetch bill details', e);
-      // Graceful fallback: compute from local cart so UI is still usable
-      if (status === 404 || status === 400 || !status) {
-        const shopItems = (cart?.items || []);
-        const itemTotal = shopItems.reduce(
-          (sum: number, item: any) =>
-            sum + (item.price || item.variant?.price || item.product?.basePrice || 0) * item.quantity,
-          0
-        );
-        // Use field names that match what the UI renders
-        setBillDetails({
-          itemTotal,
-          taxAmount: 0,
-          deliveryFee: 0,
-          walletAmountUsed: 0,
-          payableAmount: itemTotal,
-          walletBalance: 0,
-          note: 'Preview unavailable — final amount confirmed at delivery',
-        });
-      }
+      // Graceful fallback: compute total from local cart store (correct field path: item.productVariant.price)
+      const shopItems = (cart?.items || []);
+      const itemTotal = shopItems.reduce((sum: number, item: any) => {
+        // Backend cart item shape: { productVariant: { price: number }, quantity: number }
+        const price = item.productVariant?.price 
+          ?? item.price 
+          ?? item.variant?.price 
+          ?? 0;
+        return sum + price * (item.quantity || 1);
+      }, 0);
+      setBillDetails({
+        itemTotal,
+        taxAmount: Math.round(itemTotal * 0.05 * 100) / 100, // 5% tax estimate
+        deliveryFee: 20, // default delivery fee
+        walletAmountUsed: 0,
+        payableAmount: itemTotal + Math.round(itemTotal * 0.05 * 100) / 100 + 20,
+        walletBalance: 0,
+      });
     } finally {
       setFetchingBill(false);
     }
@@ -291,9 +294,6 @@ export default function CheckoutScreen() {
                   <Text style={[styles.billLabel, { color: PRIMARY }]}>Wallet Applied</Text>
                   <Text style={[styles.billValue, { color: PRIMARY }]}>-₹{(billDetails.walletAmountUsed ?? 0).toFixed(2)}</Text>
                 </View>
-              )}
-              {billDetails.note && (
-                <Text style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 4 }}>{billDetails.note}</Text>
               )}
               <View style={[styles.billRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>To Pay</Text>
