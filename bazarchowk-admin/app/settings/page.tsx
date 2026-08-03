@@ -30,12 +30,27 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setCities(data);
-        if (data.length > 0) handleSelectCity(data[0]);
+        if (data.length > 0) {
+          // If we already have a selected city, preserve it, otherwise select the first one
+          setCities(prevCities => {
+            // Need to use the current selectedCityId, so we use functional state update if needed, but we can just use the outer selectedCityId
+            return data;
+          });
+        }
       }
     } catch (e) {
       console.error('Failed to fetch cities');
     }
   };
+
+  useEffect(() => {
+    if (cities.length > 0 && selectedCityId) {
+      const city = cities.find(c => c.id === selectedCityId);
+      if (city) handleSelectCity(city);
+    } else if (cities.length > 0 && !selectedCityId) {
+      handleSelectCity(cities[0]);
+    }
+  }, [cities]);
 
   const handleSelectCity = (city: any) => {
     setSelectedCityId(city.id);
@@ -135,8 +150,8 @@ export default function SettingsPage() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Up to (KM)</label>
                     <input 
                       type="number" 
-                      value={tier.uptoKm} 
-                      onChange={(e) => updateTier(idx, 'uptoKm', parseFloat(e.target.value))}
+                      value={tier.uptoKm === 0 ? '' : tier.uptoKm} 
+                      onChange={(e) => updateTier(idx, 'uptoKm', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                       className="w-full mt-1 bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -144,8 +159,8 @@ export default function SettingsPage() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Fee (₹)</label>
                     <input 
                       type="number" 
-                      value={tier.fee} 
-                      onChange={(e) => updateTier(idx, 'fee', parseFloat(e.target.value))}
+                      value={tier.fee === 0 ? '' : tier.fee} 
+                      onChange={(e) => updateTier(idx, 'fee', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                       className="w-full mt-1 bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -169,8 +184,8 @@ export default function SettingsPage() {
               <span className="text-gray-500 font-bold mr-2">₹</span>
               <input 
                 type="number" 
-                value={defaultFee} 
-                onChange={(e) => setDefaultFee(parseFloat(e.target.value))}
+                value={defaultFee === 0 ? '' : defaultFee} 
+                onChange={(e) => setDefaultFee(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                 className="w-full bg-white border border-slate-200 px-4 py-3 rounded-lg font-bold text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
