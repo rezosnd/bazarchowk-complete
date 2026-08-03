@@ -1,6 +1,14 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, Min, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, Min, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+
+export class FeeTierDto {
+  @IsNumber()
+  uptoKm: number;
+
+  @IsNumber()
+  fee: number;
+}
 
 export class CreateCityDto {
   @ApiProperty({ example: 'Dhanbad' })
@@ -58,7 +66,9 @@ export class CreateCityDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
-  distanceFeeTiers?: any[];
+  @ValidateNested({ each: true })
+  @Type(() => FeeTierDto)
+  distanceFeeTiers?: FeeTierDto[];
 }
 
 export class UpdateCityDto {
@@ -95,7 +105,9 @@ export class UpdateCityDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
-  distanceFeeTiers?: any[];
+  @ValidateNested({ each: true })
+  @Type(() => FeeTierDto)
+  distanceFeeTiers?: FeeTierDto[];
 }
 
 export class CreateRegionalPromotionDto {

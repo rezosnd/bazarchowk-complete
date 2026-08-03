@@ -84,8 +84,6 @@ export default function SettingsPage() {
   const updateTier = (idx: number, field: keyof FeeTier, value: number) => {
     const newTiers = [...tiers];
     newTiers[idx][field] = value;
-    // Keep it sorted by uptoKm
-    newTiers.sort((a, b) => a.uptoKm - b.uptoKm);
     setTiers(newTiers);
   };
 
@@ -102,7 +100,7 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({ 
           defaultDeliveryFee: defaultFee,
-          distanceFeeTiers: tiers
+          distanceFeeTiers: [...tiers].sort((a, b) => a.uptoKm - b.uptoKm)
         }),
       });
       
