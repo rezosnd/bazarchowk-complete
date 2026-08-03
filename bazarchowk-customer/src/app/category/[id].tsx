@@ -25,15 +25,19 @@ export default function CategoryDetailScreen() {
 
   const fetchProducts = async () => {
     try {
-      // Try subCategoryId first; if empty, try categoryId (parent category)
-      let res = await api.get(`/products?subCategoryId=${id}&limit=50`);
-      let data = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-      
-      if (data.length === 0) {
-        // Fallback: query by categoryId (this id might be a parent category)
-        res = await api.get(`/products?categoryId=${id}&limit=50`);
-        data = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-      }
+      // Fetch both simultaneously to guarantee we find the products regardless of how they are categorized
+      const [subRes, catRes] = await Promise.all([
+        api.get(`/products?subCategoryId=${id}&limit=100`).catch(() => ({ data: [] })),
+        api.get(`/products?categoryId=${id}&limit=100`).catch(() => ({ data: [] }))
+      ]);
+
+      const subData = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.items || []);
+      const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.items || []);
+
+      // Merge and deduplicate by product id
+      const mergedMap = new Map();
+      [...subData, ...catData].forEach(p => mergedMap.set(p.id, p));
+      const data = Array.from(mergedMap.values());
       
       setProducts(data);
     } catch (e) {
