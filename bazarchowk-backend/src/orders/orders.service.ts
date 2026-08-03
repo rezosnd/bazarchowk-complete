@@ -8,6 +8,7 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class OrdersService {
@@ -16,6 +17,7 @@ export class OrdersService {
     private readonly notifications: NotificationsService,
     private readonly realtime: RealtimeGateway,
     private readonly auditService: AuditService,
+    private readonly emailService: EmailService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -373,6 +375,22 @@ export class OrdersService {
 
     if (createDto.idempotencyKey) {
       await this.cacheManager.set(`order_idempotency_${createDto.idempotencyKey}`, order.id, 86400000); // lock for 24h
+    }
+
+    // Send Order Invoice Email to Customer (non-blocking)
+    if (order.customer?.email) {
+      const invoiceItems = shopItems.map(item => ({
+        name: item.productVariant.product?.name || item.productVariant.name || 'Item',
+        qty: item.quantity,
+        price: item.productVariant.price * item.quantity,
+      }));
+      this.emailService.sendOrderInvoice(
+        order.customer.email,
+        order.customer.firstName || 'Customer',
+        order.orderNumber,
+        invoiceItems,
+        order.totalAmount
+      ).catch(e => console.error('Order invoice email failed:', e.message));
     }
 
     return order;

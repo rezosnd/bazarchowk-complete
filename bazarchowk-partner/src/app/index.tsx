@@ -13,6 +13,8 @@ export default function PartnerDashboard() {
   const [shopName, setShopName] = useState('Your Shop');
   const [hasProducts, setHasProducts] = useState(false);
   const [hasServices, setHasServices] = useState(false);
+  const [todayOrders, setTodayOrders] = useState(0);
+  const [todayRevenue, setTodayRevenue] = useState(0);
 
   useEffect(() => {
     checkSession();
@@ -62,6 +64,27 @@ export default function PartnerDashboard() {
         setHasProducts(data.hasProducts);
         setHasServices(data.hasServices);
         await SecureStore.setItemAsync('bazar_shop_id', data.id);
+
+        // Fetch today's stats
+        try {
+          const ordersRes = await fetch(`${API_BASE}/orders/shop/${data.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (ordersRes.ok) {
+            const allOrders = await ordersRes.json();
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const todaysOrders = (Array.isArray(allOrders) ? allOrders : []).filter(
+              (o: any) => new Date(o.createdAt) >= todayStart
+            );
+            setTodayOrders(todaysOrders.length);
+            setTodayRevenue(
+              todaysOrders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
+            );
+          }
+        } catch (statsErr) {
+          console.warn('Failed to fetch today stats', statsErr);
+        }
       } else if (res.status === 404) {
         // Only force onboarding if we explicitly get a 404 Not Found
         router.replace('/shop/onboarding');
@@ -145,12 +168,12 @@ export default function PartnerDashboard() {
           <View style={styles.summaryRow}>
             <View style={styles.summaryBox}>
               <Text style={styles.summaryLabel}>{hasServices && !hasProducts ? 'Bookings' : 'Orders'}</Text>
-              <Text style={styles.summaryVal}>0</Text>
+              <Text style={styles.summaryVal}>{todayOrders}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryBox}>
               <Text style={styles.summaryLabel}>Revenue</Text>
-              <Text style={[styles.summaryVal, { color: '#00B140' }]}>₹0</Text>
+              <Text style={[styles.summaryVal, { color: '#00B140' }]}>₹{todayRevenue.toLocaleString('en-IN')}</Text>
             </View>
           </View>
         </View>
