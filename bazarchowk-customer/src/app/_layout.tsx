@@ -4,14 +4,16 @@ import '@/i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BazarChowkSplashOverlay } from '@/components/splash-screen';
 import { useAuthStore } from '@/store';
-
-// ─── Hide native splash immediately; JS overlay takes over ───────────────────
+import { authEventEmitter } from '@/services/api';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 SplashScreen.preventAutoHideAsync();
 
 // ─── React Query Client ───────────────────────────────────────────────────────
@@ -41,6 +43,12 @@ export default function RootLayout() {
 
   const segments = useSegments();
   const router = useRouter();
+  const [backendDown, setBackendDown] = useState(false);
+
+  useEffect(() => {
+    const unsub = authEventEmitter.on('backend_down', () => setBackendDown(true));
+    return unsub;
+  }, []);
 
   // Register push notifications
   usePushNotifications();
@@ -95,6 +103,17 @@ export default function RootLayout() {
 
           {/* Premium animated splash overlay — exits when isInitialized = true */}
           <BazarChowkSplashOverlay appReady={isInitialized} />
+
+          {/* Maintenance Overlay */}
+          {backendDown && (
+            <View style={StyleSheet.absoluteFill}>
+              <LinearGradient colors={['#F8FAFC', '#F1F5F9']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
+                <Ionicons name="construct" size={80} color="#00B140" />
+                <Text style={{ fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</Text>
+                <Text style={{ fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</Text>
+              </LinearGradient>
+            </View>
+          )}
 
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
