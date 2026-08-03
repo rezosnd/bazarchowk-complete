@@ -294,7 +294,7 @@ function CategoriesGrid({ city }: { city?: string }) {
           key={c.id}
           style={styles.catItem}
           activeOpacity={0.7}
-          onPress={() => router.push(`/categories/${c.id}`)}
+          onPress={() => router.push({ pathname: '/category/[id]', params: { id: c.id, name: c.name } } as any)}
         >
           <View style={styles.catIconWrap}>
             {c.imageUrl || c.iconUrl ? (
