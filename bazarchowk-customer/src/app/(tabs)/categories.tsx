@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import api from '@/services/api';
 import { useAuthStore } from '@/store';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 const { width: W } = Dimensions.get('window');
 const PADDING_H = 20;
@@ -82,7 +83,7 @@ export default function CategoriesScreen() {
   const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
   const displayLocation = defaultAddress 
     ? `${defaultAddress.title || defaultAddress.type || 'Home'} - ${defaultAddress.addressLine1}, ${defaultAddress.city}`
-    : t('header.location', { defaultValue: 'Select Location' });
+    : 'Select Location';
 
   const { data: dynamicCategories = [], isLoading: isLoadingCategories } = useCategories(defaultAddress?.city);
 

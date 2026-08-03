@@ -56,6 +56,8 @@ export default function CheckoutScreen() {
     }
   }, [selectedAddressId, useWallet, shopId]);
 
+  const { cart } = useCartStore();
+
   const fetchBillDetails = async () => {
     try {
       setFetchingBill(true);
@@ -73,8 +75,30 @@ export default function CheckoutScreen() {
       } else if (paymentMethod === 'WALLET') {
         setPaymentMethod('COD'); // Fallback if wallet doesn't cover full amount
       }
-    } catch (e) {
+    } catch (e: any) {
+      const status = e?.response?.status;
       console.warn('Failed to fetch bill details', e);
+      // Graceful fallback: compute from local cart so UI is still usable
+      if (status === 404 || status === 400 || !status) {
+        const shopItems = (cart?.items || []).filter(
+          (item: any) => !shopId || item.shopId === shopId || true
+        );
+        const subtotal = shopItems.reduce(
+          (sum: number, item: any) =>
+            sum + (item.price || item.variant?.price || item.product?.basePrice || 0) * item.quantity,
+          0
+        );
+        setBillDetails({
+          subtotal,
+          deliveryFee: 0,
+          tax: 0,
+          discount: 0,
+          walletDeduction: 0,
+          payableAmount: subtotal,
+          walletBalance: 0,
+          note: 'Preview unavailable — final amount confirmed at delivery',
+        });
+      }
     } finally {
       setFetchingBill(false);
     }

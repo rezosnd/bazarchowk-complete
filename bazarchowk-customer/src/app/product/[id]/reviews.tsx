@@ -18,6 +18,7 @@ export default function ProductReviewsScreen() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -51,12 +52,16 @@ export default function ProductReviewsScreen() {
         rating,
         comment
       });
-      Alert.alert('Success', 'Thank you for your review!');
+      setSubmitted(true);
       setComment('');
       fetchReviews();
     } catch (e: any) {
-      const msg = e.response?.data?.message || 'Failed to submit review. Ensure you have purchased this product.';
-      Alert.alert('Error', msg);
+      const raw = e.response?.data?.message;
+      const isForbidden = e.response?.status === 403;
+      const msg = isForbidden
+        ? 'You can only review products you have purchased and received. Complete an order first!'
+        : Array.isArray(raw) ? raw[0] : (raw || 'Failed to submit review.');
+      Alert.alert(isForbidden ? '🛒 Purchase Required' : 'Error', msg);
     } finally {
       setSubmitting(false);
     }
@@ -89,28 +94,36 @@ export default function ProductReviewsScreen() {
         </View>
 
         {/* Post Review Form */}
-        <View style={styles.formBox}>
-          <Text style={styles.formTitle}>Write a Review</Text>
-          <View style={styles.starSelectRow}>
-            {[1, 2, 3, 4, 5].map((num) => (
-              <TouchableOpacity key={num} onPress={() => setRating(num)} style={{ padding: 4 }}>
-                <Ionicons name={num <= rating ? "star" : "star-outline"} size={32} color="#F59E0B" />
-              </TouchableOpacity>
-            ))}
+        {submitted ? (
+          <View style={[styles.formBox, { alignItems: 'center' }]}>
+            <Ionicons name="checkmark-circle" size={48} color="#00B140" />
+            <Text style={[styles.formTitle, { marginTop: 12 }]}>Review Posted! 🎉</Text>
+            <Text style={{ color: '#64748B', textAlign: 'center' }}>Thank you for sharing your feedback.</Text>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="What did you think about this product?"
-            placeholderTextColor="#94A3B8"
-            multiline
-            numberOfLines={4}
-            value={comment}
-            onChangeText={setComment}
-          />
-          <TouchableOpacity style={styles.submitBtn} onPress={submitReview} disabled={submitting}>
-            {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Post Review</Text>}
-          </TouchableOpacity>
-        </View>
+        ) : (
+          <View style={styles.formBox}>
+            <Text style={styles.formTitle}>Write a Review</Text>
+            <View style={styles.starSelectRow}>
+              {[1, 2, 3, 4, 5].map((num) => (
+                <TouchableOpacity key={num} onPress={() => setRating(num)} style={{ padding: 4 }}>
+                  <Ionicons name={num <= rating ? "star" : "star-outline"} size={32} color="#F59E0B" />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="What did you think about this product?"
+              placeholderTextColor="#94A3B8"
+              multiline
+              numberOfLines={4}
+              value={comment}
+              onChangeText={setComment}
+            />
+            <TouchableOpacity style={styles.submitBtn} onPress={submitReview} disabled={submitting}>
+              {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Post Review</Text>}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Review List */}
         <Text style={styles.listTitle}>All Reviews</Text>
