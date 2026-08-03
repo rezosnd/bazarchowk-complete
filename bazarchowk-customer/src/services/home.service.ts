@@ -52,6 +52,14 @@ export const HomeService = {
     const res = await api.get(url);
     return res.data;
   },
+  getNearbyServices: async (lat?: number, lng?: number): Promise<Shop[]> => {
+    let url = '/shops?hasServices=true';
+    if (lat !== undefined && lng !== undefined) {
+      url += `&lat=${lat}&lng=${lng}`;
+    }
+    const res = await api.get(url);
+    return res.data;
+  },
   getMarkets: async (lat?: number, lng?: number): Promise<Market[]> => {
     let url = '/markets';
     if (lat !== undefined && lng !== undefined) {

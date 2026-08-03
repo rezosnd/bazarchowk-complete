@@ -26,9 +26,21 @@ export class ShopsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Public: List all shops (optionally filtered by radius)' })
-  findAll(@Query('lat') lat?: string, @Query('lng') lng?: string, @Query('all') all?: string) {
-    return this.shopsService.findAll(lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined, all === 'true');
+  @ApiOperation({ summary: 'Public: List all shops (optionally filtered by radius and type)' })
+  findAll(
+    @Query('lat') lat?: string, 
+    @Query('lng') lng?: string, 
+    @Query('all') all?: string,
+    @Query('partnerType') partnerType?: string,
+    @Query('hasServices') hasServices?: string
+  ) {
+    return this.shopsService.findAll(
+      lat ? parseFloat(lat) : undefined, 
+      lng ? parseFloat(lng) : undefined, 
+      all === 'true',
+      partnerType,
+      hasServices === 'true' ? true : (hasServices === 'false' ? false : undefined)
+    );
   }
 
   @Get('me')

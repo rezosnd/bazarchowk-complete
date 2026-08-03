@@ -388,6 +388,43 @@ function NearbyShops({ lat, lng }: { lat?: number, lng?: number }) {
   );
 }
 
+function NearbyServices({ lat, lng }: { lat?: number, lng?: number }) {
+  const { t } = useTranslation();
+
+  const { data: services = [], isLoading } = useQuery({ 
+    queryKey: ['services', lat, lng], 
+    queryFn: () => HomeService.getNearbyServices(lat, lng),
+    enabled: !!lat 
+  });
+
+  if (isLoading || services.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <SectionHeader title="Services Near You" />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+        {services.map((svc: any) => (
+          <TouchableOpacity key={svc.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/services/${svc.id}`)}>
+            <View style={styles.shopImgWrapper}>
+              <Image source={{ uri: svc.bannerUrl || svc.logoUrl || PLACEHOLDER_IMG }} style={styles.shopImg} contentFit="cover" />
+              <View style={[styles.openBadge, { backgroundColor: '#EA580C' }]}>
+                <Text style={styles.openBadgeTxt}>BOOK</Text>
+              </View>
+            </View>
+            <View style={styles.shopInfo}>
+              <Text style={styles.shopName} numberOfLines={1}>{svc.name}</Text>
+              <Text style={styles.shopMeta}>
+                {svc.distanceKm ? `${svc.distanceKm.toFixed(1)} km` : 'Near you'} • {svc.partnerType?.replace('_', ' ')}
+              </Text>
+              <Text style={styles.shopTime} numberOfLines={1}>{svc.status?.reason || 'Book Now'}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
   const { t } = useTranslation();
   const { data: markets = [], isLoading } = useQuery({ 
@@ -606,6 +643,7 @@ export default function HomeScreen() {
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <CategoriesGrid />
 
+          <NearbyServices lat={location?.lat} lng={location?.lng} />
           <NearbyShops lat={location?.lat} lng={location?.lng} />
           <PopularMarkets lat={location?.lat} lng={location?.lng} />
           <TodaysOffers />
