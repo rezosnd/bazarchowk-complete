@@ -5,7 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "**/*.html", "outDir": "dist/src" }
+      { "include": "**/*.html", "outDir": "dist/src" },
+      { "include": "**/*.png", "outDir": "dist/src" }
     ]
   }
 }

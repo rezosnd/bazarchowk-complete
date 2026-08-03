@@ -174,7 +174,7 @@ export class EmailService {
       doc.fillColor('#FF8A00').fontSize(16).text('Customer Order Invoice', { align: 'center' });
       doc.moveDown(2);
 
-      const logoPath = 'D:\\bazarchowk-complete\\bazarchowk-customer\\assets\\images\\logo.png';
+      const logoPath = path.join(__dirname, 'templates', 'logo.png');
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, (595.28 / 2) - 90, doc.y, { width: 180 });
         doc.moveDown(6);
@@ -245,7 +245,7 @@ export class EmailService {
       doc.fillColor('#FF8A00').fontSize(16).text('Partner Settlement Invoice', { align: 'center' });
       doc.moveDown(2);
 
-      const logoPath = 'D:\\bazarchowk-complete\\bazarchowk-customer\\assets\\images\\logo.png';
+      const logoPath = path.join(__dirname, 'templates', 'logo.png');
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, (595.28 / 2) - 90, doc.y, { width: 180 });
         doc.moveDown(6); // Adjusted spacing since logo is drawn absolutely to Y but moves cursor down less naturally
