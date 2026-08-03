@@ -90,15 +90,15 @@ export class NotificationsService {
   }
 
   private async sendPushNotification(userId: string, title: string, body: string) {
-    if (!this.firebaseInitialized) {
-      this.logger.log(`[MOCK PUSH] To: ${userId} | Title: ${title} | Body: ${body}`);
-      return;
-    }
-
     const tokens = await this.prisma.deviceToken.findMany({
       where: { userId },
       select: { token: true },
     });
+
+    if (!tokens || tokens.length === 0) {
+      this.logger.log(`[NO TOKENS] To: ${userId} | Title: ${title}`);
+      return;
+    }
 
     const expoTokens = tokens.filter(t => t.token.startsWith('ExponentPushToken') || t.token.startsWith('ExpoPushToken'));
     const fcmTokens = tokens.filter(t => !t.token.startsWith('ExponentPushToken') && !t.token.startsWith('ExpoPushToken'));
