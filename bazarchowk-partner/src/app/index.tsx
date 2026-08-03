@@ -150,7 +150,7 @@ export default function PartnerDashboard() {
             <View style={styles.divider} />
             <View style={styles.summaryBox}>
               <Text style={styles.summaryLabel}>Revenue</Text>
-              <Text style={[styles.summaryVal, { color: '#00B140' }]}>â‚¹0</Text>
+              <Text style={[styles.summaryVal, { color: '#00B140' }]}>₹0</Text>
             </View>
           </View>
         </View>

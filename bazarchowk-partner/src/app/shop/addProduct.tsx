@@ -155,7 +155,7 @@ export default function AddProductScreen() {
             {categories.length === 0 && <Text style={{ color: '#94A3B8' }}>Loading categories...</Text>}
           </ScrollView>
 
-          <Text style={styles.label}>Base Price (â‚¹) *</Text>
+          <Text style={styles.label}>Base Price (₹) *</Text>
           <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={basePrice} onChangeText={setBasePrice} />
 
           <Text style={styles.label}>Description</Text>
@@ -191,7 +191,7 @@ export default function AddProductScreen() {
 
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Price (â‚¹) *</Text>
+              <Text style={styles.label}>Price (₹) *</Text>
               <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={variantPrice} onChangeText={setVariantPrice} />
             </View>
             <View style={{ flex: 1 }}>

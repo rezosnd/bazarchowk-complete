@@ -167,7 +167,7 @@ export default function ShopOrdersScreen() {
                   <Text style={styles.customerName}>{order.customer?.name || 'Customer'}</Text>
                 </View>
                 <View style={styles.amountBox}>
-                  <Text style={styles.amountText}>â‚¹{order.totalAmount}</Text>
+                  <Text style={styles.amountText}>₹{order.totalAmount}</Text>
                 </View>
               </View>
 

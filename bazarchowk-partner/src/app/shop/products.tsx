@@ -78,7 +78,7 @@ export default function ShopProductsScreen() {
                 )}
                 <View style={styles.info}>
                   <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-                  <Text style={styles.price}>â‚¹{product.basePrice}</Text>
+                  <Text style={styles.price}>₹{product.basePrice}</Text>
                   
                   <View style={styles.metaRow}>
                     <Text style={styles.variantsText}>{product.variants?.length || 0} Variants</Text>

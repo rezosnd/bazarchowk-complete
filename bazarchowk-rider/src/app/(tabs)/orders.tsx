@@ -129,7 +129,7 @@ export default function RiderOrdersScreen() {
                     <Text style={styles.addressText}>{order.shop?.city}</Text>
                   </View>
                   <View style={styles.amountBox}>
-                    <Text style={styles.amountText}>â‚¹{order.totalAmount}</Text>
+                    <Text style={styles.amountText}>₹{order.totalAmount}</Text>
                   </View>
                 </View>
 

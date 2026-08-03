@@ -100,24 +100,50 @@ export class NotificationsService {
       select: { token: true },
     });
 
-    if (tokens.length === 0) return;
+    const expoTokens = tokens.filter(t => t.token.startsWith('ExponentPushToken') || t.token.startsWith('ExpoPushToken'));
+    const fcmTokens = tokens.filter(t => !t.token.startsWith('ExponentPushToken') && !t.token.startsWith('ExpoPushToken'));
 
-    const messages = tokens.map(t => ({
-      notification: { title, body },
-      token: t.token,
-    }));
+    if (expoTokens.length > 0) {
+      const expoMessages = expoTokens.map(t => ({
+        to: t.token,
+        title,
+        body,
+        sound: 'default'
+      }));
+      try {
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(expoMessages)
+        });
+        this.logger.log(`Expo Push sent to ${expoTokens.length} devices.`);
+      } catch (error) {
+        this.logger.error('Error sending Expo push', error);
+      }
+    }
 
-    try {
-      const response = await getMessaging().sendEach(messages);
-      this.logger.log(`FCM Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+    if (fcmTokens.length > 0 && this.firebaseInitialized) {
+      const messages = fcmTokens.map(t => ({
+        notification: { title, body },
+        token: t.token,
+      }));
 
-      response.responses.forEach((res: any, idx: number) => {
-        if (!res.success && res.error?.code === 'messaging/registration-token-not-registered') {
-          this.removeDeviceToken(tokens[idx].token);
-        }
-      });
-    } catch (error) {
-      this.logger.error('Error sending FCM push', error);
+      try {
+        const response = await getMessaging().sendEach(messages);
+        this.logger.log(`FCM Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+
+        response.responses.forEach((res: any, idx: number) => {
+          if (!res.success && res.error?.code === 'messaging/registration-token-not-registered') {
+            this.removeDeviceToken(fcmTokens[idx].token);
+          }
+        });
+      } catch (error) {
+        this.logger.error('Error sending FCM push', error);
+      }
     }
   }
 
@@ -205,34 +231,70 @@ export class NotificationsService {
 
       if (tokens.length > 0) {
         // Send in batches of 500 (FCM limit)
+        // Send in batches of 500
         const batchSize = 500;
         for (let i = 0; i < tokens.length; i += batchSize) {
           const batch = tokens.slice(i, i + batchSize);
-          const messages = batch.map(t => {
-            const user = users.find(u => u.id === t.userId);
-            const personalizedTitle = user ? parseTemplate(title, user) : title;
-            const personalizedMessage = user ? parseTemplate(message, user) : message;
+          
+          const expoTokens = batch.filter(t => t.token.startsWith('ExponentPushToken') || t.token.startsWith('ExpoPushToken'));
+          const fcmTokens = batch.filter(t => !t.token.startsWith('ExponentPushToken') && !t.token.startsWith('ExpoPushToken'));
 
-            return {
-              notification: { 
-                title: personalizedTitle, 
+          if (expoTokens.length > 0) {
+            const expoMessages = expoTokens.map(t => {
+              const user = users.find(u => u.id === t.userId);
+              const personalizedTitle = user ? parseTemplate(title, user) : title;
+              const personalizedMessage = user ? parseTemplate(message, user) : message;
+              return {
+                to: t.token,
+                title: personalizedTitle,
                 body: personalizedMessage,
-                ...(imageUrl ? { imageUrl } : {}) 
-              },
-              token: t.token,
-              data: {
-                type: 'BROADCAST',
-                ...(imageUrl ? { imageUrl } : {}),
-                ...(linkUrl ? { linkUrl } : {})
-              }
-            };
-          });
+                sound: 'default',
+                data: {
+                  type: 'BROADCAST',
+                  ...(imageUrl ? { imageUrl } : {}),
+                  ...(linkUrl ? { linkUrl } : {})
+                }
+              };
+            });
+            try {
+              await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Accept-encoding': 'gzip, deflate', 'Content-Type': 'application/json' },
+                body: JSON.stringify(expoMessages)
+              });
+              this.logger.log(`Expo Broadcast chunk sent to ${expoTokens.length} devices.`);
+            } catch (e) {
+              this.logger.error('Failed to send broadcast Expo batch', e);
+            }
+          }
 
-          try {
-            const response = await getMessaging().sendEach(messages);
-            this.logger.log(`Broadcast chunk sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
-          } catch (e) {
-            this.logger.error('Failed to send broadcast FCM batch', e);
+          if (fcmTokens.length > 0 && this.firebaseInitialized) {
+            const messages = fcmTokens.map(t => {
+              const user = users.find(u => u.id === t.userId);
+              const personalizedTitle = user ? parseTemplate(title, user) : title;
+              const personalizedMessage = user ? parseTemplate(message, user) : message;
+
+              return {
+                notification: { 
+                  title: personalizedTitle, 
+                  body: personalizedMessage,
+                  ...(imageUrl ? { imageUrl } : {}) 
+                },
+                token: t.token,
+                data: {
+                  type: 'BROADCAST',
+                  ...(imageUrl ? { imageUrl } : {}),
+                  ...(linkUrl ? { linkUrl } : {})
+                }
+              };
+            });
+
+            try {
+              const response = await getMessaging().sendEach(messages);
+              this.logger.log(`Broadcast chunk sent via FCM. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+            } catch (e) {
+              this.logger.error('Failed to send broadcast FCM batch', e);
+            }
           }
         }
       }
