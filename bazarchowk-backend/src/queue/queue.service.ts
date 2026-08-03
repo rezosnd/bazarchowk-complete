@@ -37,7 +37,7 @@ export class QueueService implements OnModuleInit {
     Promise.resolve().then(async () => {
         try {
             if(jobName === 'send-push') {
-                await this.notificationsService.sendPushNotification(data.userId, data.title, data.body, data.data);
+                await this.notificationsService.sendInAppNotification(data.userId, data.title, data.body);
             }
         } catch(e) { this.logger.error('Notification task failed', e); }
     });
