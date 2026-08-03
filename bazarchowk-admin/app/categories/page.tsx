@@ -52,6 +52,7 @@ export default function CategoriesAdminPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   // UI State
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -504,13 +505,49 @@ export default function CategoriesAdminPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Image URL</label>
+                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Category Image</label>
+                      {imageUrl && (
+                        <img src={imageUrl} alt="Preview" className="w-20 h-20 rounded-xl object-cover border border-slate-200 mb-2" />
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const token = localStorage.getItem('admin_token');
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('folder', 'categories');
+                            const res = await fetch(`${API_BASE}/cloudinary/upload`, {
+                              method: 'POST',
+                              headers: { 'Authorization': `Bearer ${token}` },
+                              body: formData
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              setImageUrl(data.secure_url || data.url);
+                            } else {
+                              alert('Upload failed. Try pasting a URL instead.');
+                            }
+                          } catch (err) {
+                            alert('Upload error. Try pasting a URL instead.');
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" 
+                      />
+                      {uploading && <p className="text-xs text-indigo-600 mt-1 animate-pulse">Uploading...</p>}
                       <input 
                         type="url" 
                         value={imageUrl} 
                         onChange={e => setImageUrl(e.target.value)} 
-                        className="block w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white sm:text-sm shadow-inner" 
-                        placeholder="https://..." 
+                        className="block w-full mt-2 border border-slate-300 rounded-xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white sm:text-xs shadow-inner" 
+                        placeholder="Or paste URL directly..." 
                       />
                     </div>
                     <div>
