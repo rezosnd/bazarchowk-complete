@@ -63,7 +63,7 @@ import { HomeModule } from './home/home.module';
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     CacheModule.register({ isGlobal: true, ttl: 300000 }),
-    BullModule.forRoot({ connection: new (require('ioredis').Redis)(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null }) }),
+    // Removed BullModule.forRoot to prevent Redis crash
     HealthModule,
     RolesModule,
     SupportModule,

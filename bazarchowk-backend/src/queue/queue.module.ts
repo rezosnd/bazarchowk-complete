@@ -16,17 +16,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     PrismaModule,
     EmailModule,
     NotificationsModule,
-    // Root Connection
-    BullModule.forRoot({
-      connection: new (require('ioredis').Redis)(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null }),
-    }),
-    // Register Queues
-    BullModule.registerQueue(
-      { name: 'email-queue' },
-      { name: 'notification-queue' },
-      { name: 'analytics-queue' },
-      { name: 'cleanup-queue' },
-    ),
+    // Redis Queue Disabled
+    // Background jobs will be executed synchronously as a fallback
   ],
   controllers: [QueueController],
   providers: [QueueService, EmailProcessor, CleanupProcessor, NotificationProcessor, AnalyticsProcessor],
