@@ -207,18 +207,34 @@ export default function OrderTrackingScreen() {
               <View style={styles.pulseDot} />
             </View>
             <View style={styles.riderInfo}>
-              <Text style={styles.riderName}>{order.rider.user?.firstName || 'Delivery Partner'}</Text>
-              <Text style={styles.riderVehicle}>{order.rider.vehicleType} • {distance} away</Text>
+              <Text style={styles.riderName}>{order.rider?.firstName || 'Delivery Partner'}</Text>
+              <Text style={styles.riderVehicle}>{order.rider?.deliveryPartner?.vehicleType || 'Bike'} • {distance} away</Text>
             </View>
             <View style={styles.riderActions}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.rider.user?.phone}`)}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.rider?.phone}`)}>
                 <Ionicons name="call" size={20} color={PRIMARY} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => router.push({ pathname: `/chat/${order.id}`, params: { name: order.rider.user?.firstName || 'Delivery Partner', type: 'CUSTOMER_RIDER' } } as any)}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => router.push({ pathname: `/chat/${order.id}`, params: { name: order.rider?.firstName || 'Delivery Partner', type: 'CUSTOMER_RIDER' } } as any)}>
                 <Ionicons name="chatbubble" size={20} color={ACCENT} />
               </TouchableOpacity>
             </View>
           </View>
+        )}
+
+        {order.status === 'DELIVERED' && (
+          <TouchableOpacity 
+            style={styles.rateBanner}
+            onPress={() => router.push(`/shop/${order.shopId}/reviews` as any)}
+          >
+            <View style={styles.rateIconWrap}>
+              <Ionicons name="star" size={24} color="#F59E0B" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.rateTitle}>Rate {order.shop?.name}</Text>
+              <Text style={styles.rateSub}>Share your experience with others</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+          </TouchableOpacity>
         )}
 
         <ScrollView style={styles.timelineScroll} showsVerticalScrollIndicator={false}>
@@ -311,4 +327,12 @@ const styles = StyleSheet.create({
   timelineText: { fontSize: 15, fontWeight: '600', color: '#94A3B8' },
   timelineTextActive: { color: '#0F172A', fontWeight: '800' },
   timelineSubText: { fontSize: 13, color: '#64748B', marginTop: 4, lineHeight: 18 },
+
+  rateBanner: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB',
+    padding: 16, borderRadius: 16, marginTop: 16, borderWidth: 1, borderColor: '#FEF3C7'
+  },
+  rateIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
+  rateTitle: { fontSize: 15, fontWeight: '800', color: '#B45309' },
+  rateSub: { fontSize: 12, color: '#D97706', marginTop: 2 },
 });

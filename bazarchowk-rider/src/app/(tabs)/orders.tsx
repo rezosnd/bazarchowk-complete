@@ -52,6 +52,16 @@ export default function RiderOrdersScreen() {
       const token = await SecureStore.getItemAsync('rider_token');
       if (!token) throw new Error('Not authenticated');
 
+      const profileRes = await fetch(`${API_BASE}/users/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const profile = await profileRes.json();
+      if (!profile.phone || profile.phone.trim() === '') {
+        Alert.alert('Phone Number Required', 'Please add your mobile number in your Profile before accepting deliveries.');
+        setAssigningId(null);
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/delivery/${deliveryId}/assign`, {
         method: 'PATCH',
         headers: { 

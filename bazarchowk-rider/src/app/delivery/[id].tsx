@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import { socketService } from '../../services/socket';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import api from '../../services/api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
@@ -28,7 +28,7 @@ export default function ActiveDeliveryScreen() {
     let locationSubscription: Location.LocationSubscription | null = null;
 
     const startTracking = async () => {
-      if (order?.delivery?.status === 'OUT_FOR_DELIVERY') {
+      if (order?.delivery?.status === 'IN_TRANSIT') {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Location tracking is required for live updates.');
@@ -177,42 +177,53 @@ export default function ActiveDeliveryScreen() {
         {/* Live Map Tracking */}
         {order?.shop && order?.deliveryAddress && (
           <View style={[styles.card, { padding: 0, overflow: 'hidden', height: 250 }]}>
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: (order.shop.latitude + order.deliveryAddress.latitude) / 2,
-                longitude: (order.shop.longitude + order.deliveryAddress.longitude) / 2,
-                latitudeDelta: Math.abs(order.shop.latitude - order.deliveryAddress.latitude) * 2 + 0.05,
-                longitudeDelta: Math.abs(order.shop.longitude - order.deliveryAddress.longitude) * 2 + 0.05,
-              }}
-            >
-              {riderLocation && (
-                <Marker coordinate={riderLocation} title="You">
-                  <View style={{ backgroundColor: '#00B140', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
-                    <Ionicons name="bicycle" size={16} color="#FFF" />
-                  </View>
-                </Marker>
-              )}
-              <Marker coordinate={{ latitude: order.shop.latitude, longitude: order.shop.longitude }} title="Pickup">
-                <View style={{ backgroundColor: '#1E40AF', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
-                  <Ionicons name="storefront" size={16} color="#FFF" />
-                </View>
-              </Marker>
-              <Marker coordinate={{ latitude: order.deliveryAddress.latitude, longitude: order.deliveryAddress.longitude }} title="Dropoff">
-                <View style={{ backgroundColor: '#DC2626', padding: 5, borderRadius: 20, borderWidth: 2, borderColor: '#FFF' }}>
-                  <Ionicons name="home" size={16} color="#FFF" />
-                </View>
-              </Marker>
-              <Polyline
-                coordinates={[
-                  ...(riderLocation ? [riderLocation] : [{ latitude: order.shop.latitude, longitude: order.shop.longitude }]),
-                  { latitude: order.deliveryAddress.latitude, longitude: order.deliveryAddress.longitude }
-                ]}
-                strokeColor="#00B140"
-                strokeWidth={3}
-                lineDashPattern={[10, 10]}
+            {Platform.OS === 'web' ? (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
+              </View>
+            ) : (
+              <WebView
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+                source={{
+                  html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                      <style>
+                        body { padding: 0; margin: 0; }
+                        html, body, #map { height: 100%; width: 100%; }
+                      </style>
+                    </head>
+                    <body>
+                      <div id="map"></div>
+                      <script>
+                        var map = L.map('map', { zoomControl: false }).setView([${(order.shop.latitude + order.deliveryAddress.latitude) / 2}, ${(order.shop.longitude + order.deliveryAddress.longitude) / 2}], 13);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                        
+                        var shopIcon = L.divIcon({ html: '<div style="background:#1E40AF;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏬</span></div>', className: '' });
+                        var homeIcon = L.divIcon({ html: '<div style="background:#DC2626;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏠</span></div>', className: '' });
+                        
+                        L.marker([${order.shop.latitude}, ${order.shop.longitude}], {icon: shopIcon}).addTo(map);
+                        L.marker([${order.deliveryAddress.latitude}, ${order.deliveryAddress.longitude}], {icon: homeIcon}).addTo(map);
+                        
+                        ${riderLocation ? `
+                          var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🚲</span></div>', className: '' });
+                          L.marker([${riderLocation.latitude}, ${riderLocation.longitude}], {icon: riderIcon}).addTo(map);
+                          
+                          var route = [[${riderLocation.latitude}, ${riderLocation.longitude}], [${order.deliveryAddress.latitude}, ${order.deliveryAddress.longitude}]];
+                          L.polyline(route, {color: '#00B140', weight: 5, dashArray: '10, 10'}).addTo(map);
+                        ` : ''}
+                      </script>
+                    </body>
+                    </html>
+                  `
+                }}
               />
-            </MapView>
+            )}
           </View>
         )}
 
@@ -271,7 +282,7 @@ export default function ActiveDeliveryScreen() {
             {order.paymentMethod === 'COD' ? `YES: ₹${order.totalAmount}` : 'NO (Prepaid Online)'}
           </Text>
           
-          {order.paymentMethod === 'COD' && deliveryStatus === 'OUT_FOR_DELIVERY' && (
+          {order.paymentMethod === 'COD' && deliveryStatus === 'IN_TRANSIT' && (
             <TouchableOpacity 
               style={styles.qrBtn} 
               onPress={handleGeneratePayment}
@@ -288,12 +299,12 @@ export default function ActiveDeliveryScreen() {
       {/* Footer Action */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         {deliveryStatus === 'ASSIGNED' && (
-          <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('OUT_FOR_DELIVERY')}>
+          <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('IN_TRANSIT')}>
             {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Start Delivery</Text>}
           </TouchableOpacity>
         )}
         
-        {deliveryStatus === 'OUT_FOR_DELIVERY' && (
+        {deliveryStatus === 'IN_TRANSIT' && (
           <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('DELIVERED')}>
             {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Mark as Delivered</Text>}
           </TouchableOpacity>

@@ -87,6 +87,11 @@ export default function ShopDetailScreen() {
             </View>
             {shop.reason && <Text style={styles.reasonText}>({shop.reason})</Text>}
           </View>
+
+          <TouchableOpacity style={styles.reviewBtn} onPress={() => router.push(`/shop/${id}/reviews` as any)}>
+            <Ionicons name="star" size={16} color="#F59E0B" />
+            <Text style={styles.reviewBtnText}>Ratings & Reviews</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Products Grid */}
@@ -158,6 +163,13 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   statusText: { fontSize: 12, fontWeight: '800' },
   reasonText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+
+  reviewBtn: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB',
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginTop: 12,
+    borderWidth: 1, borderColor: '#FEF3C7'
+  },
+  reviewBtnText: { fontSize: 14, fontWeight: '700', color: '#B45309', marginLeft: 6 },
 
   productsContainer: { padding: 16 },
   sectionTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 16 },

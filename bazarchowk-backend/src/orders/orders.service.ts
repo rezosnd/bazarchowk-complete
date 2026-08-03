@@ -280,6 +280,7 @@ export class OrdersService {
         shop: true, 
         customer: true, 
         deliveryAddress: true,
+        rider: { select: { id: true, firstName: true, lastName: true, phone: true, deliveryPartner: { select: { vehicleType: true } } } },
         items: { include: { productVariant: true } },
         statusHistory: { orderBy: { createdAt: 'desc' } }
       }

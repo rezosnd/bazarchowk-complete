@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -11,6 +11,9 @@ export default function RiderProfileScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editPhone, setEditPhone] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -25,11 +28,42 @@ export default function RiderProfileScreen() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+        setEditPhone(data.phone || '');
       }
     } catch (error) {
       console.warn('Failed to fetch profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editPhone.trim()) {
+      Alert.alert('Error', 'Phone number cannot be empty.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const token = await SecureStore.getItemAsync('rider_token');
+      const res = await fetch(`${API_BASE}/users/me`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ phone: editPhone })
+      });
+      if (res.ok) {
+        Alert.alert('Success', 'Profile updated successfully.');
+        fetchProfile();
+        setEditing(false);
+      } else {
+        Alert.alert('Error', 'Failed to update profile.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not connect to server.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -65,7 +99,32 @@ export default function RiderProfileScreen() {
           </View>
           <View style={styles.info}>
             <Text style={styles.name}>{profile?.firstName} {profile?.lastName}</Text>
-            <Text style={styles.phone}>{profile?.phone || 'No phone number'}</Text>
+            
+            {editing ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.input}
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  placeholder="Enter Phone Number"
+                  keyboardType="phone-pad"
+                />
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSaveProfile} disabled={saving}>
+                  {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
+                  <Ionicons name="close" size={20} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.phone}>{profile?.phone || 'No phone number'}</Text>
+                <TouchableOpacity onPress={() => setEditing(true)} style={{ marginLeft: 8 }}>
+                  <Ionicons name="pencil" size={16} color="#00B140" />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.badge}>
               <Text style={styles.badgeText}>Verified Rider</Text>
             </View>
@@ -108,6 +167,11 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   phone: { fontSize: 15, color: '#64748B', marginBottom: 8 },
+  editRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  input: { flex: 1, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, fontSize: 14 },
+  saveBtn: { backgroundColor: '#00B140', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
+  cancelBtn: { padding: 4 },
   badge: { alignSelf: 'flex-start', backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 12, fontWeight: '700', color: '#D97706' },
 

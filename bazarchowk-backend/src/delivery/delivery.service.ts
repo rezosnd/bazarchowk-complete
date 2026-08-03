@@ -101,6 +101,7 @@ export class DeliveryService {
 
     let orderStatus: OrderStatus | undefined;
     if (status === DeliveryStatus.PICKED_UP) orderStatus = OrderStatus.PICKED_UP;
+    if (status === DeliveryStatus.IN_TRANSIT) orderStatus = OrderStatus.OUT_FOR_DELIVERY;
     if (status === DeliveryStatus.DELIVERED) orderStatus = OrderStatus.DELIVERED;
 
     if (orderStatus) {
@@ -117,7 +118,7 @@ export class DeliveryService {
       await this.notifications.sendInAppNotification(
         delivery.order.customerId,
         'Delivery Update',
-        `Your order is now \${status}`,
+        `Your order is now ${status}`,
         'DELIVERY'
       );
     }

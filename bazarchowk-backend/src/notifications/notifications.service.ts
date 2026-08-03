@@ -91,7 +91,7 @@ export class NotificationsService {
 
   private async sendPushNotification(userId: string, title: string, body: string) {
     if (!this.firebaseInitialized) {
-      this.logger.log(`[MOCK PUSH] To: \${userId} | Title: \${title} | Body: \${body}`);
+      this.logger.log(`[MOCK PUSH] To: ${userId} | Title: ${title} | Body: ${body}`);
       return;
     }
 

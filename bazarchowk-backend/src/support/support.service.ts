@@ -12,7 +12,7 @@ export class SupportService {
     private readonly queueService: QueueService,
     private readonly notifications: NotificationsService,
     private readonly realtimeGateway: RealtimeGateway,
-  ) {}
+  ) { }
 
   async createTicket(userId: string, dto: CreateTicketDto) {
     return this.prisma.supportTicket.create({
@@ -47,7 +47,7 @@ export class SupportService {
 
   async getTicketDetails(userId: string, ticketId: string, isAdmin: boolean = false) {
     const whereClause = isAdmin ? { id: ticketId } : { id: ticketId, userId };
-    
+
     const ticket = await this.prisma.supportTicket.findUnique({
       where: whereClause,
       include: {
@@ -63,7 +63,7 @@ export class SupportService {
   async addMessage(userId: string, ticketId: string, dto: AddMessageDto, senderType: 'USER' | 'ADMIN' = 'USER') {
     const whereClause = senderType === 'ADMIN' ? { id: ticketId } : { id: ticketId, userId };
     const ticket = await this.prisma.supportTicket.findUnique({ where: whereClause });
-    
+
     if (!ticket) throw new NotFoundException('Ticket not found');
 
     const message = await this.prisma.supportMessage.create({
