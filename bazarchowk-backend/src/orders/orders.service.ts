@@ -66,8 +66,8 @@ export class OrdersService {
 
     const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
 
-    // Default to city's configured base fee, or ₹20 hardcoded fallback
-    let deliveryFee = cityConfig?.defaultDeliveryFee ?? 20;
+    // Default to city's configured base fee, or ₹0 hardcoded fallback
+    let deliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
 
     if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
       // Apply distance-tier pricing only when we have a real distance
@@ -77,9 +77,9 @@ export class OrdersService {
       }
     } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
       // Fallback formula ONLY for reasonable distances within a city (≤30km)
-      deliveryFee = Math.max(20, Math.ceil(distanceKm) * 5);
+      deliveryFee = Math.max(0, Math.ceil(distanceKm) * 5);
     }
-    // If distanceKm is 0 (coords missing), we already defaulted to city/20 above — no change needed
+    // If distanceKm is 0 (coords missing), we already defaulted to city/0 above — no change needed
 
     let taxAmount = 0;
     if (cityConfig && cityConfig.taxPercent) {
@@ -192,7 +192,7 @@ export class OrdersService {
       where: { name: { equals: shop.city, mode: 'insensitive' } }
     });
 
-    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 20;
+    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
 
     if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
       // Tiers should be sorted by uptoKm, but let's sort them just to be safe
@@ -205,7 +205,7 @@ export class OrdersService {
       }
     } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
       // Fallback formula ONLY for reasonable distances within a city (≤30km)
-      calculatedDeliveryFee = Math.max(20, Math.ceil(distanceKm) * 5);
+      calculatedDeliveryFee = Math.max(0, Math.ceil(distanceKm) * 5);
     }
 
     let taxAmount = 0;

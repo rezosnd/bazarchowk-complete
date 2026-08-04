@@ -37,7 +37,13 @@
         "VIBRATE",
         "SCHEDULE_EXACT_ALARM",
         "RECORD_AUDIO",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "config": {
         "googleMaps": {
@@ -112,9 +118,8 @@
       "apiUrl": "https://bazarchowk-complete.vercel.app",
       "router": {},
       "eas": {
-        "projectId": "41928b2f-6523-484a-a619-f1287e852b06"
+        "projectId": "d331f986-b005-4242-b701-d13e8624710b"
       }
-    },
-    "owner": "veritasco"
+    }
   }
 }
