@@ -75,11 +75,8 @@ export class OrdersService {
       for (const tier of tiers) {
         if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
       }
-    } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
-      // Fallback formula ONLY for reasonable distances within a city (≤30km)
-      deliveryFee = Math.max(0, Math.ceil(distanceKm) * 5);
     }
-    // If distanceKm is 0 (coords missing), we already defaulted to city/0 above — no change needed
+    // If city is unconfigured, delivery fee remains ₹0.
 
     let taxAmount = 0;
     if (cityConfig && cityConfig.taxPercent) {
@@ -203,9 +200,6 @@ export class OrdersService {
           break;
         }
       }
-    } else if (!cityConfig && distanceKm > 0 && distanceKm <= 30) {
-      // Fallback formula ONLY for reasonable distances within a city (≤30km)
-      calculatedDeliveryFee = Math.max(0, Math.ceil(distanceKm) * 5);
     }
 
     let taxAmount = 0;
