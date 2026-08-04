@@ -162,7 +162,7 @@ export class InventoryService {
         await this.notifications.sendInAppNotification(
           shop.ownerId,
           'Low Stock Alert',
-          `A product in your shop "\${shop.name}" is running low on stock (Quantity: \${inventory.quantity}).`,
+          `A product in your shop "${shop.name}" is running low on stock (Quantity: ${inventory.quantity}).`,
           'SYSTEM'
         );
       }

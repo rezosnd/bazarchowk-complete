@@ -25,7 +25,7 @@ export class CategoriesService {
     }
     const category = await this.prisma.category.create({ data: createCategoryDto });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'Category Created', `Category "\${category.name}" was added.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'Category Created', `Category "${category.name}" was added.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return category;
@@ -73,7 +73,7 @@ export class CategoriesService {
       data: updateCategoryDto,
     });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'Category Updated', `Category "\${updated.name}" was modified.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'Category Updated', `Category "${updated.name}" was modified.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return updated;
@@ -83,7 +83,7 @@ export class CategoriesService {
     const category = await this.findCategory(id);
     await this.prisma.category.delete({ where: { id } });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'Category Deleted', `Category "\${category.name}" was removed.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'Category Deleted', `Category "${category.name}" was removed.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return { message: 'Category deleted successfully' };
@@ -106,7 +106,7 @@ export class CategoriesService {
     }
     const subCategory = await this.prisma.subCategory.create({ data: createSubCategoryDto });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Created', `SubCategory "\${subCategory.name}" was added.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Created', `SubCategory "${subCategory.name}" was added.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return subCategory;
@@ -146,7 +146,7 @@ export class CategoriesService {
       data: updateSubCategoryDto,
     });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Updated', `SubCategory "\${updated.name}" was modified.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Updated', `SubCategory "${updated.name}" was modified.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return updated;
@@ -156,7 +156,7 @@ export class CategoriesService {
     const subCategory = await this.findSubCategory(id);
     await this.prisma.subCategory.delete({ where: { id } });
     if (adminId) {
-      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Deleted', `SubCategory "\${subCategory.name}" was removed.`, 'SYSTEM');
+      await this.notificationsService.sendInAppNotification(adminId, 'SubCategory Deleted', `SubCategory "${subCategory.name}" was removed.`, 'SYSTEM');
     }
     await this.cacheManager.del('all_categories_v2');
     return { message: 'SubCategory deleted successfully' };

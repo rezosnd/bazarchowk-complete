@@ -135,7 +135,7 @@ export class PaymentsService {
     await this.notifications.sendInAppNotification(
       payment.order.customerId,
       'Payment Successful',
-      `Your payment for order \${payment.order.orderNumber} was successful.`,
+      `Your payment for order ${payment.order.orderNumber} was successful.`,
       'PAYMENT'
     );
     

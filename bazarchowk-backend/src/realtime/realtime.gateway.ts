@@ -50,7 +50,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       (client as any).user = decoded;
 
       // Join standard user room
-      client.join(`user_\${userId}`);
+      client.join(`user_${userId}`);
       
       // Store in connected users map
       if (!this.connectedUsers.has(userId)) {
@@ -65,7 +65,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       if (role === 'SHOP_OWNER' && decoded.shopId) {
-        client.join(`shop_\${decoded.shopId}`);
+        client.join(`shop_${decoded.shopId}`);
         if (!this.connectedShops.has(decoded.shopId)) {
           this.connectedShops.set(decoded.shopId, new Set());
         }
@@ -73,13 +73,13 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       if (role === 'RIDER' || role === 'DELIVERY_PARTNER') {
-        client.join(`rider_\${userId}`);
+        client.join(`rider_${userId}`);
         client.join('riders_room');
       }
 
-      this.logger.log(`Client connected: \${client.id} (User: \${userId}, Role: \${role})`);
+      this.logger.log(`Client connected: ${client.id} (User: ${userId}, Role: ${role})`);
     } catch (error) {
-      this.logger.warn(`Connection rejected: \${client.id} - \${error.message}`);
+      this.logger.warn(`Connection rejected: ${client.id} - ${error.message}`);
       client.disconnect();
     }
   }
@@ -104,19 +104,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
       }
     }
-    this.logger.log(`Client disconnected: \${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   // --- API Methods for Services ---
 
   // Emits an event strictly to a specific user
   sendToUser(userId: string, event: string, payload: any) {
-    this.server.to(`user_\${userId}`).emit(event, payload);
+    this.server.to(`user_${userId}`).emit(event, payload);
   }
 
   // Emits an event strictly to a specific shop owner's connected devices
   sendToShop(shopId: string, event: string, payload: any) {
-    this.server.to(`shop_\${shopId}`).emit(event, payload);
+    this.server.to(`shop_${shopId}`).emit(event, payload);
   }
 
   // Emits an event to all connected admins
@@ -140,7 +140,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Broadcast location to the specific order tracking room
     // A customer tracks an order by joining the room 'track_order_{orderId}'
-    this.server.to(`track_order_\${data.orderId}`).emit('rider_location', {
+    this.server.to(`track_order_${data.orderId}`).emit('rider_location', {
       riderId: user.sub,
       ...data,
       timestamp: new Date().toISOString()
@@ -156,7 +156,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         data.heading
       );
     } catch (e) {
-      this.logger.error(`Failed to save tracking point: \${e.message}`);
+      this.logger.error(`Failed to save tracking point: ${e.message}`);
     }
   }
 
@@ -166,8 +166,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { orderId: string }
   ) {
-    client.join(`track_order_\${data.orderId}`);
-    this.logger.log(`Client \${client.id} joined tracking for order \${data.orderId}`);
+    client.join(`track_order_${data.orderId}`);
+    this.logger.log(`Client ${client.id} joined tracking for order ${data.orderId}`);
   }
 
   @SubscribeMessage('leave_tracking')
@@ -175,6 +175,6 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { orderId: string }
   ) {
-    client.leave(`track_order_\${data.orderId}`);
+    client.leave(`track_order_${data.orderId}`);
   }
 }

@@ -74,7 +74,7 @@ export class WalletService {
     await this.notifications.sendInAppNotification(
       userId,
       'Wallet Credited',
-      `₹\${amount} has been added to your wallet.`,
+      `₹${amount} has been added to your wallet.`,
       'WALLET'
     );
 
@@ -122,7 +122,7 @@ export class WalletService {
     await this.notifications.sendInAppNotification(
       userId,
       'Wallet Debited',
-      `₹\${amount} was deducted from your wallet.`,
+      `₹${amount} was deducted from your wallet.`,
       'WALLET'
     );
 

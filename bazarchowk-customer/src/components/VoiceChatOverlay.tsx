@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring } from 'react-native-reanimated';
 import { useAIStore } from '@/store/aiStore';
+import { useAuthStore } from '@/store/auth.store';
 import api from '@/services/api';
 
 let Speech: any = null;
@@ -27,7 +28,8 @@ try {
 export function VoiceChatOverlay() {
   const { t, i18n } = useTranslation();
   const { isListening, stopListening } = useAIStore();
-  const greeting = t('ai.greeting', { defaultValue: 'How can I help you today?' });
+  const { user } = useAuthStore();
+  const greeting = t('ai.greeting', { name: user?.firstName || 'there', defaultValue: 'How can I help you today?' });
   const [aiResponse, setAiResponse] = useState('');
   const [processing, setProcessing] = useState(false);
   const [recording, setRecording] = useState<any>(null);

@@ -87,7 +87,7 @@ export class GeminiService {
   }
 
   private handleError(method: string, error: any): never {
-    this.logger.error(`Error in \${method}:`, error.message || error);
+    this.logger.error(`Error in ${method}:`, error.message || error);
     if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Quota')) {
       throw new InternalServerErrorException('AI Service rate limit exceeded. Please try again later.');
     }

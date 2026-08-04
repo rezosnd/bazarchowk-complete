@@ -141,7 +141,7 @@ export class VoiceOrderingService {
              }
              return {
                  message: 'Appointment Auto-Booked',
-                 aiVoiceReply: `Thik hai, aapka \${requestedHour} baje ka appointment \${shop.businessName} me book ho gaya hai. Mujhe bataiye agar kuch aur chahiye.`,
+                 aiVoiceReply: `Thik hai, aapka ${requestedHour} baje ka appointment ${shop.businessName} me book ho gaya hai. Mujhe bataiye agar kuch aur chahiye.`,
                  action: 'BOOKED',
                  shopSelected: shop.name,
                  orderDetails: appointmentDetails,

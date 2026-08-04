@@ -43,7 +43,7 @@ export class BusinessService {
     await this.notifications.sendInAppNotification(
       ownerId,
       'Registration Submitted',
-      `Your business \${business.businessName} has been submitted for review.`,
+      `Your business ${business.businessName} has been submitted for review.`,
       'BUSINESS'
     );
 
@@ -81,7 +81,7 @@ export class BusinessService {
     await this.notifications.sendInAppNotification(
       updated.ownerId,
       'Business Approved! 🎉',
-      `Congratulations! \${updated.businessName} is now fully verified and live.`,
+      `Congratulations! ${updated.businessName} is now fully verified and live.`,
       'SYSTEM'
     );
 

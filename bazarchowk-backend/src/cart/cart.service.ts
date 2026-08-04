@@ -92,7 +92,7 @@ export class CartService {
     }
 
     if (item.productVariant.stock < dto.quantity) {
-      throw new BadRequestException(`Only \${item.productVariant.stock} items left in stock`);
+      throw new BadRequestException(`Only ${item.productVariant.stock} items left in stock`);
     }
 
     return this.prisma.cartItem.update({

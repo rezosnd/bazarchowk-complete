@@ -149,7 +149,7 @@ export class OrdersService {
     // 2. Validate Stock & Calculate Total
     for (const item of shopItems) {
       if (item.productVariant.stock < item.quantity) {
-        throw new BadRequestException(`Insufficient stock for \${item.productVariant.name}`);
+        throw new BadRequestException(`Insufficient stock for ${item.productVariant.name}`);
       }
       totalAmount += (item.productVariant.price * item.quantity);
       
@@ -553,7 +553,7 @@ export class OrdersService {
       await this.notifications.sendInAppNotification(
         order.customerId,
         'Order Update',
-        `Your order \${order.orderNumber} is now \${dto.status}`,
+        `Your order ${order.orderNumber} is now ${dto.status}`,
         'ORDER'
       );
 

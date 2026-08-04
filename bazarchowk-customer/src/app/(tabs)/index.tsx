@@ -52,7 +52,7 @@ import api from '@/services/api';
 import { socketService } from '@/services/socket';
 
 // Reusing some placeholder images just in case backend data lacks images initially
-const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+// No longer using unsplash placeholder globally
 
 
 
@@ -165,6 +165,7 @@ function HomeHeader() {
 function AIHero() {
   const { t } = useTranslation();
   const isListening = useAIStore(state => state.isListening);
+  const { user } = useAuthStore();
   const pulse = useSharedValue(1);
   const borderGlow = useSharedValue(0.2);
 
@@ -224,7 +225,7 @@ function AIHero() {
             </View>
           </View>
           <View style={styles.aiGreeting}>
-            <Text style={styles.aiGreetingText}>{t('ai.greeting')}</Text>
+            <Text style={styles.aiGreetingText}>{t('ai.greeting', { name: user?.firstName || 'there' })}</Text>
           </View>
         </View>
 
@@ -367,7 +368,13 @@ function NearbyShops({ lat, lng }: { lat?: number, lng?: number }) {
         {shops.map((shop: any) => (
           <TouchableOpacity key={shop.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/shop/${shop.id}`)}>
             <View style={styles.shopImgWrapper}>
-              <Image source={{ uri: shop.bannerUrl || shop.logoUrl || PLACEHOLDER_IMG }} style={styles.shopImg} contentFit="cover" />
+              {shop.bannerUrl || shop.logoUrl ? (
+                <Image source={{ uri: shop.bannerUrl || shop.logoUrl }} style={styles.shopImg} contentFit="cover" />
+              ) : (
+                <View style={[styles.shopImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="storefront-outline" size={28} color="#CBD5E1" />
+                </View>
+              )}
               {shop.status?.isOpen && (
                 <View style={styles.openBadge}>
                   <Text style={styles.openBadgeTxt}>{t('shops.open')}</Text>
@@ -406,7 +413,13 @@ function NearbyServices({ lat, lng }: { lat?: number, lng?: number }) {
         {services.map((svc: any) => (
           <TouchableOpacity key={svc.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/services/${svc.id}`)}>
             <View style={styles.shopImgWrapper}>
-              <Image source={{ uri: svc.bannerUrl || svc.logoUrl || PLACEHOLDER_IMG }} style={styles.shopImg} contentFit="cover" />
+              {svc.bannerUrl || svc.logoUrl ? (
+                <Image source={{ uri: svc.bannerUrl || svc.logoUrl }} style={styles.shopImg} contentFit="cover" />
+              ) : (
+                <View style={[styles.shopImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="briefcase-outline" size={28} color="#CBD5E1" />
+                </View>
+              )}
               <View style={[styles.openBadge, { backgroundColor: '#EA580C' }]}>
                 <Text style={styles.openBadgeTxt}>BOOK</Text>
               </View>
@@ -441,7 +454,13 @@ function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {markets.map((m: any) => (
           <TouchableOpacity key={m.id} style={styles.marketCard} activeOpacity={0.9} onPress={() => router.push(`/market/${m.id}` as any)}>
-            <Image source={{ uri: m.imageUrl || PLACEHOLDER_IMG }} style={styles.marketImg} contentFit="cover" />
+            {m.imageUrl ? (
+              <Image source={{ uri: m.imageUrl }} style={styles.marketImg} contentFit="cover" />
+            ) : (
+              <View style={[styles.marketImg, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="business-outline" size={32} color="#94A3B8" />
+              </View>
+            )}
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.8)']}
               style={styles.marketOverlay}
@@ -489,11 +508,17 @@ function PromoCarousel({ lat, lng }: { lat?: number, lng?: number }) {
               }
             }}
           >
-            <Image 
-              source={{ uri: ad.imageUrl || PLACEHOLDER_IMG }} 
-              style={{ width: '100%', height: '100%', borderRadius: 16 }} 
-              contentFit="cover" 
-            />
+            {ad.imageUrl ? (
+              <Image 
+                source={{ uri: ad.imageUrl }} 
+                style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+                contentFit="cover" 
+              />
+            ) : (
+              <View style={{ width: '100%', height: '100%', borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="megaphone-outline" size={32} color="#CBD5E1" />
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -571,7 +596,13 @@ function RecommendedSection({ lat, lng }: { lat?: number, lng?: number }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {products.map((prod: any) => (
           <TouchableOpacity key={prod.id} style={styles.productCard} activeOpacity={0.9} onPress={() => router.push(`/product/${prod.id}`)}>
-            <Image source={{ uri: prod.images?.[0]?.imageUrl || PLACEHOLDER_IMG }} style={styles.productImg} contentFit="cover" />
+            {prod.images?.[0]?.imageUrl ? (
+              <Image source={{ uri: prod.images[0].imageUrl }} style={styles.productImg} contentFit="cover" />
+            ) : (
+              <View style={[styles.productImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="cube-outline" size={28} color="#CBD5E1" />
+              </View>
+            )}
             <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
             <View style={styles.productPriceRow}>
               <Text style={styles.productPrice}>₹{prod.basePrice}</Text>

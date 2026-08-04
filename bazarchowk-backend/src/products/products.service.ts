@@ -26,7 +26,7 @@ export class ProductsService {
       data: createProductDto,
     });
 
-    await this.notifications.sendInAppNotification(ownerId, 'Product Added', `Your product "\${product.name}" was successfully added to your catalog.`, 'SYSTEM');
+    await this.notifications.sendInAppNotification(ownerId, 'Product Added', `Your product "${product.name}" was successfully added to your catalog.`, 'SYSTEM');
 
     return product;
   }

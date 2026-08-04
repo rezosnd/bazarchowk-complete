@@ -19,7 +19,6 @@ import { useCurrentLocation } from '@/hooks';
 const PRIMARY = '#00B140';
 const { width: W } = Dimensions.get('window');
 const CARD_W = (W - 16 * 2 - 12) / 2;
-const PLACEHOLDER = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80';
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
@@ -29,7 +28,7 @@ function ProductCard({ product, index }: { product: any; index: number }) {
   const [adding, setAdding] = useState(false);
 
   const { isAuthenticated } = useAuthStore();
-  const { cart, fetchCart } = useCartStore();
+  const { cart, fetchCart, addToCart } = useCartStore();
 
   const primaryImage =
     product.images?.find((img: any) => img.isPrimary)?.imageUrl ||
@@ -59,10 +58,9 @@ function ProductCard({ product, index }: { product: any; index: number }) {
     }
     setAdding(true);
     try {
-      await api.post('/cart/add', { productVariantId: firstVariant.id, quantity: 1 });
-      await fetchCart();
+      await addToCart(firstVariant.id, 1);
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'Could not add to cart');
+      Alert.alert('Error', e?.response?.data?.message || e.message || 'Could not add to cart');
     } finally {
       setAdding(false);
     }
@@ -80,11 +78,17 @@ function ProductCard({ product, index }: { product: any; index: number }) {
         <Animated.View style={animStyle}>
           {/* Image */}
           <View style={styles.imgWrap}>
-            <Image
-              source={{ uri: primaryImage || PLACEHOLDER }}
-              style={styles.img}
-              contentFit={primaryImage ? 'cover' : 'cover'}
-            />
+            {primaryImage ? (
+              <Image
+                source={{ uri: primaryImage }}
+                style={styles.img}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[styles.img, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="cube-outline" size={32} color="#CBD5E1" />
+              </View>
+            )}
             {/* Veg/Non-veg badge */}
             <View style={[styles.vegBadge, { borderColor: PRIMARY }]}>
               <View style={[styles.vegDot, { backgroundColor: PRIMARY }]} />

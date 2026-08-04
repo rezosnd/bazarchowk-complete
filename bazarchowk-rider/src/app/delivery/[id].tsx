@@ -21,9 +21,13 @@ export default function ActiveDeliveryScreen() {
   const [updating, setUpdating] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [riderLocation, setRiderLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [riderUpi, setRiderUpi] = useState<string>('');
 
   useEffect(() => {
     fetchOrderDetails();
+    SecureStore.getItemAsync('rider_upi_id').then(upi => {
+      if (upi) setRiderUpi(upi);
+    });
   }, [id]);
 
   useEffect(() => {
@@ -314,6 +318,29 @@ export default function ActiveDeliveryScreen() {
           </View>
         </View>
 
+        {/* Order Items */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconBoxGreen, { backgroundColor: '#F1F5F9' }]}>
+              <Ionicons name="basket" size={20} color="#64748B" />
+            </View>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Order Items</Text>
+              <Text style={styles.cardSub}>{order.items?.length || 0} items to deliver</Text>
+            </View>
+          </View>
+          <View style={{ padding: 16 }}>
+            {order.items?.map((item: any, index: number) => (
+              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: '#0F172A', flex: 1, paddingRight: 8 }}>
+                  {item.quantity}x {item.productName || item.productVariant?.product?.name || 'Item'}
+                </Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A' }}>₹{item.price}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
         {/* Order Amount & Payment */}
         <View style={styles.amountCard}>
           <Text style={styles.amountLabel}>Payment Status</Text>
@@ -349,7 +376,7 @@ export default function ActiveDeliveryScreen() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>Scan to Pay ₹{order.totalAmount}</Text>
               <View style={{ padding: 8, backgroundColor: '#FFF', borderRadius: 12 }}>
                 <QRCode
-                  value={`upi://pay?pa=rzpy.bazarchowk@icici&pn=BazarChowk&am=${Number(order.totalAmount).toFixed(2)}&cu=INR&tn=Payment_for_Order_${order.id}`}
+                  value={`upi://pay?pa=${riderUpi || process.env.EXPO_PUBLIC_UPI_ID || 'merchant@upi'}&pn=BazarChowk&am=${Number(order.totalAmount).toFixed(2)}&cu=INR&tn=Order_${order.orderNumber}`}
                   size={150}
                 />
               </View>

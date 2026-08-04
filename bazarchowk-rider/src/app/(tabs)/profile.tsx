@@ -14,6 +14,9 @@ export default function RiderProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [editPhone, setEditPhone] = useState('');
   const [saving, setSaving] = useState(false);
+  const [upiId, setUpiId] = useState('');
+  const [editingUpi, setEditingUpi] = useState(false);
+  const [savingUpi, setSavingUpi] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -33,6 +36,8 @@ export default function RiderProfileScreen() {
     } catch (error) {
       console.warn('Failed to fetch profile');
     } finally {
+      const storedUpi = await SecureStore.getItemAsync('rider_upi_id');
+      if (storedUpi) setUpiId(storedUpi);
       setLoading(false);
     }
   };
@@ -64,6 +69,19 @@ export default function RiderProfileScreen() {
       Alert.alert('Error', 'Could not connect to server.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveUpi = async () => {
+    setSavingUpi(true);
+    try {
+      await SecureStore.setItemAsync('rider_upi_id', upiId.trim());
+      Alert.alert('Success', 'UPI ID saved locally for customer payments.');
+      setEditingUpi(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save UPI ID.');
+    } finally {
+      setSavingUpi(false);
     }
   };
 
@@ -128,6 +146,40 @@ export default function RiderProfileScreen() {
             <View style={styles.badge}>
               <Text style={styles.badgeText}>Verified Rider</Text>
             </View>
+          </View>
+        </View>
+
+        <View style={[styles.profileCard, { paddingVertical: 16 }]}>
+          <View style={[styles.avatar, { width: 48, height: 48, backgroundColor: '#E0E7FF' }]}>
+            <Ionicons name="qr-code" size={24} color="#4338CA" />
+          </View>
+          <View style={styles.info}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 4 }}>My UPI ID (For COD Settlement)</Text>
+            {editingUpi ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.input}
+                  value={upiId}
+                  onChangeText={setUpiId}
+                  placeholder="e.g. yourname@upi"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSaveUpi} disabled={savingUpi}>
+                  {savingUpi ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingUpi(false)}>
+                  <Ionicons name="close" size={20} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 14, color: '#64748B' }}>{upiId || 'Not set'}</Text>
+                <TouchableOpacity onPress={() => setEditingUpi(true)} style={{ marginLeft: 8 }}>
+                  <Ionicons name="pencil" size={16} color="#00B140" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 8 }}>Customer payments scan will go directly to this UPI ID.</Text>
           </View>
         </View>
 

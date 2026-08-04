@@ -87,7 +87,7 @@ export class CloudinaryStorageService {
     try {
       await cloudinary.uploader.destroy(publicId);
     } catch (error) {
-      this.logger.error(`Failed to delete image \${publicId} from Cloudinary:`, error);
+      this.logger.error(`Failed to delete image ${publicId} from Cloudinary:`, error);
       throw new InternalServerErrorException('Image deletion failed');
     }
   }

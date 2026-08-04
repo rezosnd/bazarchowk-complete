@@ -67,7 +67,7 @@ export class LoyaltyService {
     await this.notifications.sendInAppNotification(
       userId,
       'Points Earned! 🎉',
-      `You just earned \${points} loyalty points!`,
+      `You just earned ${points} loyalty points!`,
       'SYSTEM'
     );
 
@@ -105,7 +105,7 @@ export class LoyaltyService {
     // 2. Add cash to Wallet
     await this.wallet.credit(userId, conversionAmount, TransactionReason.CASHBACK, 'Loyalty Points Redemption');
 
-    return { message: `Successfully converted \${pointsToRedeem} points to ₹\${conversionAmount}` };
+    return { message: `Successfully converted ${pointsToRedeem} points to ₹${conversionAmount}` };
   }
 
   async processReferral(newUserId: string, referralCode: string) {

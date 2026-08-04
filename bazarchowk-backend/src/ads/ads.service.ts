@@ -55,7 +55,7 @@ export class AdsService {
     await this.notifications.sendInAppNotification(
       ad.shop.ownerId,
       'Advertisement Approved!',
-      `Your \${ad.plan.name} campaign is now live until \${endDate.toLocaleDateString()}`,
+      `Your ${ad.plan.name} campaign is now live until ${endDate.toLocaleDateString()}`,
       'SYSTEM'
     );
 
@@ -76,7 +76,7 @@ export class AdsService {
     if (!plan || !plan.isActive) throw new NotFoundException('Ad plan not available');
 
     // Pay for the ad via Wallet!
-    await this.wallet.debit(userId, plan.price, TransactionReason.PURCHASE, `Purchased \${plan.name} Ad Campaign`);
+    await this.wallet.debit(userId, plan.price, TransactionReason.PURCHASE, `Purchased ${plan.name} Ad Campaign`);
 
     const ad = await this.prisma.advertisement.create({
       data: {

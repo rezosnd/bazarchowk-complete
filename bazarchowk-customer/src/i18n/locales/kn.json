@@ -23,7 +23,7 @@
   "ai": {
     "title": "Bazar AI Assistant",
     "subtitle": "Just tell me what you need",
-    "greeting": "Hi Rehan, what would you like today?",
+    "greeting": "Hi {{name}}, what would you like today?",
     "pills": {
       "vegetables": "Order vegetables",
       "plumber": "Book a plumber",
