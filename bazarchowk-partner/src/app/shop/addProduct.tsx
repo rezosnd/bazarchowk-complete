@@ -138,20 +138,15 @@ export default function AddProductScreen() {
           } as any);
           formData.append('folder', 'products');
 
-          const uploadRes = await fetch(`${API_BASE}/upload`, {
-            method: 'POST',
-            body: formData,
-            // NOTE: Do NOT set Content-Type manually for multipart/form-data.
-            // The browser/RN fetch must auto-generate it with the proper boundary.
+          const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
             headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${token}`
+            }
           });
 
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            const uploadedUrl = uploadData.url || uploadData.secure_url;
-            // Attach image to product
+          const uploadedUrl = uploadRes.data.url || uploadRes.data.secure_url;
+          // Attach image to product
             await fetch(`${API_BASE}/products/${product.id}/images`, {
               method: 'POST',
               headers: { 
@@ -163,7 +158,6 @@ export default function AddProductScreen() {
                 isPrimary: true
               }),
             });
-          }
         } catch (imgError) {
           console.error('Failed to upload image', imgError);
         }

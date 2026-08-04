@@ -73,28 +73,19 @@ export default function ShopProfileScreen() {
         } as any);
         formData.append('folder', 'shops');
 
-        const uploadRes = await fetch(`${API_BASE}/upload`, {
-          method: 'POST',
-          body: formData,
+        const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
           headers: {
-            // NOTE: Do NOT set Content-Type manually for multipart/form-data.
-            // The browser/RN fetch must auto-generate it with the proper boundary.
+            'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (uploadRes.ok) {
-          const data = await uploadRes.json();
-          const uploadedUrl = data.url || data.secure_url;
-          if (type === 'logo') setLogoUrl(uploadedUrl);
-          else setBannerUrl(uploadedUrl);
-        } else {
-          const errText = await uploadRes.text();
-          console.error(errText);
-          alert('Upload failed. Please check your internet and try again.');
-        }
+        const uploadedUrl = uploadRes.data.url || uploadRes.data.secure_url;
+        if (type === 'logo') setLogoUrl(uploadedUrl);
+        else setBannerUrl(uploadedUrl);
+
       } catch (err: any) {
-        console.error(err?.message);
+        console.error(err?.response?.data || err?.message);
         alert('Network error while uploading. Please check your connection.');
       } finally {
         setUploading(false);
