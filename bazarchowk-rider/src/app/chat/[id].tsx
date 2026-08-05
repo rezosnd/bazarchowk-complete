@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE = 'https://bazarchowk-complete.vercel.app';
 
@@ -20,7 +20,7 @@ export default function ChatScreen() {
     let newSocket: Socket;
 
     const setupChat = async () => {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await SecureStore.getItemAsync('rider_token');
       
       newSocket = io(`${API_BASE}/chat`, {
         auth: { token },
