@@ -62,7 +62,7 @@ export class OrdersController {
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles('SHOP_OWNER', 'ADMIN', 'DELIVERY_PARTNER')
+  @Roles('SHOP_OWNER', 'ADMIN', 'DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Update order status' })
   updateOrderStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto, @CurrentUser() user: any) {
     return this.ordersService.updateOrderStatus(id, user.id, dto);

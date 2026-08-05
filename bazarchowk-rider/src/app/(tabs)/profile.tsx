@@ -184,13 +184,13 @@ export default function RiderProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/earnings')}>
             <Ionicons name="document-text-outline" size={24} color="#64748B" />
             <Text style={styles.menuText}>Delivery History</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Support', 'Please email support@bazarchowk.com or call 1800-BAZAR-HELP')}>
             <Ionicons name="help-buoy-outline" size={24} color="#64748B" />
             <Text style={styles.menuText}>Support & Help</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
