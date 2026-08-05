@@ -91,7 +91,7 @@ export class ShopsService {
 
     return {
       ...shop,
-      status: this.computeShopStatus(shop.timings, shop.holidays),
+      status: this.computeShopStatus(shop.isOpen),
     };
   }
 
@@ -112,67 +112,20 @@ export class ShopsService {
 
     const result = {
       ...shop,
-      status: this.computeShopStatus(shop.timings, shop.holidays),
+      status: this.computeShopStatus(shop.isOpen),
     };
     await this.cacheManager.set(cacheKey, result, 30000); // 30s cache for real-time status
     return result;
   }
 
   /**
-   * Computes real-time shop status.
-   * Priority: Holiday > Weekly isClosed > Open/Closed based on time
+   * Computes real-time shop status using the simple manual toggle.
    */
-  private computeShopStatus(timings: any[], holidays: any[]) {
-    const now = new Date();
-    const todayIST = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-    const dayOfWeek = todayIST.getDay(); // 0=Sunday...6=Saturday
-
-    // 1. Check if today is a specific holiday
-    const todayDateStr = todayIST.toISOString().split('T')[0];
-    const holiday = holidays.find(h => {
-      const hDate = new Date(h.date).toISOString().split('T')[0];
-      return hDate === todayDateStr;
-    });
-    if (holiday) {
-      return {
-        isOpen: false,
-        label: 'CLOSED',
-        reason: holiday.reason ? `Holiday: ${holiday.reason}` : 'Closed Today',
-        isHoliday: true,
-      };
-    }
-
-    // 2. Check weekly timing for today
-    const timing = timings.find(t => t.dayOfWeek === dayOfWeek);
-    if (!timing || timing.isClosed) {
-      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
-      return {
-        isOpen: false,
-        label: 'CLOSED',
-        reason: `Closed on ${dayName}s`,
-        isHoliday: false,
-      };
-    }
-
-    // 3. Check if currently within open hours
-    const [openH, openM] = timing.openTime.split(':').map(Number);
-    const [closeH, closeM] = timing.closeTime.split(':').map(Number);
-    const currentMinutes = todayIST.getHours() * 60 + todayIST.getMinutes();
-    const openMinutes = openH * 60 + openM;
-    const closeMinutes = closeH * 60 + closeM;
-
-    const isOpen = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-
+  private computeShopStatus(isOpen: boolean) {
     return {
       isOpen,
       label: isOpen ? 'OPEN' : 'CLOSED',
-      openTime: timing.openTime,
-      closeTime: timing.closeTime,
-      reason: isOpen
-        ? `Open until ${timing.closeTime}`
-        : currentMinutes < openMinutes
-          ? `Opens at ${timing.openTime}`
-          : `Closed. Opens tomorrow`,
+      reason: isOpen ? 'Accepting Orders' : 'Currently Closed',
       isHoliday: false,
     };
   }

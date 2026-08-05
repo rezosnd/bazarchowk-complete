@@ -49,6 +49,7 @@ export class OrdersService {
 
     const shop = await this.prisma.shop.findUnique({ where: { id: dto.shopId } });
     if (!shop) throw new NotFoundException('Shop not found');
+    if (!shop.isOpen) throw new BadRequestException('This shop is currently closed. You cannot place orders right now.');
 
     // Only compute distance if BOTH shop and address have valid non-zero coordinates
     const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);
@@ -175,6 +176,7 @@ export class OrdersService {
     });
 
     if (!shop) throw new NotFoundException('Shop not found');
+    if (!shop.isOpen) throw new BadRequestException('This shop is currently closed. You cannot place orders right now.');
 
     // Only compute distance if BOTH shop and address have valid non-zero coordinates
     const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);

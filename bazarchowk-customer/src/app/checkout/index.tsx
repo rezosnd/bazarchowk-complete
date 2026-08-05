@@ -27,6 +27,7 @@ export default function CheckoutScreen() {
   const [useWallet, setUseWallet] = useState(false);
   const [billDetails, setBillDetails] = useState<any>(null);
   const [fetchingBill, setFetchingBill] = useState(false);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -65,6 +66,7 @@ export default function CheckoutScreen() {
   const fetchBillDetails = async () => {
     try {
       setFetchingBill(true);
+      setDeliveryError(null);
       const res = await api.post('/orders/checkout-preview', {
         shopId,
         deliveryAddressId: selectedAddressId,
@@ -81,6 +83,12 @@ export default function CheckoutScreen() {
       }
     } catch (e: any) {
       const status = e?.response?.status;
+      const errorMsg = e?.response?.data?.message || '';
+      
+      if (status === 400 && (errorMsg.includes('out of range') || errorMsg.includes('not available'))) {
+        setDeliveryError("Order can't be placed. This shop does not deliver to the selected location.");
+      }
+      
       console.warn('Failed to fetch bill details', e);
       // Graceful fallback: compute total from local cart store (correct field path: item.productVariant.price)
       const shopItems = (cart?.items || []);
@@ -229,6 +237,19 @@ export default function CheckoutScreen() {
           )}
         </View>
 
+        {/* Delivery Error Warning */}
+        {deliveryError && (
+          <View style={styles.errorCard}>
+            <View style={styles.errorIconBg}>
+              <Ionicons name="location-outline" size={24} color="#EF4444" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.errorTitle}>Out of Delivery Range</Text>
+              <Text style={styles.errorDesc}>{deliveryError}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Payment Method */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
@@ -318,8 +339,8 @@ export default function CheckoutScreen() {
           )}
         </View>
         <TouchableOpacity 
-          style={[styles.placeOrderBtn, (!selectedAddressId || placingOrder) && { opacity: 0.5 }]} 
-          disabled={!selectedAddressId || placingOrder}
+          style={[styles.placeOrderBtn, (!selectedAddressId || placingOrder || !!deliveryError) && { opacity: 0.6, backgroundColor: deliveryError ? '#94A3B8' : PRIMARY }]} 
+          disabled={!selectedAddressId || placingOrder || !!deliveryError}
           onPress={handlePlaceOrder}
         >
           {placingOrder ? (
@@ -388,4 +409,9 @@ const styles = StyleSheet.create({
   totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', marginBottom: 0 },
   totalLabel: { fontSize: 16, color: '#0F172A', fontWeight: '800' },
   totalValue: { fontSize: 18, color: PRIMARY, fontWeight: '800' },
+
+  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FECACA', marginBottom: 12 },
+  errorIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  errorTitle: { fontSize: 15, fontWeight: '700', color: '#991B1B', marginBottom: 4 },
+  errorDesc: { fontSize: 13, color: '#B91C1C', lineHeight: 18 },
 });

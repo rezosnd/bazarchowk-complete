@@ -230,6 +230,7 @@ model Shop {
   // Verification & Status
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
+  isOpen     Boolean @default(true)
 
   // Financial & Settlement Details
   bankAccountNumber String?

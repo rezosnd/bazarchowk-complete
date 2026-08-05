@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -162,9 +162,26 @@ export default function ShopOrdersScreen() {
           filteredOrders.map((order) => (
             <View key={order.id} style={styles.card}>
               <View style={styles.cardHeader}>
-                <View>
+                <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={styles.orderId}>{order.orderNumber}</Text>
-                  <Text style={styles.customerName}>{order.customer?.name || 'Customer'}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.customerName}>
+                        {[order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ') || 'Customer'}
+                      </Text>
+                      {order.customer?.phone && (
+                        <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '500' }}>{order.customer.phone}</Text>
+                      )}
+                    </View>
+                    {order.customer?.phone && (
+                      <TouchableOpacity 
+                        style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' }}
+                        onPress={() => Linking.openURL(`tel:${order.customer.phone}`)}
+                      >
+                        <Ionicons name="call" size={18} color="#00B140" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
                 <View style={styles.amountBox}>
                   <Text style={styles.amountText}>₹{order.totalAmount}</Text>
