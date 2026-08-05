@@ -309,7 +309,11 @@ export default function ActiveDeliveryScreen() {
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.actionBtnOutline} onPress={() => Linking.openURL(`tel:${customerPhone}`)}>
               <Ionicons name="call" size={18} color="#DC2626" />
-              <Text style={styles.actionTextRed}>Call Customer</Text>
+              <Text style={styles.actionTextRed}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtnOutline} onPress={() => router.push({ pathname: `/chat/${order.id}`, params: { name: customerName, type: 'CUSTOMER_RIDER' } } as any)}>
+              <Ionicons name="chatbubble" size={18} color="#DC2626" />
+              <Text style={styles.actionTextRed}>Message</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtnOutline} onPress={() => openMap(order.deliveryAddress?.latitude, order.deliveryAddress?.longitude, 'Customer Location')}>
               <Ionicons name="navigate" size={18} color="#DC2626" />

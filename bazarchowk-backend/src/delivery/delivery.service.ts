@@ -93,6 +93,24 @@ export class DeliveryService {
         data: { riderId: partner.userId },
       });
 
+      // Auto-create chat conversation between Customer and Rider
+      const conversationExists = await prisma.conversation.findUnique({ where: { id: delivery.orderId } });
+      if (!conversationExists) {
+        await prisma.conversation.create({
+          data: {
+            id: delivery.orderId,
+            type: 'CUSTOMER_RIDER',
+            orderId: delivery.orderId,
+            participants: {
+              create: [
+                { userId: delivery.order.customerId, role: 'MEMBER' },
+                { userId: partner.userId, role: 'MEMBER' }
+              ]
+            }
+          }
+        });
+      }
+
       return d;
     });
 
@@ -162,5 +180,55 @@ export class DeliveryService {
     }
 
     return updated;
+  }
+
+  async getRiderEarnings(riderId: string, filter: 'TODAY' | 'WEEK' | 'MONTH') {
+    const today = new Date();
+    let startDate = new Date();
+    
+    if (filter === 'TODAY') {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (filter === 'WEEK') {
+      startDate.setDate(today.getDate() - 7);
+    } else if (filter === 'MONTH') {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    const deliveries = await this.prisma.delivery.findMany({
+      where: {
+        riderId,
+        status: 'DELIVERED',
+        createdAt: { gte: startDate }
+      },
+      include: {
+        order: { select: { deliveryFee: true, totalAmount: true, paymentMethod: true } }
+      }
+    });
+
+    const totalDeliveries = deliveries.length;
+    let deliveryEarnings = 0;
+    
+    deliveries.forEach(d => {
+      // Assuming rider gets 80% of the delivery fee for instance, or 100%. Let's say 100% of delivery fee is their earnings.
+      deliveryEarnings += d.order.deliveryFee || 0;
+    });
+
+    // Cash In Hand: Total COD orders that are DELIVERED but not yet submitted (this requires looking at CashCollection model, 
+    // but if it's not strictly linked to delivery timeline, we can look at all unsubmitted cash collections for this rider).
+    const unsubmittedCash = await this.prisma.cashCollection.aggregate({
+      _sum: { amountCollected: true },
+      where: { riderId, status: 'COLLECTED' }
+    });
+    
+    const cashInHand = unsubmittedCash._sum.amountCollected || 0;
+
+    return {
+      totalDeliveries,
+      deliveryEarnings,
+      tips: 0, // Mock for now
+      totalEarnings: deliveryEarnings, // + tips
+      cashInHand,
+      settlementStatus: cashInHand > 0 ? 'PENDING' : 'SETTLED'
+    };
   }
 }

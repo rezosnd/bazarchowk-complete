@@ -56,4 +56,15 @@ export class DeliveryController {
   ) {
     return this.deliveryService.updateDeliveryStatus(id, user.id, status, proofImageUrl);
   }
+
+  @Get('rider/earnings')
+  @UseGuards(RolesGuard)
+  @Roles('RIDER', 'DELIVERY_PARTNER')
+  @ApiOperation({ summary: 'Get rider earnings and cash in hand' })
+  getRiderEarnings(
+    @Query('filter') filter: 'TODAY' | 'WEEK' | 'MONTH',
+    @CurrentUser() user: any
+  ) {
+    return this.deliveryService.getRiderEarnings(user.id, filter);
+  }
 }

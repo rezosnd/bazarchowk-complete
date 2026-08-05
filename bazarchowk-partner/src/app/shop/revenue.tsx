@@ -19,7 +19,8 @@ export default function RevenueDashboardScreen() {
     onlinePaid: 0,
     codCollected: 0,
     platformFees: 0,
-    netEarnings: 0
+    netEarnings: 0,
+    pendingSettlement: 0
   });
 
   const fetchData = async () => {
@@ -29,15 +30,17 @@ export default function RevenueDashboardScreen() {
       
       if (response.data) {
         // Map the correct timeframe based on filter
-        let currentPeriodData = response.data.thisMonth;
+        let currentPeriodData = response.data.today;
         if (filter === 'WEEK') currentPeriodData = response.data.last7Days;
+        if (filter === 'MONTH') currentPeriodData = response.data.thisMonth;
         
         setData({
-          grossSales: currentPeriodData.grossSales || 0,
-          onlinePaid: 0, // In future, calculate split if needed
-          codCollected: currentPeriodData.grossSales || 0, 
-          platformFees: (currentPeriodData.grossSales - currentPeriodData.netSettled) || 0,
-          netEarnings: currentPeriodData.netSettled || 0
+          grossSales: currentPeriodData?.grossSales || 0,
+          onlinePaid: currentPeriodData?.onlinePaid || 0,
+          codCollected: currentPeriodData?.codCollected || 0, 
+          platformFees: ((currentPeriodData?.grossSales || 0) * 0.1) || 0,
+          netEarnings: currentPeriodData?.netSettled || 0,
+          pendingSettlement: response.data.pendingSettlement || 0
         });
       }
     } catch (e) {
@@ -87,9 +90,15 @@ export default function RevenueDashboardScreen() {
           <View style={styles.heroCard}>
             <Text style={styles.heroLabel}>Net Settlement Earnings</Text>
             <Text style={styles.heroAmount}>₹{data.netEarnings.toLocaleString()}</Text>
-            <View style={styles.heroBadge}>
-              <Ionicons name="trending-up" size={16} color="#00B140" />
-              <Text style={styles.heroBadgeText}>+12% vs last {filter.toLowerCase()}</Text>
+            <View style={styles.heroBadgeRow}>
+              <View style={styles.heroBadge}>
+                <Ionicons name="trending-up" size={16} color="#00B140" />
+                <Text style={styles.heroBadgeText}>+12% vs last {filter.toLowerCase()}</Text>
+              </View>
+              <View style={styles.heroBadgePending}>
+                <Ionicons name="time-outline" size={16} color="#F59E0B" />
+                <Text style={styles.heroBadgeTextPending}>₹{data.pendingSettlement.toLocaleString()} Pending</Text>
+              </View>
             </View>
           </View>
 
@@ -166,8 +175,11 @@ const styles = StyleSheet.create({
   heroCard: { backgroundColor: '#0F172A', padding: 24, borderRadius: 24, marginBottom: 24, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 10 },
   heroLabel: { color: '#94A3B8', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   heroAmount: { color: '#FFF', fontSize: 40, fontWeight: '800', marginBottom: 16 },
-  heroBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,177,64,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' },
+  heroBadgeRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  heroBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,177,64,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   heroBadgeText: { color: '#10B981', fontSize: 12, fontWeight: '700', marginLeft: 4 },
+  heroBadgePending: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(245,158,11,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  heroBadgeTextPending: { color: '#F59E0B', fontSize: 12, fontWeight: '700', marginLeft: 4 },
   
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
   

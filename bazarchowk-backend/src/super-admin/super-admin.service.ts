@@ -224,7 +224,7 @@ export class SuperAdminService {
   }
 
   async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day') {
-    const [orders, topShopsRaw, totalOrderCount] = await Promise.all([
+    const [orders, topShopsRaw, totalOrderCount, totalCodAgg, totalOnlineAgg] = await Promise.all([
       this.prisma.order.groupBy({
         by: ['createdAt'],
         _sum: { totalAmount: true },
@@ -246,6 +246,14 @@ export class SuperAdminService {
       this.prisma.order.count({
         where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } }
       }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate }, paymentMethod: 'COD' }
+      }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate }, paymentMethod: { not: 'COD' } }
+      }),
     ]);
 
     // Enrich topShops with shop names
@@ -261,8 +269,10 @@ export class SuperAdminService {
     }));
 
     const totalRevenue = orders.reduce((sum, o) => sum + (o._sum.totalAmount || 0), 0);
+    const totalCod = totalCodAgg._sum.totalAmount || 0;
+    const totalOnline = totalOnlineAgg._sum.totalAmount || 0;
 
-    return { dailyRevenue: orders, topShops, totalRevenue, totalOrderCount };
+    return { dailyRevenue: orders, topShops, totalRevenue, totalOrderCount, totalCod, totalOnline };
   }
 
   // ==================== ADVERTISEMENT MANAGEMENT ====================

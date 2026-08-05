@@ -346,17 +346,28 @@ export class SettlementService {
     const shop = await this.prisma.shop.findFirst({ where: { ownerId: userId } });
     if (!shop) throw new NotFoundException('Shop not found');
 
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
 
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
       orders7Days,
+      orders7DaysCOD,
+      orders7DaysOnline,
       ordersThisMonth,
+      ordersThisMonthCOD,
+      ordersThisMonthOnline,
+      ordersToday,
+      ordersTodayCOD,
+      ordersTodayOnline,
       settlements7Days,
       settlementsThisMonth,
+      settlementsToday,
       pendingSettlementAmt
     ] = await Promise.all([
       // Gross sales last 7 days (Delivered)
@@ -365,11 +376,47 @@ export class SettlementService {
         _count: { id: true },
         where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: sevenDaysAgo } }
       }),
+      // Gross sales last 7 days COD
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: sevenDaysAgo }, paymentMethod: 'COD' }
+      }),
+      // Gross sales last 7 days Online
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: sevenDaysAgo }, paymentMethod: { not: 'COD' } }
+      }),
       // Gross sales this month
       this.prisma.order.aggregate({
         _sum: { totalAmount: true },
         _count: { id: true },
         where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: firstDayOfMonth } }
+      }),
+      // Gross sales this month COD
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: firstDayOfMonth }, paymentMethod: 'COD' }
+      }),
+      // Gross sales this month Online
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: firstDayOfMonth }, paymentMethod: { not: 'COD' } }
+      }),
+      // Gross sales today
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: today } }
+      }),
+      // Gross sales today COD
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: today }, paymentMethod: 'COD' }
+      }),
+      // Gross sales today Online
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: today }, paymentMethod: { not: 'COD' } }
       }),
       // Net settlements received last 7 days (Completed)
       this.prisma.shopSettlement.aggregate({
@@ -381,6 +428,11 @@ export class SettlementService {
         _sum: { netSettlementAmt: true },
         where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: firstDayOfMonth } }
       }),
+      // Net settlements received today
+      this.prisma.shopSettlement.aggregate({
+        _sum: { netSettlementAmt: true },
+        where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: today } }
+      }),
       // Unsettled amount currently pending
       this.prisma.shopSettlement.aggregate({
         _sum: { netSettlementAmt: true },
@@ -391,13 +443,24 @@ export class SettlementService {
     return {
       last7Days: {
         grossSales: orders7Days._sum.totalAmount || 0,
+        codCollected: orders7DaysCOD._sum.totalAmount || 0,
+        onlinePaid: orders7DaysOnline._sum.totalAmount || 0,
         totalDeliveries: orders7Days._count.id || 0,
         netSettled: settlements7Days._sum.netSettlementAmt || 0,
       },
       thisMonth: {
         grossSales: ordersThisMonth._sum.totalAmount || 0,
+        codCollected: ordersThisMonthCOD._sum.totalAmount || 0,
+        onlinePaid: ordersThisMonthOnline._sum.totalAmount || 0,
         totalDeliveries: ordersThisMonth._count.id || 0,
         netSettled: settlementsThisMonth._sum.netSettlementAmt || 0,
+      },
+      today: {
+        grossSales: ordersToday._sum.totalAmount || 0,
+        codCollected: ordersTodayCOD._sum.totalAmount || 0,
+        onlinePaid: ordersTodayOnline._sum.totalAmount || 0,
+        totalDeliveries: ordersToday._count.id || 0,
+        netSettled: settlementsToday._sum.netSettlementAmt || 0,
       },
       pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || 0
     };

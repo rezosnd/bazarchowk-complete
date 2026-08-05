@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
@@ -17,6 +18,7 @@ export default function RiderProfileScreen() {
   const [upiId, setUpiId] = useState('');
   const [editingUpi, setEditingUpi] = useState(false);
   const [savingUpi, setSavingUpi] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -72,6 +74,66 @@ export default function RiderProfileScreen() {
     }
   };
 
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        uploadImage(result.assets[0].uri);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        name: 'avatar.jpg',
+        type: 'image/jpeg'
+      } as any);
+      formData.append('folder', 'profiles');
+
+      const uploadRes = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadRes.ok) throw new Error('Upload failed');
+      const uploadData = await uploadRes.json();
+      const imageUrl = uploadData.url;
+
+      const token = await SecureStore.getItemAsync('rider_token');
+      const updateRes = await fetch(`${API_BASE}/users/me`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ avatarUrl: imageUrl })
+      });
+
+      if (updateRes.ok) {
+        fetchProfile();
+        Alert.alert('Success', 'Profile picture updated');
+      } else {
+        throw new Error('Failed to save profile picture');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSaveUpi = async () => {
     setSavingUpi(true);
     try {
@@ -112,9 +174,18 @@ export default function RiderProfileScreen() {
       
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{profile?.firstName?.[0] || 'R'}</Text>
-          </View>
+          <TouchableOpacity onPress={handlePickImage} disabled={uploadingImage} style={styles.avatar}>
+            {uploadingImage ? (
+              <ActivityIndicator color="#0F172A" />
+            ) : profile?.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 40 }} />
+            ) : (
+              <Text style={styles.avatarText}>{profile?.firstName?.[0] || 'R'}</Text>
+            )}
+            <View style={styles.editAvatarBadge}>
+              <Ionicons name="camera" size={12} color="#FFF" />
+            </View>
+          </TouchableOpacity>
           <View style={styles.info}>
             <Text style={styles.name}>{profile?.firstName} {profile?.lastName}</Text>
             
@@ -215,8 +286,9 @@ const styles = StyleSheet.create({
   
   profileCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', gap: 16 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 28, fontWeight: '800', color: '#00B140' },
-  info: { flex: 1 },
+  avatarText: { fontSize: 32, fontWeight: '800', color: '#0F172A' },
+  editAvatarBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#00B140', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' },
+  info: { flex: 1, marginLeft: 16 },
   name: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   phone: { fontSize: 15, color: '#64748B', marginBottom: 8 },
   editRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },

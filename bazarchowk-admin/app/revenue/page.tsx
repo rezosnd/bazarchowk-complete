@@ -43,6 +43,8 @@ export default function RevenuePage() {
 
   const totalRevenue = data?.totalRevenue || data?.dailyRevenue?.reduce((sum: number, item: any) => sum + (item._sum.totalAmount || 0), 0) || 0;
   const totalOrders = data?.totalOrderCount || 0;
+  const totalCod = data?.totalCod || 0;
+  const totalOnline = data?.totalOnline || 0;
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
@@ -59,10 +61,15 @@ export default function RevenuePage() {
           <p className="text-3xl font-bold text-blue-600 mt-2">{totalOrders.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <p className="text-sm font-medium text-gray-500">Avg. Order Value</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">
-            ₹{totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0.00'}
-          </p>
+          <p className="text-sm font-medium text-gray-500">Online vs COD</p>
+          <div className="flex flex-col mt-2 gap-1">
+            <p className="text-lg font-bold text-blue-600">
+              Online: ₹{totalOnline.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-lg font-bold text-orange-500">
+              COD: ₹{totalCod.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
         </div>
       </div>
 
