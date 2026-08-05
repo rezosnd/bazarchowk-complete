@@ -40,7 +40,7 @@ export class ProductsService {
     if (shopId) whereClause.shopId = shopId;
     if (categoryId) whereClause.categoryId = categoryId;
     if (subCategoryId) whereClause.subCategoryId = subCategoryId;
-    if (city) {
+    if (city && (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng))) {
       whereClause.shop = { city: { equals: city, mode: 'insensitive' } };
     }
     if (query) {
@@ -73,7 +73,7 @@ export class ProductsService {
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           const distance = R * c;
-          return distance <= (shop.deliveryRadius || 10.0);
+          return distance <= (shop.deliveryRadius || 5.0);
         }).map(s => s.id);
 
         // Also include shops that have NO coordinates set (treat as local/unverified)

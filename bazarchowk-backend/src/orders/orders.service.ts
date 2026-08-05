@@ -63,8 +63,9 @@ export class OrdersService {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       distanceKm = R * c;
 
-      if (distanceKm > 25) {
-        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius is 25 km.`);
+      const maxRadius = shop.deliveryRadius || 5.0;
+      if (distanceKm > maxRadius) {
+        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius for this shop is ${maxRadius} km.`);
       }
     } else {
       if (shop.city?.toLowerCase() !== deliveryAddress.city?.toLowerCase()) {
@@ -191,8 +192,9 @@ export class OrdersService {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       distanceKm = R * c;
 
-      if (distanceKm > 25) {
-        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius is 25 km.`);
+      const maxRadius = shop.deliveryRadius || 5.0;
+      if (distanceKm > maxRadius) {
+        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius for this shop is ${maxRadius} km.`);
       }
     } else {
       if (shop.city?.toLowerCase() !== deliveryAddress.city?.toLowerCase()) {
