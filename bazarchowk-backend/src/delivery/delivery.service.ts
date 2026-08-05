@@ -196,12 +196,12 @@ export class DeliveryService {
 
     const deliveries = await this.prisma.delivery.findMany({
       where: {
-        riderId,
+        deliveryPartner: { userId: riderId },
         status: 'DELIVERED',
         createdAt: { gte: startDate }
       },
       include: {
-        order: { select: { deliveryFee: true, totalAmount: true, paymentMethod: true } }
+        order: true
       }
     });
 
