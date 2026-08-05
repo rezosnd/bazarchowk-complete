@@ -59,7 +59,9 @@ export default function ProductDetailScreen() {
       Alert.alert('Success', `Added ${quantity}x ${selectedVariant.name} to cart!`);
       router.back();
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to add to cart. Check stock limits.');
+      const msg = e?.response?.data?.message;
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || e?.message || 'Failed to add to cart. Check stock limits.');
+      Alert.alert('Error', errorMsg);
     } finally {
       setAddingToCart(false);
     }
@@ -223,12 +225,15 @@ export default function ProductDetailScreen() {
         </View>
 
         <TouchableOpacity 
-          style={[styles.addToCartBtn, (!selectedVariant || selectedVariant?.stock < 1 || addingToCart) && { opacity: 0.5 }]}
+          style={[styles.addToCartBtn, (!selectedVariant || selectedVariant?.stock < 1 || addingToCart) && { backgroundColor: '#F1F5F9', shadowOpacity: 0 }]}
           disabled={!selectedVariant || selectedVariant?.stock < 1 || addingToCart}
           onPress={handleAddToCart}
+          activeOpacity={0.8}
         >
           {addingToCart ? (
-            <ActivityIndicator color="#FFF" />
+            <ActivityIndicator color="#0F172A" />
+          ) : !selectedVariant || selectedVariant?.stock < 1 ? (
+            <Text style={[styles.addToCartText, { color: '#94A3B8' }]}>Out of Stock</Text>
           ) : (
             <Text style={styles.addToCartText}>Add to Cart</Text>
           )}

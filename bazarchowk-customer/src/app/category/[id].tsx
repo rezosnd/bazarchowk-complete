@@ -44,6 +44,8 @@ function ProductCard({ product, index }: { product: any; index: number }) {
     .filter((i: any) => i.productVariant?.productId === product.id)
     .reduce((s: number, i: any) => s + i.quantity, 0);
 
+  const isOutOfStock = !firstVariant || firstVariant.stock <= 0;
+
   const handleAdd = async () => {
     if (!isAuthenticated) {
       Alert.alert('Login Required', 'Please login to add items to cart.', [
@@ -60,7 +62,9 @@ function ProductCard({ product, index }: { product: any; index: number }) {
     try {
       await addToCart(firstVariant.id, 1);
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || e.message || 'Could not add to cart');
+      const msg = e?.response?.data?.message;
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || e.message || 'Could not add to cart');
+      Alert.alert('Error', errorMsg);
     } finally {
       setAdding(false);
     }
@@ -109,20 +113,26 @@ function ProductCard({ product, index }: { product: any; index: number }) {
             </View>
 
             {/* Add to Cart button */}
-            <TouchableOpacity
-              style={[styles.addBtn, cartQty > 0 && styles.addBtnActive]}
-              onPress={handleAdd}
-              activeOpacity={0.8}
-              disabled={adding}
-            >
-              {adding ? (
-                <ActivityIndicator size="small" color={cartQty > 0 ? '#FFF' : PRIMARY} />
-              ) : cartQty > 0 ? (
-                <Text style={[styles.addBtnText, { color: '#FFF' }]}>+ Add ({cartQty})</Text>
-              ) : (
-                <Text style={styles.addBtnText}>+ ADD</Text>
-              )}
-            </TouchableOpacity>
+            {isOutOfStock ? (
+              <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }]}>
+                <Text style={[styles.addBtnText, { color: '#94A3B8', fontSize: 11 }]}>OUT OF STOCK</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.addBtn, cartQty > 0 && styles.addBtnActive]}
+                onPress={handleAdd}
+                activeOpacity={0.8}
+                disabled={adding}
+              >
+                {adding ? (
+                  <ActivityIndicator size="small" color={cartQty > 0 ? '#FFF' : PRIMARY} />
+                ) : cartQty > 0 ? (
+                  <Text style={[styles.addBtnText, { color: '#FFF' }]}>+ Add ({cartQty})</Text>
+                ) : (
+                  <Text style={styles.addBtnText}>+ ADD</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
       </TouchableOpacity>

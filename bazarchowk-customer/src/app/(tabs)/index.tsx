@@ -594,7 +594,9 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
     <View style={styles.section}>
       <SectionHeader title={t('sections.recommended')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
-        {products.map((prod: any) => (
+        {products.map((prod: any) => {
+          const isOutOfStock = !prod.variants?.[0] || prod.variants[0].stock <= 0;
+          return (
           <TouchableOpacity key={prod.id} style={styles.productCard} activeOpacity={0.9} onPress={() => router.push(`/product/${prod.id}`)}>
             {prod.images?.[0]?.imageUrl ? (
               <Image source={{ uri: prod.images[0].imageUrl }} style={styles.productImg} contentFit="cover" />
@@ -605,13 +607,19 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
             )}
             <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
             <View style={styles.productPriceRow}>
-              <Text style={styles.productPrice}>₹{prod.basePrice}</Text>
-              <TouchableOpacity style={styles.addBtn}>
-                <Text style={styles.addBtnText}>ADD</Text>
-              </TouchableOpacity>
+              <Text style={styles.productPrice}>₹{prod.variants?.[0]?.price || prod.basePrice}</Text>
+              {isOutOfStock ? (
+                <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }]}>
+                  <Text style={[styles.addBtnText, { color: '#94A3B8', fontSize: 10 }]}>OUT OF STOCK</Text>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.addBtn} onPress={() => router.push(`/product/${prod.id}`)}>
+                  <Text style={styles.addBtnText}>ADD</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </TouchableOpacity>
-        ))}
+        )})}
       </ScrollView>
     </View>
   );
