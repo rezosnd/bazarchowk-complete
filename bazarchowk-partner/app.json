@@ -21,6 +21,7 @@
       "package": "com.veritasco.bazarchowkpartner",
       "googleServicesFile": "./google-services.json",
       "permissions": [
+        "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -57,6 +58,12 @@
       "eas": {
         "projectId": "4f0c5601-272b-4f9f-a9c8-996224ac4fac"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4f0c5601-272b-4f9f-a9c8-996224ac4fac"
     }
   }
 }
