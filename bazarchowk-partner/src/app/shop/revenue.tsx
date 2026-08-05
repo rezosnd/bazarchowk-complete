@@ -25,20 +25,23 @@ export default function RevenueDashboardScreen() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const shopId = await SecureStore.getItemAsync('bazar_shop_id');
-      const response = await api.get(`/shops/${shopId}/revenue?filter=${filter}`);
+      const response = await api.get(`/settlement/shop/dashboard`);
       
       if (response.data) {
+        // Map the correct timeframe based on filter
+        let currentPeriodData = response.data.thisMonth;
+        if (filter === 'WEEK') currentPeriodData = response.data.last7Days;
+        
         setData({
-          grossSales: response.data.grossSales || 0,
-          onlinePaid: response.data.onlinePaid || 0,
-          codCollected: response.data.codCollected || 0,
-          platformFees: response.data.platformFees || 0,
-          netEarnings: response.data.netEarnings || 0
+          grossSales: currentPeriodData.grossSales || 0,
+          onlinePaid: 0, // In future, calculate split if needed
+          codCollected: currentPeriodData.grossSales || 0, 
+          platformFees: (currentPeriodData.grossSales - currentPeriodData.netSettled) || 0,
+          netEarnings: currentPeriodData.netSettled || 0
         });
       }
     } catch (e) {
-      console.warn('Failed to fetch real shop revenue');
+      console.warn('Failed to fetch real shop revenue', e);
     } finally {
       setLoading(false);
     }

@@ -66,6 +66,14 @@ export class SettlementController {
 
   // ---- SETTLEMENT MANAGEMENT ----
 
+  @Get('shop/dashboard')
+  @UseGuards(RolesGuard)
+  @Roles('SHOP_OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Partner: Get Shop Financial Dashboard (Gross sales, net settlement)' })
+  getShopFinancialDashboard(@CurrentUser() user: any) {
+    return this.settlementService.getShopFinancialDashboard(user.id);
+  }
+
   @Post('shops/create')
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')

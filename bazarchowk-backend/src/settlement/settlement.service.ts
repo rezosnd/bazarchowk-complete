@@ -339,4 +339,67 @@ export class SettlementService {
       pendingSettlements,
     };
   }
+
+  // =============== PARTNER FINANCIAL DASHBOARD ===============
+
+  async getShopFinancialDashboard(userId: string) {
+    const shop = await this.prisma.shop.findFirst({ where: { ownerId: userId } });
+    if (!shop) throw new NotFoundException('Shop not found');
+
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const [
+      orders7Days,
+      ordersThisMonth,
+      settlements7Days,
+      settlementsThisMonth,
+      pendingSettlementAmt
+    ] = await Promise.all([
+      // Gross sales last 7 days (Delivered)
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: sevenDaysAgo } }
+      }),
+      // Gross sales this month
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: firstDayOfMonth } }
+      }),
+      // Net settlements received last 7 days (Completed)
+      this.prisma.shopSettlement.aggregate({
+        _sum: { netSettlementAmt: true },
+        where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: sevenDaysAgo } }
+      }),
+      // Net settlements received this month
+      this.prisma.shopSettlement.aggregate({
+        _sum: { netSettlementAmt: true },
+        where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: firstDayOfMonth } }
+      }),
+      // Unsettled amount currently pending
+      this.prisma.shopSettlement.aggregate({
+        _sum: { netSettlementAmt: true },
+        where: { shopId: shop.id, status: 'PENDING' }
+      })
+    ]);
+
+    return {
+      last7Days: {
+        grossSales: orders7Days._sum.totalAmount || 0,
+        totalDeliveries: orders7Days._count.id || 0,
+        netSettled: settlements7Days._sum.netSettlementAmt || 0,
+      },
+      thisMonth: {
+        grossSales: ordersThisMonth._sum.totalAmount || 0,
+        totalDeliveries: ordersThisMonth._count.id || 0,
+        netSettled: settlementsThisMonth._sum.netSettlementAmt || 0,
+      },
+      pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || 0
+    };
+  }
 }
