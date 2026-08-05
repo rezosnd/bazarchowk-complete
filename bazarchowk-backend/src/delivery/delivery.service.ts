@@ -28,7 +28,7 @@ export class DeliveryService {
   async getAvailableDeliveries(lat?: number, lng?: number) {
     const deliveries = await this.prisma.delivery.findMany({
       where: { status: DeliveryStatus.UNASSIGNED },
-      include: { order: { include: { shop: true, deliveryAddress: true } } },
+      include: { order: { include: { shop: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
     });
 
     if (lat && lng) {
@@ -54,7 +54,7 @@ export class DeliveryService {
           in: [DeliveryStatus.ASSIGNED, DeliveryStatus.ACCEPTED, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT]
         }
       },
-      include: { order: { include: { shop: true, deliveryAddress: true } } },
+      include: { order: { include: { shop: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
     });
   }
 

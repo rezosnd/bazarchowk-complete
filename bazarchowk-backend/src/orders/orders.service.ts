@@ -407,7 +407,7 @@ export class OrdersService {
   async getCustomerOrders(customerId: string) {
     return this.prisma.order.findMany({
       where: { customerId },
-      include: { shop: true, items: { include: { productVariant: true } }, statusHistory: { orderBy: { createdAt: 'desc' } } },
+      include: { shop: true, items: { include: { productVariant: { include: { product: true } } } }, statusHistory: { orderBy: { createdAt: 'desc' } } },
       orderBy: { createdAt: 'desc' }
     });
   }
@@ -420,14 +420,14 @@ export class OrdersService {
 
     return this.prisma.order.findMany({
       where: { shopId },
-      include: { customer: true, items: { include: { productVariant: true } } },
+      include: { customer: true, items: { include: { productVariant: { include: { product: true } } } } },
       orderBy: { createdAt: 'desc' }
     });
   }
 
   async getAllOrders() {
     return this.prisma.order.findMany({
-      include: { shop: true, customer: true, items: { include: { productVariant: true } } },
+      include: { shop: true, customer: true, items: { include: { productVariant: { include: { product: true } } } } },
       orderBy: { createdAt: 'desc' },
       take: 100
     });
@@ -442,7 +442,7 @@ export class OrdersService {
         deliveryAddress: true,
         delivery: true,
         rider: { select: { id: true, firstName: true, lastName: true, phone: true, deliveryPartner: { select: { vehicleType: true } } } },
-        items: { include: { productVariant: true } },
+        items: { include: { productVariant: { include: { product: true } } } },
         statusHistory: { orderBy: { createdAt: 'desc' } }
       }
     });

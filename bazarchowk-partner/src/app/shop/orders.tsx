@@ -174,7 +174,7 @@ export default function ShopOrdersScreen() {
               <View style={styles.itemsBox}>
                 {order.items?.map((item: any) => (
                   <Text key={item.id} style={styles.itemText}>
-                    {item.quantity} x {item.productVariant?.name}
+                    {item.quantity} x {item.productVariant?.product?.name || 'Item'} ({item.productVariant?.name})
                   </Text>
                 ))}
               </View>

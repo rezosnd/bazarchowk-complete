@@ -100,7 +100,7 @@ export default function OrdersScreen() {
 
               <View style={styles.itemsRow}>
                 <Text style={styles.itemsText}>
-                  {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.name}`).join(', ')}
+                  {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.product?.name || 'Item'} (${item.productVariant?.name})`).join(', ')}
                 </Text>
               </View>
 

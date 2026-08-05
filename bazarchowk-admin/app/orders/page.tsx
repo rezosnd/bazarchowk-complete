@@ -154,7 +154,7 @@ export default function OrdersAdminPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="max-w-[180px] text-xs text-gray-600 truncate">
-                      {order.items?.map((it: any) => `${it.quantity}× ${it.productVariant?.name || it.productVariant?.sku}`).join(', ') || '—'}
+                      {order.items?.map((it: any) => `${it.quantity}× ${it.productVariant?.product?.name || 'Item'} (${it.productVariant?.name})`).join(', ') || '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
