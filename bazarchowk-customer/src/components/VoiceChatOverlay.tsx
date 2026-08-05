@@ -174,9 +174,10 @@ export function VoiceChatOverlay() {
       });
       
       const data = res.data;
-      setAiResponse(data.aiVoiceReply);
+      const aiReply = data.aiVoiceReply || 'Sorry, I did not understand that.';
+      setAiResponse(aiReply);
       
-      Speech.speak(data.aiVoiceReply, { language: langCode, rate: 0.9 });
+      Speech.speak(aiReply, { language: langCode, rate: 0.9 });
 
       if (data.action === 'ADD_TO_CART' && data.cartResults?.length > 0) {
         setTimeout(() => router.push('/cart'), 3000); 
@@ -186,7 +187,10 @@ export function VoiceChatOverlay() {
         setTimeout(() => router.push('/(tabs)/orders' as any), 3000);
       }
     } catch (e: any) {
-      const errMessage = e.response?.data?.message || e.message || 'Something went wrong processing audio';
+      let errMessage = e.response?.data?.message || e.message || 'Something went wrong processing audio';
+      if (Array.isArray(errMessage)) errMessage = errMessage.join(', ');
+      if (typeof errMessage === 'object') errMessage = JSON.stringify(errMessage);
+      
       setAiResponse(errMessage);
       const errLangCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
       Speech.speak(errMessage, { language: errLangCode });
