@@ -76,9 +76,9 @@ export class VoiceOrderingService {
       // Attempt to clean markdown JSON formatting if present
       const cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       aiOutput = JSON.parse(cleanedContent);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('AI Conversational Error:', error);
-      throw new BadRequestException('Failed to process voice AI intent. Please try again.');
+      throw new BadRequestException(error.message || 'Failed to process voice AI intent. Please try again.');
     }
 
     const log = await this.prisma.voiceOrderLog.create({

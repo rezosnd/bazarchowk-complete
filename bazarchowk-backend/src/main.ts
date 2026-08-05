@@ -42,6 +42,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Increase payload limit for Base64 Voice/Audio uploads
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

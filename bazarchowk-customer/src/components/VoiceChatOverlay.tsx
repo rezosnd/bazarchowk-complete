@@ -186,7 +186,7 @@ export function VoiceChatOverlay() {
         setTimeout(() => router.push('/(tabs)/orders' as any), 3000);
       }
     } catch (e: any) {
-      const errMessage = e.message || 'Something went wrong processing audio';
+      const errMessage = e.response?.data?.message || e.message || 'Something went wrong processing audio';
       setAiResponse(errMessage);
       const errLangCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
       Speech.speak(errMessage, { language: errLangCode });
