@@ -21,6 +21,9 @@ const languageDetectorPlugin: LanguageDetectorAsyncModule = {
   async: true,
   init: () => {},
   detect: function (callback: (lang: string) => void) {
+    if (typeof window === 'undefined') {
+      return callback('en');
+    }
     try {
       AsyncStorage.getItem(STORE_LANGUAGE_KEY).then((language) => {
         if (language) {
