@@ -12,12 +12,35 @@ export class DeliveryService {
     private readonly realtime: RealtimeGateway,
   ) {}
 
-  async getAvailableDeliveries() {
-    // In production, use PostGIS distance logic. 
-    return this.prisma.delivery.findMany({
+  // Haversine formula to calculate distance in km
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  }
+
+  async getAvailableDeliveries(lat?: number, lng?: number) {
+    const deliveries = await this.prisma.delivery.findMany({
       where: { status: DeliveryStatus.UNASSIGNED },
       include: { order: { include: { shop: true, deliveryAddress: true } } },
     });
+
+    if (lat && lng) {
+      // Filter out deliveries that are > 25km away from the Rider's current location
+      return deliveries.filter(d => {
+        if (!d.order?.shop?.latitude || !d.order?.shop?.longitude) return false;
+        const dist = this.calculateDistance(lat, lng, d.order.shop.latitude, d.order.shop.longitude);
+        return dist <= 25; // 25 km radius restriction
+      });
+    }
+
+    return deliveries;
   }
 
   async getMyActiveDeliveries(userId: string) {

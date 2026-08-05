@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as Location from 'expo-location';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
@@ -33,8 +34,23 @@ export default function RiderOrdersScreen() {
   const fetchAvailableDeliveries = async () => {
     try {
       const token = await SecureStore.getItemAsync('rider_token');
+      
+      // Get current location for Geo-Fencing
+      let lat = '';
+      let lng = '';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          lat = loc.coords.latitude.toString();
+          lng = loc.coords.longitude.toString();
+        }
+      } catch (e) {
+        console.warn('Location error', e);
+      }
+
       const [res, activeRes] = await Promise.all([
-        fetch(`${API_BASE}/delivery/available`, {
+        fetch(`${API_BASE}/delivery/available?lat=${lat}&lng=${lng}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_BASE}/delivery/my-active`, {

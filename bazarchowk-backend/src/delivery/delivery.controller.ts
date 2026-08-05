@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -17,9 +17,15 @@ export class DeliveryController {
   @Get('available')
   @UseGuards(RolesGuard)
   @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
-  @ApiOperation({ summary: 'Get all unassigned deliveries (for Riders)' })
-  getAvailableDeliveries() {
-    return this.deliveryService.getAvailableDeliveries();
+  @ApiOperation({ summary: 'Get available pending deliveries for riders (Geo-fenced)' })
+  getAvailableDeliveries(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+  ) {
+    return this.deliveryService.getAvailableDeliveries(
+      lat ? parseFloat(lat) : undefined,
+      lng ? parseFloat(lng) : undefined
+    );
   }
 
   @Get('my-active')
