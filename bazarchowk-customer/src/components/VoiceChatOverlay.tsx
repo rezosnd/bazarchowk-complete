@@ -167,19 +167,13 @@ export function VoiceChatOverlay() {
       const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
       const langCode = i18n.language === 'en' ? 'en-IN' : `${i18n.language}-IN`;
       
-      // Use process.env.EXPO_PUBLIC_API_URL safely
-      const baseURL = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
-      const res = await fetch(`${baseURL}/voice-ordering/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audioBase64, sessionId, language: langCode }),
+      const res = await api.post('/voice-ordering/process', {
+        audioBase64,
+        sessionId,
+        language: langCode
       });
       
-      if (!res.ok) {
-         throw new Error('Something went wrong processing audio');
-      }
-
-      const data = await res.json();
+      const data = res.data;
       setAiResponse(data.aiVoiceReply);
       
       Speech.speak(data.aiVoiceReply, { language: langCode, rate: 0.9 });
