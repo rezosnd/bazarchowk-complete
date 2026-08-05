@@ -64,7 +64,7 @@ export default function OrderTrackingScreen() {
               riderMarker.setLatLng([${data.latitude}, ${data.longitude}]);
               map.setView([${data.latitude}, ${data.longitude}]);
             } else {
-              var riderIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3209/3209800.png', iconSize: [40, 40] });
+              var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🚲</span></div>', className: '' });
               window.riderMarker = L.marker([${data.latitude}, ${data.longitude}], {icon: riderIcon}).addTo(map);
               map.setView([${data.latitude}, ${data.longitude}]);
             }
@@ -165,7 +165,7 @@ export default function OrderTrackingScreen() {
                     ` : ''}
 
                     ${riderLocation ? `
-                      var riderIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3209/3209800.png', iconSize: [40, 40] });
+                      var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🚲</span></div>', className: '' });
                       window.riderMarker = L.marker([${riderLocation.lat}, ${riderLocation.lng}], {icon: riderIcon}).addTo(map);
                     ` : ''}
                   </script>
@@ -198,12 +198,21 @@ export default function OrderTrackingScreen() {
         {isTrackingActive && order.rider && (
           <View style={styles.riderCard}>
             <View style={styles.riderAvatarWrap}>
-              <Image source={{ uri: 'https://i.pravatar.cc/150?img=11' }} style={styles.riderAvatar} />
+              {order.rider?.avatarUrl ? (
+                <Image source={{ uri: order.rider.avatarUrl }} style={styles.riderAvatar} />
+              ) : (
+                <View style={[styles.riderAvatar, { alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="person" size={28} color="#94A3B8" />
+                </View>
+              )}
               <View style={styles.pulseDot} />
             </View>
             <View style={styles.riderInfo}>
               <Text style={styles.riderName}>{order.rider?.firstName || 'Delivery Partner'}</Text>
               <Text style={styles.riderVehicle}>{order.rider?.deliveryPartner?.vehicleType || 'Bike'} • {distance} away</Text>
+              {order.rider?.phone && (
+                <Text style={{ fontSize: 13, color: '#334155', fontWeight: '600', marginTop: 4 }}>{order.rider.phone}</Text>
+              )}
             </View>
             <View style={styles.riderActions}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.rider?.phone}`)}>
