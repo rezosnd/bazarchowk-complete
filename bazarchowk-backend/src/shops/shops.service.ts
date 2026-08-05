@@ -43,14 +43,15 @@ export class ShopsService {
     return shop;
   }
 
-  async findAll(lat?: number, lng?: number, includeUnverified = false, partnerType?: string, hasServices?: boolean) {
-    const cacheKey = `shops_all_${lat?.toFixed(2) || 'none'}_${lng?.toFixed(2) || 'none'}_${includeUnverified}_${partnerType || 'none'}_${hasServices || 'none'}`;
+  async findAll(lat?: number, lng?: number, includeUnverified = false, partnerType?: string, hasServices?: boolean, city?: string) {
+    const cacheKey = `shops_all_${lat?.toFixed(2) || 'none'}_${lng?.toFixed(2) || 'none'}_${includeUnverified}_${partnerType || 'none'}_${hasServices || 'none'}_${city || 'none'}`;
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
     const whereClause: any = includeUnverified ? {} : { isVerified: true, isActive: true };
     if (partnerType) whereClause.partnerType = partnerType;
     if (hasServices !== undefined) whereClause.hasServices = hasServices;
+    if (city) whereClause.city = { equals: city, mode: 'insensitive' };
 
     const shops = await this.prisma.shop.findMany({ 
       where: whereClause,

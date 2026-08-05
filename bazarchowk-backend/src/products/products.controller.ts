@@ -40,8 +40,9 @@ export class ProductsController {
     @Query('subCategoryId') subCategoryId?: string,
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
+    @Query('city') city?: string,
   ) {
-    return this.productsService.findAll(shopId, query, categoryId, subCategoryId, lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined);
+    return this.productsService.findAll(shopId, query, categoryId, subCategoryId, lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined, city);
   }
 
   @Get(':id')

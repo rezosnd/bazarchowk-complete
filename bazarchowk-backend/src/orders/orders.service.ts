@@ -62,6 +62,14 @@ export class OrdersService {
       const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(deliveryAddress.latitude*Math.PI/180)*Math.cos(shop.latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       distanceKm = R * c;
+
+      if (distanceKm > 25) {
+        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius is 25 km.`);
+      }
+    } else {
+      if (shop.city?.toLowerCase() !== deliveryAddress.city?.toLowerCase()) {
+        throw new BadRequestException(`Delivery not available in ${deliveryAddress.city}. This shop only delivers within ${shop.city}.`);
+      }
     }
 
     const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
@@ -182,6 +190,14 @@ export class OrdersService {
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       distanceKm = R * c;
+
+      if (distanceKm > 25) {
+        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius is 25 km.`);
+      }
+    } else {
+      if (shop.city?.toLowerCase() !== deliveryAddress.city?.toLowerCase()) {
+        throw new BadRequestException(`Delivery not available in ${deliveryAddress.city}. This shop only delivers within ${shop.city}.`);
+      }
     }
 
     // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)

@@ -39,13 +39,19 @@ export default function SearchScreen() {
     try {
       let lat = '';
       let lng = '';
+      let city = '';
       const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
-      if (defaultAddress && defaultAddress.latitude && defaultAddress.longitude) {
-        lat = defaultAddress.latitude;
-        lng = defaultAddress.longitude;
+      if (defaultAddress) {
+        if (defaultAddress.latitude && defaultAddress.longitude) {
+          lat = defaultAddress.latitude;
+          lng = defaultAddress.longitude;
+        }
+        if (defaultAddress.city) {
+          city = defaultAddress.city;
+        }
       }
       
-      const { data } = await api.get(`/search?query=${encodeURIComponent(text)}&lat=${lat}&lng=${lng}`);
+      const { data } = await api.get(`/search?query=${encodeURIComponent(text)}&lat=${lat}&lng=${lng}&city=${encodeURIComponent(city)}`);
       setResults(data.results || { products: [], shops: [] });
     } catch (e) {
       console.warn('Search failed');

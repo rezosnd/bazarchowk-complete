@@ -31,8 +31,8 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(shopId?: string, query?: string, categoryId?: string, subCategoryId?: string, lat?: number, lng?: number) {
-    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}_${categoryId || 'none'}_${subCategoryId || 'none'}_${lat?.toFixed(2) || 'none'}_${lng?.toFixed(2) || 'none'}`;
+  async findAll(shopId?: string, query?: string, categoryId?: string, subCategoryId?: string, lat?: number, lng?: number, city?: string) {
+    const cacheKey = `products_all_${shopId || 'none'}_${query || 'none'}_${categoryId || 'none'}_${subCategoryId || 'none'}_${lat?.toFixed(2) || 'none'}_${lng?.toFixed(2) || 'none'}_${city || 'none'}`;
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -40,6 +40,9 @@ export class ProductsService {
     if (shopId) whereClause.shopId = shopId;
     if (categoryId) whereClause.categoryId = categoryId;
     if (subCategoryId) whereClause.subCategoryId = subCategoryId;
+    if (city) {
+      whereClause.shop = { city: { equals: city, mode: 'insensitive' } };
+    }
     if (query) {
       const tsQuery = query.trim().split(/\s+/).join(' & ');
       whereClause.OR = [
@@ -81,11 +84,12 @@ export class ProductsService {
         const combinedIds = [...nearbyShopIds, ...shopsWithoutLocation];
         if (combinedIds.length > 0) {
           whereClause.shopId = { in: combinedIds };
+        } else {
+          whereClause.shopId = { in: ['__NO_SHOPS_IN_RANGE__'] };
         }
-        // If combinedIds is empty (no nearby shops + no location-less shops), don't add shopId filter
-        // This means: show all products (better UX than showing nothing)
+      } else {
+        whereClause.shopId = { in: ['__NO_SHOPS_IN_RANGE__'] };
       }
-      // If no shops have location data at all, skip location filtering entirely
     }
 
     const products = await this.prisma.product.findMany({

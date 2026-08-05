@@ -44,20 +44,20 @@ export const HomeService = {
     const res = await api.get(url);
     return res.data;
   },
-  getNearbyShops: async (lat?: number, lng?: number): Promise<Shop[]> => {
-    let url = '/shops';
-    if (lat !== undefined && lng !== undefined) {
-      url += `?lat=${lat}&lng=${lng}`;
-    }
-    const res = await api.get(url);
+  getNearbyShops: async (lat?: number, lng?: number, city?: string): Promise<Shop[]> => {
+    let url = '/shops?';
+    if (lat !== undefined && lng !== undefined) url += `lat=${lat}&lng=${lng}&`;
+    if (city) url += `city=${encodeURIComponent(city)}&`;
+    
+    const res = await api.get(url.replace(/&$/, '').replace(/\?$/, ''));
     return res.data;
   },
-  getNearbyServices: async (lat?: number, lng?: number): Promise<Shop[]> => {
-    let url = '/shops?hasServices=true';
-    if (lat !== undefined && lng !== undefined) {
-      url += `&lat=${lat}&lng=${lng}`;
-    }
-    const res = await api.get(url);
+  getNearbyServices: async (lat?: number, lng?: number, city?: string): Promise<Shop[]> => {
+    let url = '/shops?hasServices=true&';
+    if (lat !== undefined && lng !== undefined) url += `lat=${lat}&lng=${lng}&`;
+    if (city) url += `city=${encodeURIComponent(city)}&`;
+    
+    const res = await api.get(url.replace(/&$/, ''));
     return res.data;
   },
   getMarkets: async (lat?: number, lng?: number): Promise<Market[]> => {
@@ -68,12 +68,12 @@ export const HomeService = {
     const res = await api.get(url);
     return res.data;
   },
-  getRecommendedProducts: async (lat?: number, lng?: number): Promise<Product[]> => {
-    let url = '/products';
-    if (lat !== undefined && lng !== undefined) {
-      url += `?lat=${lat}&lng=${lng}`;
-    }
-    const res = await api.get(url);
+  getRecommendedProducts: async (lat?: number, lng?: number, city?: string): Promise<Product[]> => {
+    let url = '/products?';
+    if (lat !== undefined && lng !== undefined) url += `lat=${lat}&lng=${lng}&`;
+    if (city) url += `city=${encodeURIComponent(city)}&`;
+    
+    const res = await api.get(url.replace(/&$/, '').replace(/\?$/, ''));
     return res.data;
   },
   getActiveAds: async (type: string = 'BANNER'): Promise<Ad[]> => {

@@ -163,8 +163,8 @@ export default function CategoryDetailScreen() {
       // Build location params — backend will filter to nearby shops if lat/lng provided
       // If shop has no GPS set yet, backend still includes it (no false negatives)
       const locParams = location?.lat && location?.lng
-        ? `&lat=${location.lat}&lng=${location.lng}`
-        : '';
+        ? `&lat=${location.lat}&lng=${location.lng}&city=${encodeURIComponent(location.city || '')}`
+        : (location?.city ? `&city=${encodeURIComponent(location.city)}` : '');
 
       const [subRes, catRes] = await Promise.all([
         api.get(`/products?subCategoryId=${id}${locParams}`).catch(() => ({ data: [] })),
@@ -180,7 +180,7 @@ export default function CategoryDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id, location?.lat, location?.lng]);
+  }, [id, location?.lat, location?.lng, location?.city]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 

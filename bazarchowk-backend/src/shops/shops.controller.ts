@@ -32,14 +32,16 @@ export class ShopsController {
     @Query('lng') lng?: string, 
     @Query('all') all?: string,
     @Query('partnerType') partnerType?: string,
-    @Query('hasServices') hasServices?: string
+    @Query('hasServices') hasServices?: string,
+    @Query('city') city?: string
   ) {
     return this.shopsService.findAll(
       lat ? parseFloat(lat) : undefined, 
       lng ? parseFloat(lng) : undefined, 
       all === 'true',
       partnerType,
-      hasServices === 'true' ? true : (hasServices === 'false' ? false : undefined)
+      hasServices === 'true' ? true : (hasServices === 'false' ? false : undefined),
+      city
     );
   }
 

@@ -350,13 +350,13 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-function NearbyShops({ lat, lng }: { lat?: number, lng?: number }) {
+function NearbyShops({ lat, lng, city }: { lat?: number, lng?: number, city?: string }) {
   const { t } = useTranslation();
 
   const { data: shops = [], isLoading } = useQuery({ 
-    queryKey: ['shops', lat, lng], 
-    queryFn: () => HomeService.getNearbyShops(lat, lng),
-    enabled: !!lat // Only fetch when location is determined
+    queryKey: ['shops', lat, lng, city], 
+    queryFn: () => HomeService.getNearbyShops(lat, lng, city),
+    enabled: !!lat || !!city 
   });
 
   if (isLoading || shops.length === 0) return null;
@@ -395,13 +395,13 @@ function NearbyShops({ lat, lng }: { lat?: number, lng?: number }) {
   );
 }
 
-function NearbyServices({ lat, lng }: { lat?: number, lng?: number }) {
+function NearbyServices({ lat, lng, city }: { lat?: number, lng?: number, city?: string }) {
   const { t } = useTranslation();
 
   const { data: services = [], isLoading } = useQuery({ 
-    queryKey: ['services', lat, lng], 
-    queryFn: () => HomeService.getNearbyServices(lat, lng),
-    enabled: !!lat 
+    queryKey: ['services', lat, lng, city], 
+    queryFn: () => HomeService.getNearbyServices(lat, lng, city),
+    enabled: !!lat || !!city 
   });
 
   if (isLoading || services.length === 0) return null;
@@ -580,12 +580,12 @@ function TodaysOffers() {
   );
 }
 
-function RecommendedSection({ lat, lng }: { lat?: number, lng?: number }) {
+function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, city?: string }) {
   const { t } = useTranslation();
   const { data: products = [], isLoading } = useQuery({ 
-    queryKey: ['recommendedProducts', lat, lng], 
-    queryFn: () => HomeService.getRecommendedProducts(lat, lng),
-    enabled: !!lat 
+    queryKey: ['recommendedProducts', lat, lng, city], 
+    queryFn: () => HomeService.getRecommendedProducts(lat, lng, city),
+    enabled: !!lat || !!city
   });
 
   if (isLoading || products.length === 0) return null;
@@ -674,12 +674,12 @@ export default function HomeScreen() {
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <CategoriesGrid />
 
-          <NearbyServices lat={location?.lat} lng={location?.lng} />
-          <NearbyShops lat={location?.lat} lng={location?.lng} />
+          <NearbyServices lat={location?.lat} lng={location?.lng} city={location?.city} />
+          <NearbyShops lat={location?.lat} lng={location?.lng} city={location?.city} />
           <PopularMarkets lat={location?.lat} lng={location?.lng} />
           <TodaysOffers />
           
-          <RecommendedSection lat={location?.lat} lng={location?.lng} />
+          <RecommendedSection lat={location?.lat} lng={location?.lng} city={location?.city} />
         </ScrollView>
         
         {/* Subtle backdrop reaction when listening */}
