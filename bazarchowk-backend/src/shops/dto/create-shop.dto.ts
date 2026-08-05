@@ -60,4 +60,9 @@ export class CreateShopDto {
   @IsOptional()
   @IsBoolean()
   hasServices?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isOpen?: boolean;
 }
