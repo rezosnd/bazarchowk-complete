@@ -20,6 +20,21 @@ export class DeliveryService {
     });
   }
 
+  async getMyActiveDeliveries(userId: string) {
+    const partner = await this.prisma.deliveryPartner.findUnique({ where: { userId } });
+    if (!partner) return [];
+    
+    return this.prisma.delivery.findMany({
+      where: {
+        deliveryPartnerId: partner.id,
+        status: {
+          in: [DeliveryStatus.ASSIGNED, DeliveryStatus.ACCEPTED, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT]
+        }
+      },
+      include: { order: { include: { shop: true, deliveryAddress: true } } },
+    });
+  }
+
   async assignDelivery(deliveryId: string, userId: string) {
     const delivery = await this.prisma.delivery.findUnique({ where: { id: deliveryId }, include: { order: true } });
     if (!delivery) throw new NotFoundException('Delivery not found');

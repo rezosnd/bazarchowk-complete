@@ -10,6 +10,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete
 export default function RiderOrdersScreen() {
   const insets = useSafeAreaInsets();
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [activeDeliveries, setActiveDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
@@ -32,12 +33,22 @@ export default function RiderOrdersScreen() {
   const fetchAvailableDeliveries = async () => {
     try {
       const token = await SecureStore.getItemAsync('rider_token');
-      const res = await fetch(`${API_BASE}/delivery/available`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const [res, activeRes] = await Promise.all([
+        fetch(`${API_BASE}/delivery/available`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE}/delivery/my-active`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
       if (res.ok) {
         const data = await res.json();
         setDeliveries(data);
+      }
+      if (activeRes.ok) {
+        const data = await activeRes.json();
+        setActiveDeliveries(data);
       }
     } catch (error) {
       console.error('Failed to fetch deliveries:', error);
@@ -111,6 +122,38 @@ export default function RiderOrdersScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {activeDeliveries.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 12 }}>Active Delivery (Action Required)</Text>
+            {activeDeliveries.map((delivery) => {
+              const order = delivery.order;
+              if (!order) return null;
+              return (
+                <View key={`active-${delivery.id}`} style={[styles.card, { borderColor: '#FF8A00', borderWidth: 2 }]}>
+                  <View style={styles.cardHeader}>
+                    <View>
+                      <Text style={styles.shopName}>{order.shop?.name}</Text>
+                      <Text style={styles.addressText}>{order.shop?.city}</Text>
+                    </View>
+                    <View style={styles.amountBox}>
+                      <Text style={styles.amountText}>₹{order.totalAmount}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.footer}>
+                    <TouchableOpacity 
+                      style={[styles.acceptBtn, { backgroundColor: '#FF8A00' }]} 
+                      onPress={() => router.push(`/delivery/${order.id}` as any)}
+                    >
+                      <Text style={styles.acceptText}>Resume Delivery</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 12 }}>New Requests</Text>
         {deliveries.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="bicycle-outline" size={64} color="#CBD5E1" />

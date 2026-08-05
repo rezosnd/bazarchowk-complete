@@ -22,6 +22,14 @@ export class DeliveryController {
     return this.deliveryService.getAvailableDeliveries();
   }
 
+  @Get('my-active')
+  @UseGuards(RolesGuard)
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
+  @ApiOperation({ summary: 'Get active deliveries for the current rider' })
+  getMyActiveDeliveries(@CurrentUser() user: any) {
+    return this.deliveryService.getMyActiveDeliveries(user.id);
+  }
+
   @Patch(':id/assign')
   @UseGuards(RolesGuard)
   @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
