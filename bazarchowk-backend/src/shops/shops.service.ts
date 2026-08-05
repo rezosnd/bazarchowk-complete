@@ -51,7 +51,9 @@ export class ShopsService {
     const whereClause: any = includeUnverified ? {} : { isVerified: true, isActive: true };
     if (partnerType) whereClause.partnerType = partnerType;
     if (hasServices !== undefined) whereClause.hasServices = hasServices;
-    if (city) whereClause.city = { equals: city, mode: 'insensitive' };
+    if (city && (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng))) {
+      whereClause.city = { equals: city, mode: 'insensitive' };
+    }
 
     const shops = await this.prisma.shop.findMany({ 
       where: whereClause,
