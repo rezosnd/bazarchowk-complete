@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -15,6 +15,7 @@ export default function PartnerDashboard() {
   const [hasServices, setHasServices] = useState(false);
   const [todayOrders, setTodayOrders] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
     checkSession();
@@ -63,6 +64,7 @@ export default function PartnerDashboard() {
         setShopName(data.name || 'Your Shop');
         setHasProducts(data.hasProducts);
         setHasServices(data.hasServices);
+        setIsOpen(data.isOpen ?? true);
         await SecureStore.setItemAsync('bazar_shop_id', data.id);
 
         // Fetch today's stats
@@ -99,6 +101,26 @@ export default function PartnerDashboard() {
     }
   };
 
+  const toggleShopStatus = async () => {
+    const newVal = !isOpen;
+    setIsOpen(newVal); // Optimistic update
+    try {
+      const token = await SecureStore.getItemAsync('partner_token');
+      const shopId = await SecureStore.getItemAsync('bazar_shop_id');
+      const res = await fetch(`${API_BASE}/shops/${shopId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ isOpen: newVal })
+      });
+      if (!res.ok) throw new Error('Failed to update shop status');
+    } catch (e) {
+      setIsOpen(!newVal); // Revert on error
+    }
+  };
+
   const getMenuItems = () => {
     let items: any[] = [];
     
@@ -122,7 +144,6 @@ export default function PartnerDashboard() {
       { title: 'Promote Ads', icon: 'megaphone-outline', route: '/shop/ads', color: '#00B140', bgColor: '#DCFCE7' },
       { title: 'Revenue', icon: 'cash-outline', route: '/shop/revenue', color: '#10B981', bgColor: '#D1FAE5' },
       { title: 'Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#F59E0B', bgColor: '#FEF3C7' },
-      { title: 'Timings', icon: 'time-outline', route: '/shop/timings', color: '#EC4899', bgColor: '#FCE7F3' },
       { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
       { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' }
     );
@@ -163,6 +184,25 @@ export default function PartnerDashboard() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        
+        {/* Status Toggle Card */}
+        <View style={[styles.statusCard, { backgroundColor: isOpen ? '#DCFCE7' : '#FEF2F2' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.statusTitle, { color: isOpen ? '#166534' : '#991B1B' }]}>
+              {isOpen ? "Shop is Open" : "Shop is Closed"}
+            </Text>
+            <Text style={[styles.statusSub, { color: isOpen ? '#15803D' : '#B91C1C' }]}>
+              {isOpen ? "Accepting orders right now." : "Customers cannot place orders."}
+            </Text>
+          </View>
+          <Switch 
+            value={isOpen}
+            onValueChange={toggleShopStatus}
+            trackColor={{ false: '#FECACA', true: '#86EFAC' }}
+            thumbColor={isOpen ? '#22C55E' : '#EF4444'}
+          />
+        </View>
+
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Today's Overview</Text>
           <View style={styles.summaryRow}>
@@ -233,4 +273,11 @@ const styles = StyleSheet.create({
   },
   iconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   gridItemText: { fontSize: 14, fontWeight: '700', color: '#334155' },
+  
+  statusCard: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 20, marginBottom: 24,
+    shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4,
+  },
+  statusTitle: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  statusSub: { fontSize: 13, fontWeight: '500' },
 });

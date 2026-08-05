@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
@@ -102,14 +103,13 @@ export default function RiderProfileScreen() {
       } as any);
       formData.append('folder', 'profiles');
 
-      const uploadRes = await fetch(`${API_BASE}/upload`, {
-        method: 'POST',
-        body: formData,
+      const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
       });
       
-      if (!uploadRes.ok) throw new Error('Upload failed');
-      const uploadData = await uploadRes.json();
-      const imageUrl = uploadData.url;
+      const imageUrl = uploadRes.data.url || uploadRes.data.secure_url;
 
       const token = await SecureStore.getItemAsync('rider_token');
       const updateRes = await fetch(`${API_BASE}/users/me`, {
