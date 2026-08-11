@@ -27,7 +27,9 @@ export default function CartScreen() {
     try {
       await updateQuantity(itemId, newQuantity);
     } catch (error: any) {
-      Alert.alert('Error', error?.response?.data?.message || error?.message || 'Failed to update quantity.');
+      const msg = error?.response?.data?.message;
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || error?.message || 'Failed to update quantity.');
+      Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Something went wrong');
     } finally {
       setUpdatingId(null);
     }
@@ -125,7 +127,13 @@ export default function CartScreen() {
                       <Ionicons name="remove" size={16} color="#0F172A" />
                     </TouchableOpacity>
                     <Text style={styles.qtyText}>{item.quantity}</Text>
-                    <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)} style={styles.qtyBtn}>
+                    <TouchableOpacity onPress={() => {
+                      if (item.quantity >= item.productVariant.stock) {
+                        Alert.alert('Stock Limit', `Only ${item.productVariant.stock} items available in stock.`);
+                      } else {
+                        handleUpdateQuantity(item.id, item.quantity + 1);
+                      }
+                    }} style={styles.qtyBtn}>
                       <Ionicons name="add" size={16} color="#0F172A" />
                     </TouchableOpacity>
                   </>

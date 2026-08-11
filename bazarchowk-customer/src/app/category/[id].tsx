@@ -64,7 +64,7 @@ function ProductCard({ product, index }: { product: any; index: number }) {
     } catch (e: any) {
       const msg = e?.response?.data?.message;
       const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || e.message || 'Could not add to cart');
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Something went wrong');
     } finally {
       setAdding(false);
     }

@@ -166,6 +166,21 @@ export class DeliveryService {
         data: { status: orderStatus }
       });
       
+      // If DELIVERED and COD, create CashCollection for Rider
+      if (orderStatus === OrderStatus.DELIVERED && delivery.order.paymentMethod === 'COD') {
+        const existingCollection = await this.prisma.cashCollection.findUnique({ where: { orderId: delivery.orderId } });
+        if (!existingCollection) {
+          await this.prisma.cashCollection.create({
+            data: {
+              orderId: delivery.orderId,
+              riderId: delivery.deliveryPartner.userId,
+              amountCollected: delivery.order.totalAmount,
+              status: 'COLLECTED'
+            }
+          });
+        }
+      }
+
       this.realtime.sendToUser(delivery.order.customerId, 'order_status_update', {
         orderId: delivery.orderId,
         status: orderStatus
@@ -230,5 +245,26 @@ export class DeliveryService {
       cashInHand,
       settlementStatus: cashInHand > 0 ? 'PENDING' : 'SETTLED'
     };
+  }
+
+  async updateRiderProfile(userId: string, dto: { marketId?: string; isOnline?: boolean }) {
+    let partner = await this.prisma.deliveryPartner.findUnique({ where: { userId } });
+    if (!partner) {
+      partner = await this.prisma.deliveryPartner.create({
+        data: { userId, vehicleType: 'Bike', isOnline: dto.isOnline ?? false, marketId: dto.marketId }
+      });
+      
+      const riderRole = await this.prisma.role.findUnique({ where: { name: 'RIDER' } });
+      if (riderRole) {
+        await this.prisma.user.update({ where: { id: userId }, data: { roleId: riderRole.id } });
+      }
+
+      return partner;
+    }
+
+    return this.prisma.deliveryPartner.update({
+      where: { userId },
+      data: dto
+    });
   }
 }

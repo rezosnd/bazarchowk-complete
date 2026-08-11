@@ -95,6 +95,11 @@ export class UpdateMarketDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  adminId?: string;
 }
 
 export class CreateCityConfigDto {

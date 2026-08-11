@@ -10,10 +10,25 @@ export class SuperAdminService {
     private readonly auditService: AuditService
   ) {}
 
+  private async getAdminMarketId(user: any): Promise<string | undefined> {
+    if (!user || user.role?.name === 'SUPER_ADMIN') return undefined;
+    const adminUser = await this.prisma.user.findUnique({
+      where: { id: user.id || user.userId },
+      include: { managedMarket: true }
+    });
+    return adminUser?.managedMarket?.id;
+  }
+
   // ==================== PLATFORM DASHBOARD ====================
 
-  async getPlatformOverview() {
+  async getPlatformOverview(user: any) {
     try {
+      const marketId = await this.getAdminMarketId(user);
+      
+      const shopWhere = marketId ? { marketId } : {};
+      const orderWhere = marketId ? { shop: { marketId } } : {};
+      const deliveryPartnerWhere = marketId ? { marketId, isOnline: true } : { isOnline: true };
+      
       const [
         totalUsers,
         totalShops,
@@ -26,12 +41,12 @@ export class SuperAdminService {
         recentFraudLogs,
       ] = await Promise.all([
         this.prisma.user.count({ where: { deletedAt: null } }),
-        this.prisma.shop.count(),
-        this.prisma.order.count(),
-        this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { status: 'DELIVERED' } }),
-        this.prisma.shop.count({ where: { isVerified: false, isActive: true } }),
+        this.prisma.shop.count({ where: shopWhere }),
+        this.prisma.order.count({ where: orderWhere }),
+        this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { ...orderWhere, status: 'DELIVERED' } }),
+        this.prisma.shop.count({ where: { ...shopWhere, isVerified: false, isActive: true } }),
         this.prisma.advertisement.count({ where: { status: 'PENDING' } }),
-        this.prisma.deliveryPartner.count({ where: { isOnline: true } }),
+        this.prisma.deliveryPartner.count({ where: deliveryPartnerWhere }),
         this.prisma.supportTicket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
         this.prisma.fraudLog.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
       ]);
@@ -53,15 +68,32 @@ export class SuperAdminService {
 
   // ==================== USER MANAGEMENT ====================
 
-  async getAllUsers(page: number, limit: number, search?: string) {
+  async getAllUsers(page: number, limit: number, search?: string, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
     const where: any = { deletedAt: null };
-    if (search) {
+    
+    // Note: Filtering users by market is complex since users don't have a direct marketId.
+    // For now, if marketId is present, we only show users who are riders/shops in that market.
+    if (marketId) {
       where.OR = [
+        { shops: { some: { marketId } } },
+        { deliveryPartner: { marketId } }
+      ];
+    }
+    
+    if (search) {
+      const searchOR = [
         { email: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search } },
         { firstName: { contains: search, mode: 'insensitive' } },
       ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchOR }];
+        delete where.OR;
+      } else {
+        where.OR = searchOR;
+      }
     }
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -135,10 +167,12 @@ export class SuperAdminService {
 
   // ==================== SHOP MANAGEMENT ====================
 
-  async getAllShops(page: number, limit: number, verified?: boolean) {
+  async getAllShops(page: number, limit: number, verified?: boolean, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
     const where: any = {};
     if (verified !== undefined) where.isVerified = verified;
+    if (marketId) where.marketId = marketId;
     const [shops, total] = await Promise.all([
       this.prisma.shop.findMany({
         where, skip, take: limit,
@@ -184,10 +218,12 @@ export class SuperAdminService {
 
   // ==================== ORDER MANAGEMENT ====================
 
-  async getAllOrders(page: number, limit: number, status?: string) {
+  async getAllOrders(page: number, limit: number, status?: string, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
     const where: any = {};
     if (status) where.status = status;
+    if (marketId) where.shop = { marketId };
     
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -205,10 +241,12 @@ export class SuperAdminService {
 
   // ==================== REVENUE & SETTLEMENT MANAGEMENT ====================
 
-  async getAllSettlements(page: number, limit: number, status?: string) {
+  async getAllSettlements(page: number, limit: number, status?: string, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
     const where: any = {};
     if (status) where.status = status;
+    if (marketId) where.shop = { marketId };
 
     const [settlements, total] = await Promise.all([
       this.prisma.shopSettlement.findMany({
@@ -223,36 +261,37 @@ export class SuperAdminService {
     return { data: settlements, total, page, limit };
   }
 
-  async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day') {
+  async getRevenueReport(startDate: Date, endDate: Date, groupBy: 'day' | 'month' = 'day', user?: any) {
+    const marketId = await this.getAdminMarketId(user);
+    const orderWhere: any = { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } };
+    if (marketId) orderWhere.shop = { marketId };
+
     const [orders, topShopsRaw, totalOrderCount, totalCodAgg, totalOnlineAgg] = await Promise.all([
       this.prisma.order.groupBy({
         by: ['createdAt'],
         _sum: { totalAmount: true },
         _count: { id: true },
-        where: {
-          status: 'DELIVERED',
-          createdAt: { gte: startDate, lte: endDate },
-        },
+        where: orderWhere,
         orderBy: { createdAt: 'asc' },
       }),
       this.prisma.order.groupBy({
         by: ['shopId'],
         _sum: { totalAmount: true },
         _count: { id: true },
-        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } },
+        where: orderWhere,
         orderBy: { _sum: { totalAmount: 'desc' } },
         take: 10,
       }),
       this.prisma.order.count({
-        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate } }
+        where: orderWhere
       }),
       this.prisma.order.aggregate({
         _sum: { totalAmount: true },
-        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate }, paymentMethod: 'COD' }
+        where: { ...orderWhere, paymentMethod: 'COD' }
       }),
       this.prisma.order.aggregate({
         _sum: { totalAmount: true },
-        where: { status: 'DELIVERED', createdAt: { gte: startDate, lte: endDate }, paymentMethod: { not: 'COD' } }
+        where: { ...orderWhere, paymentMethod: { not: 'COD' } }
       }),
     ]);
 
@@ -305,11 +344,15 @@ export class SuperAdminService {
 
   // ==================== DELIVERY NETWORK MANAGEMENT ====================
 
-  async getDeliveryNetwork(page: number, limit: number) {
+  async getDeliveryNetwork(page: number, limit: number, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
+    const where: any = {};
+    if (marketId) where.marketId = marketId;
+    
     const [partners, total] = await Promise.all([
       this.prisma.deliveryPartner.findMany({
-        skip, take: limit,
+        where, skip, take: limit,
         include: {
           user: { select: { firstName: true, lastName: true, phone: true, email: true } },
           _count: { select: { deliveries: true } },

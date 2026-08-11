@@ -14,6 +14,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -39,11 +40,19 @@ export default function ChatScreen() {
 
       // Load initial messages from backend
       try {
-        const res = await fetch(`${API_BASE}/communication/messages/${conversationId}`, {
+        const userRes = await fetch(`${API_BASE}/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await userRes.json();
+        setCurrentUserId(user.id);
+
+        const res = await fetch(`${API_BASE}/communication/conversations/${conversationId}/messages`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
-        if (Array.isArray(data)) setMessages(data);
+        if (data && Array.isArray(data.data)) {
+          setMessages(data.data);
+        }
       } catch (e) {
         console.error('Failed to load messages');
       }
@@ -100,9 +109,7 @@ export default function ChatScreen() {
         <Text style={styles.encryptionNotice}>🔒 Messages are secured by end-to-end encryption</Text>
         
         {messages.map((m, idx) => {
-          // A rough assumption: If sender isn't current user (which we'd normally verify by ID)
-          // For now, we simulate "my message" vs "their message"
-          const isMine = m.isMine; 
+          const isMine = m.senderId === currentUserId; 
           return (
             <View key={idx} style={[styles.messageWrapper, isMine ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
               <View style={[styles.messageBubble, isMine ? styles.myBubble : styles.theirBubble]}>

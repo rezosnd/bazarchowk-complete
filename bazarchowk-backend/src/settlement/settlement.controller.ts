@@ -52,8 +52,8 @@ export class SettlementController {
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Admin: Get all pending rider cash deposits awaiting verification' })
-  getPendingDeposits() {
-    return this.settlementService.getPendingDeposits();
+  getPendingDeposits(@CurrentUser() user: any) {
+    return this.settlementService.getPendingDeposits(user);
   }
 
   @Patch('deposits/:id/verify')
@@ -93,8 +93,9 @@ export class SettlementController {
     @Query('status') status?: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
+    @CurrentUser() user?: any
   ) {
-    return this.settlementService.getSettlements(shopId, status, Number(page), Number(limit));
+    return this.settlementService.getSettlements(shopId, status, Number(page), Number(limit), user);
   }
 
   @Patch('shops/:id/mark-paid')

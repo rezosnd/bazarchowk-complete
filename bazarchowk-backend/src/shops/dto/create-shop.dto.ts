@@ -65,4 +65,9 @@ export class CreateShopDto {
   @IsOptional()
   @IsBoolean()
   isOpen?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  marketId?: string;
 }

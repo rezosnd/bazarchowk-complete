@@ -113,6 +113,22 @@ export default function OrderTrackingScreen() {
     }
   };
 
+  const handleChat = async (recipientId: string, name: string) => {
+    try {
+      const res = await api.post('/communication/conversations', {
+        type: 'P2P',
+        participantIds: [recipientId],
+        orderId: order.id,
+        title: `Order #${order.orderNumber}`
+      });
+      if (res.data && res.data.id) {
+        router.push({ pathname: `/chat/${res.data.id}`, params: { name, type: 'CUSTOMER_RIDER' } } as any);
+      }
+    } catch (e) {
+      alert('Failed to start chat');
+    }
+  };
+
   if (loading || !order) {
     return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
   }
@@ -218,7 +234,7 @@ export default function OrderTrackingScreen() {
               <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${order.rider?.phone}`)}>
                 <Ionicons name="call" size={20} color={PRIMARY} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => router.push({ pathname: `/chat/${order.id}`, params: { name: order.rider?.firstName || 'Delivery Partner', type: 'CUSTOMER_RIDER' } } as any)}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => handleChat(order.riderId, order.rider?.firstName || 'Delivery Partner')}>
                 <Ionicons name="chatbubble" size={20} color={ACCENT} />
               </TouchableOpacity>
             </View>

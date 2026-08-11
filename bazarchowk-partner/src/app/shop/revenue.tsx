@@ -22,6 +22,8 @@ export default function RevenueDashboardScreen() {
     netEarnings: 0,
     pendingSettlement: 0
   });
+  
+  const [ledgerHistory, setLedgerHistory] = useState<any[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -42,6 +44,32 @@ export default function RevenueDashboardScreen() {
           netEarnings: currentPeriodData?.netSettled || 0,
           pendingSettlement: response.data.pendingSettlement || 0
         });
+      }
+
+      // Fetch actual orders for ledger history
+      const shopId = await SecureStore.getItemAsync('bazar_shop_id');
+      if (shopId) {
+        const ordersRes = await api.get(`/orders/shop/${shopId}`);
+        if (ordersRes.data) {
+          const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
+          // Filter by timeframe
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - 7);
+          const monthStart = new Date();
+          monthStart.setDate(1);
+
+          const filteredOrders = orders.filter((o: any) => {
+            const orderDate = new Date(o.createdAt);
+            if (filter === 'TODAY') return orderDate >= todayStart;
+            if (filter === 'WEEK') return orderDate >= weekStart;
+            if (filter === 'MONTH') return orderDate >= monthStart;
+            return true;
+          });
+          
+          setLedgerHistory(filteredOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }
       }
     } catch (e) {
       console.warn('Failed to fetch real shop revenue', e);
@@ -150,6 +178,32 @@ export default function RevenueDashboardScreen() {
             <Text style={styles.downloadText}>Download Tax Invoice</Text>
           </TouchableOpacity>
 
+          <View style={{ marginTop: 32 }}>
+            <Text style={styles.sectionTitle}>Ledger History</Text>
+            {ledgerHistory.length === 0 ? (
+              <View style={styles.emptyLedger}>
+                <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
+                <Text style={styles.emptyLedgerText}>No transactions found for {filter.toLowerCase()}.</Text>
+              </View>
+            ) : (
+              ledgerHistory.map((item, index) => (
+                <View key={item.id || index} style={styles.ledgerCard}>
+                  <View style={styles.ledgerHeader}>
+                    <Text style={styles.ledgerId}>Order #{item.orderNumber || item.id?.substring(0, 8)}</Text>
+                    <Text style={styles.ledgerDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  <View style={styles.ledgerRow}>
+                    <View>
+                      <Text style={styles.ledgerMethod}>{item.paymentMethod || 'ONLINE'}</Text>
+                      <Text style={styles.ledgerStatus}>Net: ₹{((item.totalAmount || 0) * 0.9).toFixed(2)}</Text>
+                    </View>
+                    <Text style={styles.ledgerAmount}>+ ₹{item.totalAmount || 0}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+
         </ScrollView>
       )}
     </View>
@@ -204,5 +258,17 @@ const styles = StyleSheet.create({
   bdTotalValue: { fontSize: 20, fontWeight: '900', color: '#00B140' },
   
   downloadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9', padding: 16, borderRadius: 16, gap: 8 },
-  downloadText: { fontSize: 15, fontWeight: '700', color: '#0F172A' }
+  downloadText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  
+  emptyLedger: { alignItems: 'center', padding: 24, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  emptyLedgerText: { marginTop: 12, color: '#64748B', fontWeight: '500' },
+  
+  ledgerCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  ledgerHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  ledgerId: { fontSize: 14, fontWeight: '700', color: '#334155' },
+  ledgerDate: { fontSize: 12, color: '#94A3B8' },
+  ledgerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ledgerMethod: { fontSize: 12, color: '#00B140', fontWeight: '600', backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 4 },
+  ledgerStatus: { fontSize: 12, color: '#64748B' },
+  ledgerAmount: { fontSize: 18, fontWeight: '800', color: '#0F172A' }
 });

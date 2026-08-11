@@ -20,6 +20,15 @@ export class SettlementService {
     private readonly emailService: EmailService,
   ) {}
 
+  private async getAdminMarketId(user: any): Promise<string | undefined> {
+    if (!user || user.role?.name === 'SUPER_ADMIN') return undefined;
+    const adminUser = await this.prisma.user.findUnique({
+      where: { id: user.id || user.userId },
+      include: { managedMarket: true }
+    });
+    return adminUser?.managedMarket?.id;
+  }
+
   // =============== RIDER: CASH COLLECTION ===============
 
   /**
@@ -109,9 +118,15 @@ export class SettlementService {
 
   // =============== MARKET ADMIN: DEPOSIT VERIFICATION ===============
 
-  async getPendingDeposits() {
+  async getPendingDeposits(user?: any) {
+    const marketId = await this.getAdminMarketId(user);
+    const where: any = { status: 'PENDING' };
+    if (marketId) {
+      where.rider = { deliveryPartner: { marketId } };
+    }
+    
     return this.prisma.riderDeposit.findMany({
-      where: { status: 'PENDING' },
+      where,
       include: {
         rider: { select: { firstName: true, lastName: true, phone: true } },
         collections: { include: { order: { select: { orderNumber: true, totalAmount: true } } } },
@@ -296,11 +311,13 @@ export class SettlementService {
     return updatedSettlement;
   }
 
-  async getSettlements(shopId?: string, status?: string, page = 1, limit = 20) {
+  async getSettlements(shopId?: string, status?: string, page = 1, limit = 20, user?: any) {
+    const marketId = await this.getAdminMarketId(user);
     const skip = (page - 1) * limit;
     const where: any = {};
     if (shopId) where.shopId = shopId;
     if (status) where.status = status;
+    if (marketId) where.shop = { marketId };
 
     const [data, total] = await Promise.all([
       this.prisma.shopSettlement.findMany({

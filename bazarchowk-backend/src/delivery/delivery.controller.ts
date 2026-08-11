@@ -67,4 +67,15 @@ export class DeliveryController {
   ) {
     return this.deliveryService.getRiderEarnings(user.id, filter);
   }
+
+  @Patch('rider/profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update rider profile (marketId, isOnline)' })
+  updateRiderProfile(
+    @CurrentUser() user: any,
+    @Body() dto: { marketId?: string; isOnline?: boolean }
+  ) {
+    return this.deliveryService.updateRiderProfile(user.id, dto);
+  }
 }

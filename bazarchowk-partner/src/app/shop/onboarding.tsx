@@ -13,6 +13,8 @@ export default function ShopOnboardingScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [markets, setMarkets] = useState<any[]>([]);
+  const [marketId, setMarketId] = useState('');
   
   // Selection
   const [offerType, setOfferType] = useState<'PRODUCTS' | 'SERVICES' | 'BOTH' | ''>('');
@@ -29,6 +31,22 @@ export default function ShopOnboardingScreen() {
   const [longitude, setLongitude] = useState('');
 
   const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
+
+  React.useEffect(() => {
+    fetchMarkets();
+  }, []);
+
+  const fetchMarkets = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/markets`);
+      if (res.ok) {
+        const data = await res.json();
+        setMarkets(data);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch markets', e);
+    }
+  };
 
   const fetchCoordinates = async () => {
     setLoading(true);
@@ -88,8 +106,8 @@ export default function ShopOnboardingScreen() {
   };
 
   const handleRegister = async () => {
-    if (!name || !address || !city || !stateName || !latitude || !longitude) {
-      alert('Please fill all mandatory fields (*), including Latitude and Longitude.');
+    if (!name || !address || !city || !stateName || !latitude || !longitude || !marketId) {
+      alert('Please fill all mandatory fields (*), including Market, Latitude and Longitude.');
       return;
     }
 
@@ -112,7 +130,8 @@ export default function ShopOnboardingScreen() {
         deliveryRadius: parseFloat(deliveryRadius),
         hasProducts,
         hasServices,
-        partnerType
+        partnerType,
+        marketId
       };
 
       const res = await fetch(`${API_BASE}/shops`, {
@@ -274,6 +293,26 @@ export default function ShopOnboardingScreen() {
             onChangeText={setDescription}
             multiline
           />
+        </View>
+
+        <View className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm mb-5">
+          <Text className="text-lg font-extrabold text-gray-900 mb-5">Select Market *</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+            {markets.length === 0 ? (
+              <Text className="text-gray-500 italic">No markets found. Contact Admin.</Text>
+            ) : (
+              markets.map(m => (
+                <TouchableOpacity
+                  key={m.id}
+                  onPress={() => setMarketId(m.id)}
+                  className={`px-4 py-3 mr-3 rounded-xl border ${marketId === m.id ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-gray-200'}`}
+                >
+                  <Text className={`font-bold ${marketId === m.id ? 'text-blue-700' : 'text-gray-600'}`}>{m.name}</Text>
+                  <Text className={`text-xs mt-1 ${marketId === m.id ? 'text-blue-500' : 'text-gray-400'}`}>{m.village?.name || 'Local'} Area</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
         </View>
 
         <View className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm mb-5">

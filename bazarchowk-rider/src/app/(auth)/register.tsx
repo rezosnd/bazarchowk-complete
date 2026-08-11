@@ -28,6 +28,8 @@ export default function RiderRegisterScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [markets, setMarkets] = useState<any[]>([]);
+  const [marketId, setMarketId] = useState('');
   
   useEffect(() => {
     async function loadProfile() {
@@ -48,12 +50,24 @@ export default function RiderRegisterScreen() {
         console.error('Failed to load profile for completion', e);
       }
     }
+    async function loadMarkets() {
+      try {
+        const res = await fetch(`${API_URL}/markets`);
+        if (res.ok) {
+          const data = await res.json();
+          setMarkets(data);
+        }
+      } catch (e) {
+        console.warn('Failed to load markets', e);
+      }
+    }
     loadProfile();
+    loadMarkets();
   }, []);
 
   const handleCompleteProfile = async () => {
-    if (!firstName.trim() || !lastName.trim() || !phone.trim() || phone.length < 10) {
-      setError('Please fill in all valid details');
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || phone.length < 10 || !marketId) {
+      setError('Please fill in all valid details and select a Market.');
       return;
     }
     
@@ -78,7 +92,18 @@ export default function RiderRegisterScreen() {
       });
       
       if (!res.ok) throw new Error('Failed to update profile');
-      
+
+      // Update DeliveryPartner profile with marketId
+      const dpRes = await fetch(`${API_URL}/delivery/rider/profile`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ marketId, isOnline: false }),
+      });
+      if (!dpRes.ok) throw new Error('Failed to update Rider profile');
+
       router.replace('/');
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
@@ -172,6 +197,36 @@ export default function RiderRegisterScreen() {
                   keyboardType="phone-pad"
                 />
               </View>
+            </View>
+
+            <View style={{ height: 16 }} />
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Select Your Market</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {markets.length === 0 ? (
+                  <Text style={{ color: '#9CA3AF', padding: 8 }}>No markets found.</Text>
+                ) : (
+                  markets.map((m) => (
+                    <TouchableOpacity
+                      key={m.id}
+                      onPress={() => setMarketId(m.id)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        marginRight: 12,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: marketId === m.id ? '#00B140' : '#E5E7EB',
+                        backgroundColor: marketId === m.id ? '#DCFCE7' : '#F9FAFB'
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: marketId === m.id ? '#00B140' : '#374151' }}>{m.name}</Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{m.village?.name || 'Local'} Area</Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
             </View>
           </View>
 

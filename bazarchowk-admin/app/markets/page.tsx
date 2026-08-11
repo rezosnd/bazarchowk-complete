@@ -13,8 +13,27 @@ export default function MarketsPage() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [selectedMarketId, setSelectedMarketId] = useState('');
 
+  const [markets, setMarkets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    fetchMarkets();
+  }, []);
+
+  const fetchMarkets = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/super-admin/markets?limit=100`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const d = await res.json();
+        setMarkets(d.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleCreateMarket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +56,7 @@ export default function MarketsPage() {
       if (res.ok) {
         alert('Market created successfully!');
         setMarketName(''); setVillageId(''); setLatitude(''); setLongitude('');
+        fetchMarkets();
       } else {
         const error = await res.json();
         alert('Failed: ' + (error.message || 'Unknown error'));
@@ -49,6 +69,10 @@ export default function MarketsPage() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedMarketId) {
+      alert('Please select a market to assign this admin to.');
+      return;
+    }
     setLoading(true);
     try {
       // 1. Create User
@@ -84,8 +108,18 @@ export default function MarketsPage() {
       });
 
       if (roleRes.ok) {
-        alert('Market Admin created and role assigned successfully!');
-        setAdminName(''); setAdminEmail(''); setAdminPhone(''); setAdminPassword('');
+        // 3. Assign Admin to Market
+        await fetch(`${API_BASE}/super-admin/markets/${selectedMarketId}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ adminId: user.id }),
+        });
+
+        alert('Market Admin created, role assigned, and linked to market successfully!');
+        setAdminName(''); setAdminEmail(''); setAdminPhone(''); setAdminPassword(''); setSelectedMarketId('');
       } else {
         alert('User created, but role assignment failed. Check your Super Admin permissions.');
       }
@@ -131,6 +165,15 @@ export default function MarketsPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <h2 className="text-lg font-bold text-gray-900 mb-6">Register Market Admin User</h2>
           <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Market</label>
+              <select required value={selectedMarketId} onChange={e=>setSelectedMarketId(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select a Market...</option>
+                {markets.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Admin Full Name</label>
               <input required type="text" value={adminName} onChange={e=>setAdminName(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />

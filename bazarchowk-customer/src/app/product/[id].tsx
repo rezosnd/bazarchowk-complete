@@ -61,7 +61,7 @@ export default function ProductDetailScreen() {
     } catch (e: any) {
       const msg = e?.response?.data?.message;
       const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || e?.message || 'Failed to add to cart. Check stock limits.');
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Error', typeof errorMsg === 'string' ? errorMsg : 'Something went wrong');
     } finally {
       setAddingToCart(false);
     }
@@ -218,7 +218,13 @@ export default function ProductDetailScreen() {
           <Text style={styles.qtyText}>{quantity}</Text>
           <TouchableOpacity 
             style={styles.qtyBtn}
-            onPress={() => setQuantity(quantity + 1)}
+            onPress={() => {
+              if (selectedVariant && quantity >= selectedVariant.stock) {
+                Alert.alert('Stock Limit', `Only ${selectedVariant.stock} items available in stock.`);
+              } else {
+                setQuantity(quantity + 1);
+              }
+            }}
           >
             <Ionicons name="add" size={20} color="#0F172A" />
           </TouchableOpacity>

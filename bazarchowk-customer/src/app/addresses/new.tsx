@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks';
 import { FontSize, FontWeight, Spacing } from '@/theme';
@@ -10,117 +10,92 @@ import { Button, Input } from '@/components/ui';
 import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 
+const { height: H } = Dimensions.get('window');
+
 export default function AddAddressScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const addMutation = useAddAddress();
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('Home');
+  const [customTitle, setCustomTitle] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [mapSearchQuery, setMapSearchQuery] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
+  const [mapSuggestions, setMapSuggestions] = useState<any[]>([]);
 
   const [region, setRegion] = useState({
     latitude: 28.6139,
     longitude: 77.2090,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
   });
 
-  const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || ('pk.eyJ1IjoicmV6b3NuZCIsImEiOiJjbTZi' + 'b2MxcWUwaTNyMmpxNDBoMXd2MDc4In0.n-k5sDOR' + 'd1_qZJ1_y1jKmg');
+  const webViewRef = useRef<WebView>(null);
+  const searchTimeout = useRef<any>(null);
+
+  useEffect(() => {
+    fetchLocation();
+  }, []);
 
   const fetchLocation = async () => {
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        alert('Permission denied. Please enter address manually to fetch coordinates via Mapbox.');
         setLocationLoading(false);
         return;
       }
-      
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const lat = location.coords.latitude;
-      const lng = location.coords.longitude;
-      setLatitude(lat);
-      setLongitude(lng);
-      setRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 });
-
-      // Reverse Geocode using Nominatim
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
-        const data = await res.json();
-        if (data && data.address) {
-          setAddressLine1(data.address.road || data.address.suburb || data.address.village || data.display_name.split(',')[0]);
-          if (data.address.city || data.address.town || data.address.county) setCity(data.address.city || data.address.town || data.address.county);
-          if (data.address.state) setState(data.address.state);
-          if (data.address.postcode) setPincode(data.address.postcode);
-        }
-      } catch (err) {
-        console.warn('Nominatim Reverse Geocode Failed', err);
-      }
-      
+      updateMapPosition(location.coords.latitude, location.coords.longitude);
+      await reverseGeocode(location.coords.latitude, location.coords.longitude);
     } catch (error) {
       console.warn('Error fetching GPS:', error);
-      alert('GPS failed. Please enter address manually to fetch coordinates via Mapbox.');
     } finally {
       setLocationLoading(false);
     }
   };
 
-  const webViewRef = useRef<WebView>(null);
-
-  const geocodeAddressFallback = async () => {
-    if (!addressLine1 || !city) return;
-    setLocationLoading(true);
-    try {
-      const query = encodeURIComponent(`${addressLine1}, ${city}, ${state}`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&addressdetails=1&limit=1`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const coords = [parseFloat(data[0].lon), parseFloat(data[0].lat)]; // [lng, lat]
-        setLongitude(coords[0]);
-        setLatitude(coords[1]);
-        setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
-        
-        // Dynamically move the Leaflet map without reloading the WebView
-        webViewRef.current?.injectJavaScript(`
-          if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
-            map.flyTo([${coords[1]}, ${coords[0]}], 15);
-            marker.setLatLng([${coords[1]}, ${coords[0]}]);
-          }
-          true;
-        `);
-        
-        alert('Map successfully moved to your searched address!');
-      } else {
-        alert('Nominatim could not find coordinates for this address.');
+  const updateMapPosition = (lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    setRegion({ latitude: lat, longitude: lng });
+    webViewRef.current?.injectJavaScript(`
+      if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
+        map.flyTo([${lat}, ${lng}], 16);
+        marker.setLatLng([${lat}, ${lng}]);
       }
-    } catch (e) {
-      alert('Nominatim Geocoding failed.');
-    } finally {
-      setLocationLoading(false);
-    }
+      true;
+    `);
   };
 
-  const [mapSuggestions, setMapSuggestions] = useState<any[]>([]);
-  const searchTimeout = useRef<any>(null);
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'User-Agent': 'BazarChowkApp/1.0' } });
+      const data = await res.json();
+      if (data && data.address) {
+        setAddressLine1(data.address.road || data.address.suburb || data.address.village || data.display_name.split(',')[0]);
+        if (data.address.city || data.address.town || data.address.county) setCity(data.address.city || data.address.town || data.address.county);
+        if (data.address.state) setState(data.address.state);
+        if (data.address.postcode) setPincode(data.address.postcode);
+      }
+    } catch (err) {
+      console.warn('Reverse Geocode Failed', err);
+    }
+  };
 
   const fetchMapSuggestions = async (text: string) => {
     setMapSearchQuery(text);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    
     if (text.length < 3) {
       setMapSuggestions([]);
       return;
     }
-
     searchTimeout.current = setTimeout(async () => {
       try {
         const query = encodeURIComponent(text);
@@ -143,33 +118,20 @@ export default function AddAddressScreen() {
     const coords = feature.center;
     setMapSearchQuery(feature.place_name);
     setMapSuggestions([]);
-    
-    setLongitude(coords[0]);
-    setLatitude(coords[1]);
-    setRegion({ latitude: coords[1], longitude: coords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 });
-    
-    webViewRef.current?.injectJavaScript(`
-      if (typeof map !== 'undefined' && typeof marker !== 'undefined') {
-        map.flyTo([${coords[1]}, ${coords[0]}], 15);
-        marker.setLatLng([${coords[1]}, ${coords[0]}]);
-      }
-      true;
-    `);
+    updateMapPosition(coords[1], coords[0]);
+    reverseGeocode(coords[1], coords[0]);
   };
 
-  useEffect(() => {
-    fetchLocation();
-  }, []);
-
   const handleSave = () => {
-    if (!title || !addressLine1 || !city || !state || !pincode || !latitude || !longitude) {
-      alert('Please fill all required fields and wait for location to sync.');
+    const finalTitle = title === 'Other' ? customTitle : title;
+    if (!finalTitle || !addressLine1 || !city || !state || !pincode || !latitude || !longitude) {
+      alert('Please fill all required fields and ensure location is pinned.');
       return;
     }
 
     addMutation.mutate(
       {
-        title,
+        title: finalTitle,
         addressLine1,
         addressLine2,
         city,
@@ -180,267 +142,247 @@ export default function AddAddressScreen() {
         isDefault: true,
       },
       {
-        onSuccess: () => {
-          router.back();
-        },
-        onError: () => {
-          alert('Failed to add address');
-        }
+        onSuccess: () => router.back(),
+        onError: () => alert('Failed to add address')
       }
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Add New Address</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* GPS Location Banner */}
-        <View style={[styles.locationBanner, { backgroundColor: theme.primarySurface }]}>
-          <Ionicons name="location" size={24} color={theme.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.locationTitle, { color: theme.primary }]}>GPS Coordinates</Text>
-            {locationLoading ? (
-              <Text style={{ color: theme.primary, fontSize: 12 }}>Fetching location...</Text>
-            ) : latitude && longitude ? (
-              <Text style={{ color: theme.primary, fontSize: 12 }}>
-                Lat: {latitude.toFixed(4)}, Lng: {longitude.toFixed(4)}
-              </Text>
-            ) : (
-              <View>
-                <Text style={{ color: '#EF4444', fontSize: 12 }}>Location not synced</Text>
-                <TouchableOpacity onPress={geocodeAddressFallback} style={{ marginTop: 4 }}>
-                  <Text style={{ color: theme.primary, fontSize: 12, fontWeight: 'bold' }}>Geocode Fallback (Type address below & tap here)</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity onPress={fetchLocation} style={styles.refreshBtn}>
-            <Ionicons name="refresh" size={20} color={theme.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Interactive Map Search */}
-        <View style={[styles.mapSearchContainer, { zIndex: 10 }]}>
-          <Input 
-            placeholder="Search city, area, or place..."
-            value={mapSearchQuery}
-            onChangeText={fetchMapSuggestions}
-            leftIcon={<Ionicons name="search" size={20} color={theme.textTertiary} />}
-            style={{ marginBottom: 0, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
-          />
-          {mapSuggestions.length > 0 ? (
-            <View style={{ backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, marginTop: 4, maxHeight: 150, overflow: 'hidden' }}>
-              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-                {mapSuggestions.map((item: any, index: number) => (
-                  <TouchableOpacity 
-                    key={index} 
-                    style={{ padding: 12, borderBottomWidth: index === mapSuggestions.length - 1 ? 0 : 1, borderBottomColor: '#F3F4F6' }}
-                    onPress={() => selectSuggestion(item)}
-                  >
-                    <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }} numberOfLines={1}>{item.text}</Text>
-                    <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }} numberOfLines={1}>{item.place_name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Interactive Map */}
-        <View style={styles.mapContainer}>
-          {Platform.OS === 'web' ? (
-             <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }]}>
-               <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
-             </View>
-          ) : (
-            <WebView
-              ref={webViewRef}
-              style={styles.map}
-              scrollEnabled={false}
-              source={{
-                html: `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-                    <style>
-                      body { padding: 0; margin: 0; }
-                      html, body, #map { height: 100%; width: 100%; }
-                    </style>
-                  </head>
-                  <body>
-                    <div id="map"></div>
-                    <script>
-                      var map = L.map('map', { zoomControl: false }).setView([${region.latitude}, ${region.longitude}], 15);
-                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-                      var marker = L.marker([${region.latitude}, ${region.longitude}]).addTo(map);
-                      
-                      map.on('move', function() {
-                        marker.setLatLng(map.getCenter());
-                      });
-
-                      map.on('moveend', function() {
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#FFF' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Absolute Map Layer */}
+      <View style={[StyleSheet.absoluteFill, { height: H * 0.45 }]}>
+        {Platform.OS === 'web' ? (
+           <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' }]}>
+             <Ionicons name="map-outline" size={48} color="#94A3B8" />
+             <Text style={{ color: '#64748B', marginTop: 12 }}>Map unavailable on web</Text>
+           </View>
+        ) : (
+          <WebView
+            ref={webViewRef}
+            style={styles.map}
+            scrollEnabled={false}
+            source={{
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                  <style>
+                    body { padding: 0; margin: 0; }
+                    html, body, #map { height: 100%; width: 100%; }
+                    .center-marker {
+                      position: absolute; top: 50%; left: 50%;
+                      transform: translate(-50%, -100%);
+                      z-index: 1000; pointer-events: none;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div id="map"></div>
+                  <!-- Center Marker -->
+                  <div class="center-marker">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 21.5C12 21.5 20.5 15.5 20.5 9.5C20.5 4.80558 16.6944 1 12 1C7.30558 1 3.5 4.80558 3.5 9.5C3.5 15.5 12 21.5 12 21.5Z" fill="#00B140" stroke="#FFFFFF" stroke-width="2"/>
+                      <circle cx="12" cy="9.5" r="3.5" fill="#FFFFFF"/>
+                    </svg>
+                  </div>
+                  <script>
+                    var map = L.map('map', { zoomControl: false }).setView([${region.latitude}, ${region.longitude}], 16);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+                    
+                    let moveTimeout;
+                    map.on('moveend', function() {
+                      clearTimeout(moveTimeout);
+                      moveTimeout = setTimeout(() => {
                         var center = map.getCenter();
                         window.ReactNativeWebView.postMessage(JSON.stringify({
                           latitude: center.lat,
                           longitude: center.lng
                         }));
-                      });
-                    </script>
-                  </body>
-                  </html>
-                `
-              }}
-              onMessage={(event) => {
-                try {
-                  const data = JSON.parse(event.nativeEvent.data);
-                  if (data.latitude && data.longitude) {
-                    setLatitude(data.latitude);
-                    setLongitude(data.longitude);
-                    setRegion(prev => ({ ...prev, latitude: data.latitude, longitude: data.longitude }));
-                  }
-                } catch (e) {}
-              }}
-            />
-          )}
-          <View style={styles.mapOverlay}>
-            <Text style={styles.mapOverlayText}>Drag map to pin exact location</Text>
-          </View>
-        </View>
-
-        <Text style={{ fontWeight: '600', marginBottom: Spacing.xs, color: theme.text }}>Save Address As</Text>
-        <View style={{ flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm }}>
-          {['Home', 'Office', 'Other'].map(type => (
-            <TouchableOpacity 
-              key={type}
-              style={{ 
-                paddingHorizontal: 16, paddingVertical: 8, 
-                borderRadius: 20, 
-                borderWidth: 1, 
-                borderColor: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primary : '#E5E7EB',
-                backgroundColor: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primarySurface : 'transparent'
-              }}
-              onPress={() => {
-                if (type !== 'Other') {
-                  setTitle(type);
-                } else {
-                  setTitle('');
+                      }, 500);
+                    });
+                  </script>
+                </body>
+                </html>
+              `
+            }}
+            onMessage={(event) => {
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.latitude && data.longitude) {
+                  setLatitude(data.latitude);
+                  setLongitude(data.longitude);
+                  reverseGeocode(data.latitude, data.longitude);
                 }
-              }}
-            >
-              <Text style={{ 
-                color: title === type || (type === 'Other' && title !== 'Home' && title !== 'Office' && title !== '') ? theme.primary : theme.textSecondary,
-                fontWeight: '600'
-              }}>{type}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {(!['Home', 'Office'].includes(title)) && (
-          <Input label="Custom Title" placeholder="e.g. Friend's House" value={title} onChangeText={setTitle} required />
+              } catch (e) {}
+            }}
+          />
         )}
+      </View>
 
-        <Input label="Address Line 1" placeholder="House/Flat No., Building Name" value={addressLine1} onChangeText={setAddressLine1} required />
-        <Input label="Address Line 2 (Optional)" placeholder="Street, Area" value={addressLine2} onChangeText={setAddressLine2} />
-        
-        <View style={{ flexDirection: 'row', gap: Spacing.md }}>
-          <View style={{ flex: 1 }}>
-            <Input label="City" placeholder="City" value={city} onChangeText={setCity} required />
+      {/* Header Overlay */}
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Confirm Location</Text>
+      </View>
+
+      {/* Floating Locate Me Button */}
+      <View style={[styles.locateBtnWrap, { top: H * 0.45 - 80 }]}>
+        <TouchableOpacity style={styles.locateBtn} onPress={fetchLocation}>
+          {locationLoading ? (
+             <Ionicons name="sync" size={20} color="#00B140" />
+          ) : (
+             <Ionicons name="locate" size={20} color="#00B140" />
+          )}
+          <Text style={styles.locateText}>Use Current Location</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Sheet Details */}
+      <View style={[styles.bottomSheet, { marginTop: H * 0.45 }]}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search" size={20} color="#94A3B8" />
+              <Input 
+                placeholder="Search for your area..."
+                value={mapSearchQuery}
+                onChangeText={fetchMapSuggestions}
+                style={styles.searchInput}
+              />
+            </View>
+            
+            {mapSuggestions.length > 0 && (
+              <View style={styles.suggestionsList}>
+                {mapSuggestions.map((item: any, index: number) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={[styles.suggestionItem, index === mapSuggestions.length - 1 && { borderBottomWidth: 0 }]}
+                    onPress={() => selectSuggestion(item)}
+                  >
+                    <Ionicons name="location-outline" size={20} color="#64748B" />
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                      <Text style={styles.suggestionTitle} numberOfLines={1}>{item.text}</Text>
+                      <Text style={styles.suggestionSub} numberOfLines={1}>{item.place_name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
-          <View style={{ flex: 1 }}>
+
+          <View style={styles.formSection}>
+            <Text style={styles.sectionTitle}>Address Details</Text>
+            
+            <View style={styles.chipRow}>
+              {['Home', 'Office', 'Other'].map(type => (
+                <TouchableOpacity 
+                  key={type}
+                  style={[styles.chip, title === type && styles.chipActive]}
+                  onPress={() => setTitle(type)}
+                >
+                  <Ionicons name={type === 'Home' ? 'home' : type === 'Office' ? 'briefcase' : 'location'} size={14} color={title === type ? '#00B140' : '#64748B'} />
+                  <Text style={[styles.chipText, title === type && styles.chipTextActive]}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {title === 'Other' && (
+              <Input label="Custom Label" placeholder="e.g. Mom's House" value={customTitle} onChangeText={setCustomTitle} required />
+            )}
+
+            <Input label="Flat / House No. / Building" placeholder="Enter complete address" value={addressLine1} onChangeText={setAddressLine1} required />
+            <Input label="Nearby Landmark (Optional)" placeholder="e.g. Near Apollo Hospital" value={addressLine2} onChangeText={setAddressLine2} />
+            
+            <View style={{ flexDirection: 'row', gap: Spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <Input label="City" placeholder="City" value={city} onChangeText={setCity} required />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input label="Pincode" placeholder="Pincode" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} required />
+              </View>
+            </View>
             <Input label="State" placeholder="State" value={state} onChangeText={setState} required />
           </View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom || 24 }]}>
+          <Button
+            title="Save Address"
+            onPress={handleSave}
+            loading={addMutation.isPending}
+            disabled={!latitude || !longitude || locationLoading}
+          />
         </View>
-
-        <Input label="Pincode" placeholder="6-digit Pincode" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} required />
-
-      </ScrollView>
-
-      {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom || Spacing.lg, backgroundColor: theme.background }]}>
-        <Button
-          title="Save Address"
-          onPress={handleSave}
-          loading={addMutation.isPending}
-          disabled={!latitude || !longitude}
-        />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-  backBtn: { padding: Spacing.xs, marginRight: Spacing.sm },
-  title: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
-  content: { padding: Spacing.base, gap: Spacing.md },
-  locationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: 12,
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  locationTitle: { fontWeight: 'bold', fontSize: FontSize.sm },
-  refreshBtn: { padding: Spacing.xs },
-  mapContainer: {
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  title: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
   map: { flex: 1 },
-  mapOverlay: {
-    position: 'absolute',
-    top: 10,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  
+  locateBtnWrap: {
+    position: 'absolute', right: 16, zIndex: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 6,
   },
-  mapOverlayText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  locateBtn: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
+    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, gap: 8,
+  },
+  locateText: { color: '#00B140', fontWeight: '700', fontSize: 14 },
+
+  bottomSheet: {
+    flex: 1, backgroundColor: '#FFF',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 20,
+  },
+  content: { padding: 20, paddingBottom: 40 },
+  
+  searchContainer: { marginBottom: 24, zIndex: 30 },
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
+    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16,
+  },
+  searchInput: { flex: 1, marginBottom: 0, borderWidth: 0, backgroundColor: 'transparent', height: 50 },
+  suggestionsList: {
+    backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0',
+    marginTop: 8, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 4,
+  },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  suggestionTitle: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
+  suggestionSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
+
+  formSection: { gap: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  
+  chipRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
+    backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  chipActive: { backgroundColor: '#F3FAF5', borderColor: '#00B140' },
+  chipText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  chipTextActive: { color: '#00B140' },
+
   footer: {
-    padding: Spacing.base,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  mapSearchContainer: {
-    marginBottom: Spacing.sm,
-    borderRadius: 12,
-  },
-  searchMapBtn: {
-    padding: Spacing.sm,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  searchMapBtnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
+    padding: 20, paddingTop: 16,
+    backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9',
+  }
 });

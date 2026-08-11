@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SuperAdminService } from './super-admin.service';
 import { 
   PaginationQueryDto, 
@@ -27,16 +28,16 @@ export class SuperAdminController {
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Platform-wide overview: users, revenue, shops, fraud, support' })
-  getDashboard() {
-    return this.superAdminService.getPlatformOverview();
+  getDashboard(@CurrentUser() user: any) {
+    return this.superAdminService.getPlatformOverview(user);
   }
 
   // --- USER MANAGEMENT ---
 
   @Get('users')
   @ApiOperation({ summary: 'List all users with search & pagination' })
-  getUsers(@Query() query: PaginationQueryDto) {
-    return this.superAdminService.getAllUsers(Number(query.page || 1), Number(query.limit || 50), query.search);
+  getUsers(@Query() query: PaginationQueryDto, @CurrentUser() user: any) {
+    return this.superAdminService.getAllUsers(Number(query.page || 1), Number(query.limit || 50), query.search, user);
   }
 
   @Patch('users/:id/ban')
@@ -61,8 +62,8 @@ export class SuperAdminController {
 
   @Get('shops')
   @ApiOperation({ summary: 'List all shops with verification filter & pagination' })
-  getShops(@Query() query: ShopFilterDto) {
-    return this.superAdminService.getAllShops(Number(query.page || 1), Number(query.limit || 50), query.verified);
+  getShops(@Query() query: ShopFilterDto, @CurrentUser() user: any) {
+    return this.superAdminService.getAllShops(Number(query.page || 1), Number(query.limit || 50), query.verified, user);
   }
 
   @Patch('shops/:id/verify')
@@ -82,8 +83,8 @@ export class SuperAdminController {
   @Get('orders')
   @ApiOperation({ summary: 'List all platform orders with search & pagination' })
   @ApiQuery({ name: 'status', required: false })
-  getOrders(@Query() query: PaginationQueryDto, @Query('status') status?: string) {
-    return this.superAdminService.getAllOrders(Number(query.page || 1), Number(query.limit || 50), status);
+  getOrders(@Query() query: PaginationQueryDto, @CurrentUser() user: any, @Query('status') status?: string) {
+    return this.superAdminService.getAllOrders(Number(query.page || 1), Number(query.limit || 50), status, user);
   }
 
   // --- REVENUE & SETTLEMENT MANAGEMENT ---
@@ -91,14 +92,14 @@ export class SuperAdminController {
   @Get('settlements')
   @ApiOperation({ summary: 'List all shop settlement batches' })
   @ApiQuery({ name: 'status', required: false })
-  getSettlements(@Query() query: PaginationQueryDto, @Query('status') status?: string) {
-    return this.superAdminService.getAllSettlements(Number(query.page || 1), Number(query.limit || 50), status);
+  getSettlements(@Query() query: PaginationQueryDto, @CurrentUser() user: any, @Query('status') status?: string) {
+    return this.superAdminService.getAllSettlements(Number(query.page || 1), Number(query.limit || 50), status, user);
   }
 
   @Get('revenue')
   @ApiOperation({ summary: 'Platform revenue report with top shops' })
-  getRevenue(@Query() query: RevenueFilterDto) {
-    return this.superAdminService.getRevenueReport(new Date(query.startDate), new Date(query.endDate), query.groupBy);
+  getRevenue(@Query() query: RevenueFilterDto, @CurrentUser() user: any) {
+    return this.superAdminService.getRevenueReport(new Date(query.startDate), new Date(query.endDate), query.groupBy, user);
   }
 
   // --- ADVERTISEMENT MANAGEMENT ---
@@ -125,8 +126,8 @@ export class SuperAdminController {
 
   @Get('delivery-partners')
   @ApiOperation({ summary: 'List all registered delivery partners with stats' })
-  getDeliveryNetwork(@Query() query: PaginationQueryDto) {
-    return this.superAdminService.getDeliveryNetwork(Number(query.page || 1), Number(query.limit || 50));
+  getDeliveryNetwork(@Query() query: PaginationQueryDto, @CurrentUser() user: any) {
+    return this.superAdminService.getDeliveryNetwork(Number(query.page || 1), Number(query.limit || 50), user);
   }
 
   // --- FRAUD MANAGEMENT ---

@@ -71,6 +71,8 @@ model User {
   conversations              ConversationParticipant[] @relation("UserConversations")
   sentMessages               Message[]                 @relation("SentMessages")
 
+  managedMarket              Market?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -665,6 +667,10 @@ model DeliveryPartner {
   isOnline         Boolean @default(false)
   currentLatitude  Float?
   currentLongitude Float?
+
+  // Market Assignment
+  marketId String?
+  market   Market? @relation(fields: [marketId], references: [id])
 
   // Financial & Settlement Details
   bankAccountNumber String?
@@ -1444,7 +1450,11 @@ model Market {
   radiusKm    Float   @default(5.0)
   isActive    Boolean @default(true)
 
-  shops Shop[]
+  adminId     String? @unique
+  admin       User?   @relation(fields: [adminId], references: [id])
+
+  shops            Shop[]
+  deliveryPartners DeliveryPartner[]
 
   createdAt DateTime @default(now())
 
