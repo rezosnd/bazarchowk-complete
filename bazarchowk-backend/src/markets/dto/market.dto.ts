@@ -13,6 +13,32 @@ export class CreateCountryDto {
   code: string;
 }
 
+export class BootstrapGeoDto {
+  @ApiProperty({ example: 'India' })
+  @IsString()
+  countryName: string;
+
+  @ApiProperty({ example: 'Bihar' })
+  @IsString()
+  stateName: string;
+
+  @ApiProperty({ example: 'Vaishali' })
+  @IsString()
+  districtName: string;
+
+  @ApiProperty({ example: 'Desari' })
+  @IsString()
+  cityName: string;
+
+  @ApiProperty({ example: 'Desari Main' })
+  @IsString()
+  villageName: string;
+
+  @ApiProperty({ example: '844504' })
+  @IsString()
+  pincode: string;
+}
+
 export class CreateStateDto {
   @ApiProperty({ example: 'country-uuid' })
   @IsString()

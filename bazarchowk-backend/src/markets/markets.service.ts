@@ -8,7 +8,8 @@ import {
   CreateDistrictDto,
   CreateCityDto,
   CreateVillageDto,
-  CreateMarketDto
+  CreateMarketDto,
+  BootstrapGeoDto
 } from './dto/market.dto';
 
 @Injectable()
@@ -124,36 +125,36 @@ export class MarketsService {
     });
   }
 
-  async bootstrapDefaultGeo() {
+  async bootstrapDefaultGeo(dto: BootstrapGeoDto) {
     // 1. Country
     const country = await this.prisma.country.upsert({
-      where: { code: 'IN' },
+      where: { code: dto.countryName.substring(0, 2).toUpperCase() },
       update: {},
-      create: { name: 'India', code: 'IN' },
+      create: { name: dto.countryName, code: dto.countryName.substring(0, 2).toUpperCase() },
     });
     // 2. State
     const state = await this.prisma.state.upsert({
-      where: { countryId_name: { countryId: country.id, name: 'Bihar' } },
+      where: { countryId_name: { countryId: country.id, name: dto.stateName } },
       update: {},
-      create: { countryId: country.id, name: 'Bihar', code: 'BR' },
+      create: { countryId: country.id, name: dto.stateName, code: dto.stateName.substring(0, 2).toUpperCase() },
     });
     // 3. District
     const district = await this.prisma.district.upsert({
-      where: { stateId_name: { stateId: state.id, name: 'Vaishali' } },
+      where: { stateId_name: { stateId: state.id, name: dto.districtName } },
       update: {},
-      create: { stateId: state.id, name: 'Vaishali' },
+      create: { stateId: state.id, name: dto.districtName },
     });
     // 4. City
     const city = await this.prisma.city.upsert({
-      where: { districtId_name: { districtId: district.id, name: 'Desari' } },
+      where: { districtId_name: { districtId: district.id, name: dto.cityName } },
       update: {},
-      create: { districtId: district.id, name: 'Desari', pincode: '844504' },
+      create: { districtId: district.id, name: dto.cityName, pincode: dto.pincode },
     });
     // 5. Village
     const village = await this.prisma.village.upsert({
-      where: { cityId_name: { cityId: city.id, name: 'Desari Main' } },
+      where: { cityId_name: { cityId: city.id, name: dto.villageName } },
       update: {},
-      create: { cityId: city.id, name: 'Desari Main', pincode: '844504', latitude: 25.6416, longitude: 85.3400 },
+      create: { cityId: city.id, name: dto.villageName, pincode: dto.pincode, latitude: 25.0, longitude: 85.0 },
     });
 
     return { message: 'Boostrap successful', villageId: village.id, villageName: village.name };

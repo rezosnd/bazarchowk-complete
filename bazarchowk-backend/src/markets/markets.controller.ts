@@ -6,7 +6,8 @@ import {
   CreateDistrictDto,
   CreateCityDto,
   CreateVillageDto,
-  CreateMarketDto
+  CreateMarketDto,
+  BootstrapGeoDto
 } from './dto/market.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -109,8 +110,8 @@ export class MarketsController {
   @ApiBearerAuth()
   @Post('bootstrap-default-geo')
   @ApiOperation({ summary: 'Bootstrap initial geographic zones if empty' })
-  bootstrapDefaultGeo() {
-    return this.marketsService.bootstrapDefaultGeo();
+  bootstrapDefaultGeo(@Body() dto: BootstrapGeoDto) {
+    return this.marketsService.bootstrapDefaultGeo(dto);
   }
 
   // --- MARKETS --- //

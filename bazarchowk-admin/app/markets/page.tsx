@@ -19,6 +19,14 @@ export default function MarketsPage() {
   const [villages, setVillages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Geo Bootstrap State
+  const [geoCountry, setGeoCountry] = useState('India');
+  const [geoState, setGeoState] = useState('Bihar');
+  const [geoDistrict, setGeoDistrict] = useState('Vaishali');
+  const [geoCity, setGeoCity] = useState('Desari');
+  const [geoVillage, setGeoVillage] = useState('Desari Main');
+  const [geoPincode, setGeoPincode] = useState('844504');
+
   React.useEffect(() => {
     fetchMarkets();
     fetchVillages();
@@ -35,14 +43,26 @@ export default function MarketsPage() {
     } catch (e) { console.error(e); }
   };
 
-  const handleBootstrapGeo = async () => {
-    if (!confirm('This will insert India -> Bihar -> Vaishali -> Desari into the database. Proceed?')) return;
+  const handleBootstrapGeo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirm(`This will insert ${geoCountry} -> ${geoState} -> ${geoDistrict} -> ${geoCity} -> ${geoVillage} into the database. Proceed?`)) return;
     setLoading(true);
     try {
       const token = localStorage.getItem('admin_token');
       const res = await fetch(`${API_BASE}/markets/bootstrap-default-geo`, { 
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` } 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          countryName: geoCountry,
+          stateName: geoState,
+          districtName: geoDistrict,
+          cityName: geoCity,
+          villageName: geoVillage,
+          pincode: geoPincode
+        })
       });
       if (res.ok) {
         alert('Boostrap successful! Location hierarchy created.');
@@ -184,10 +204,20 @@ export default function MarketsPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select Base Village / Zone</label>
               {villages.length === 0 ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-red-500 text-sm">No locations exist in database!</p>
-                  <button type="button" onClick={handleBootstrapGeo} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm w-fit">
-                    Initialize Default Locations (Desari)
+                <div className="flex flex-col gap-3 p-4 bg-red-50 border border-red-100 rounded-lg">
+                  <p className="text-red-600 text-sm font-bold">No locations exist in the database! Initialize your first setup:</p>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <input required type="text" value={geoCountry} onChange={e=>setGeoCountry(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="Country" />
+                    <input required type="text" value={geoState} onChange={e=>setGeoState(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="State" />
+                    <input required type="text" value={geoDistrict} onChange={e=>setGeoDistrict(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="District" />
+                    <input required type="text" value={geoCity} onChange={e=>setGeoCity(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="City" />
+                    <input required type="text" value={geoVillage} onChange={e=>setGeoVillage(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="Village Zone" />
+                    <input required type="text" value={geoPincode} onChange={e=>setGeoPincode(e.target.value)} className="w-full px-3 py-1.5 border rounded outline-none text-sm" placeholder="Pincode" />
+                  </div>
+                  
+                  <button type="button" onClick={handleBootstrapGeo} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm w-full mt-1 hover:bg-slate-700">
+                    Submit Location Setup
                   </button>
                 </div>
               ) : (
