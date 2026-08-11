@@ -245,11 +245,14 @@ export default function AddAddressScreen() {
 
       {/* Bottom Sheet Details */}
       <View style={[styles.bottomSheet, { marginTop: H * 0.45 }]}>
+        <View style={styles.dragHandleWrap}>
+          <View style={styles.dragHandle} />
+        </View>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           
           <View style={styles.searchContainer}>
             <View style={styles.searchBox}>
-              <Ionicons name="search" size={20} color="#94A3B8" />
+              <Ionicons name="search" size={20} color="#00B140" />
               <Input 
                 placeholder="Search for your area..."
                 value={mapSearchQuery}
@@ -348,28 +351,31 @@ const styles = StyleSheet.create({
 
   bottomSheet: {
     flex: 1, backgroundColor: '#FFF',
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 20,
+    borderTopLeftRadius: 30, borderTopRightRadius: 30,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 15,
   },
-  content: { padding: 20, paddingBottom: 40 },
+  dragHandleWrap: { width: '100%', alignItems: 'center', paddingTop: 12, paddingBottom: 8 },
+  dragHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: '#CBD5E1' },
+  content: { padding: 20, paddingTop: 0, paddingBottom: 40 },
   
   searchContainer: { marginBottom: 24, zIndex: 30 },
   searchBox: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
     borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1,
   },
-  searchInput: { flex: 1, marginBottom: 0, borderWidth: 0, backgroundColor: 'transparent', height: 50 },
+  searchInput: { flex: 1, marginBottom: 0, borderWidth: 0, backgroundColor: 'transparent', height: 52, fontSize: 15, fontWeight: '500', color: '#0F172A' },
   suggestionsList: {
-    backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9',
     marginTop: 8, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 6,
   },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  suggestionTitle: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
-  suggestionSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  suggestionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2 },
+  suggestionSub: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '500' },
 
-  formSection: { gap: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  formSection: { gap: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A', marginBottom: 16, letterSpacing: -0.3 },
   
   chipRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   chip: {

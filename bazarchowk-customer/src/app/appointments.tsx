@@ -62,12 +62,12 @@ export default function AppointmentsTab() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Appointments</Text>
-          <Text style={styles.headerSubtitle}>Manage your bookings & services</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>My Bookings</Text>
+          <Text style={styles.headerSubtitle}>Manage your service appointments</Text>
         </View>
       </View>
 
@@ -75,7 +75,7 @@ export default function AppointmentsTab() {
         
         {upcoming.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming</Text>
+            <Text style={styles.sectionTitle}>Active Bookings</Text>
             {upcoming.map((app: any) => {
               const badge = getStatusBadge(app.status);
               return (
@@ -83,36 +83,41 @@ export default function AppointmentsTab() {
                   <View style={styles.cardHeader}>
                     <View style={styles.serviceInfoRow}>
                       <View style={styles.serviceIconWrap}>
-                        <Ionicons name="cut-outline" size={24} color="#6366F1" />
+                        <Ionicons name="briefcase-outline" size={24} color="#00B140" />
                       </View>
-                      <View>
-                        <Text style={styles.serviceName}>{app.serviceOffering.name}</Text>
-                        <Text style={styles.providerName}>{app.provider.name} • {app.provider.specialty || 'Pro'}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.serviceName} numberOfLines={2}>{app.serviceOffering.name}</Text>
+                        <Text style={styles.providerName}>{app.provider.name} • {app.provider.specialty || 'Professional'}</Text>
                       </View>
                     </View>
                     
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <View style={[styles.badge, { backgroundColor: badge.bg, marginBottom: 8 }]}>
+                    <View style={{ alignItems: 'flex-end', minWidth: 80 }}>
+                      <View style={[styles.badge, { backgroundColor: badge.bg, marginBottom: 6 }]}>
                         <Feather name={badge.icon as any} size={12} color={badge.text} />
                         <Text style={[styles.badgeText, { color: badge.text }]}>{app.status}</Text>
                       </View>
-                      <Text style={{ fontWeight: '900', fontSize: 16, color: '#0F172A' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
-                      <Text style={{ fontSize: 10, fontWeight: 'bold', color: app.paymentStatus === 'PAID' ? '#16A34A' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
+                      <Text style={{ fontWeight: '900', fontSize: 17, color: '#0F172A' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: app.paymentStatus === 'PAID' ? '#16A34A' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
                     </View>
                   </View>
 
                   {app.serviceAddress && (
-                    <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-                      <Feather name="map-pin" size={16} color="#00B140" style={{ marginRight: 8 }} />
-                      <Text style={{ fontSize: 12, color: '#475569', flex: 1 }} numberOfLines={1}>
-                        {app.serviceAddress.streetAddress}, {app.serviceAddress.city}
-                      </Text>
+                    <View style={styles.addressBox}>
+                      <View style={styles.addressIcon}>
+                        <Feather name="map-pin" size={14} color="#64748B" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155' }}>Service Location</Text>
+                        <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }} numberOfLines={1}>
+                          {app.serviceAddress.streetAddress}, {app.serviceAddress.city}
+                        </Text>
+                      </View>
                     </View>
                   )}
 
                   <View style={styles.dateTimeBox}>
                     <View style={styles.dateCol}>
-                      <View style={styles.dtIconWrap}><Feather name="calendar" size={14} color="#00B140" /></View>
+                      <View style={styles.dtIconWrap}><Feather name="calendar" size={16} color="#00B140" /></View>
                       <View style={{ marginLeft: 12 }}>
                         <Text style={styles.dtLabel}>Date</Text>
                         <Text style={styles.dtValue}>
@@ -124,7 +129,7 @@ export default function AppointmentsTab() {
                     <View style={styles.divider} />
 
                     <View style={styles.dateCol}>
-                      <View style={styles.dtIconWrap}><Feather name="clock" size={14} color="#F59E0B" /></View>
+                      <View style={styles.dtIconWrap}><Feather name="clock" size={16} color="#F59E0B" /></View>
                       <View style={{ marginLeft: 12 }}>
                         <Text style={styles.dtLabel}>Time</Text>
                         <Text style={styles.dtValue}>
@@ -138,8 +143,9 @@ export default function AppointmentsTab() {
                     onPress={() => handleCancel(app.id)}
                     disabled={cancelMutation.isPending}
                     style={styles.cancelBtn}
+                    activeOpacity={0.7}
                   >
-                    <Feather name="x" size={16} color="#DC2626" />
+                    <Feather name="x-circle" size={16} color="#DC2626" />
                     <Text style={styles.cancelBtnText}>Cancel Booking</Text>
                   </TouchableOpacity>
                 </View>
@@ -150,25 +156,27 @@ export default function AppointmentsTab() {
 
         {past.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Past & Cancelled</Text>
+            <Text style={styles.sectionTitle}>Past Bookings</Text>
             {past.map((app: any) => {
               const badge = getStatusBadge(app.status);
               return (
                 <View key={app.id} style={styles.pastCard}>
                   <View style={styles.pastInfoRow}>
                     <View style={styles.pastIconWrap}>
-                      <Ionicons name="checkmark-done" size={18} color="#9CA3AF" />
+                      <Ionicons name={app.status === 'COMPLETED' ? 'checkmark-circle' : 'close-circle'} size={24} color={badge.text} />
                     </View>
-                    <View>
-                      <Text style={styles.pastServiceName}>{app.serviceOffering.name}</Text>
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={styles.pastServiceName} numberOfLines={1}>{app.serviceOffering.name}</Text>
                       <Text style={styles.pastDateText}>
                         {new Date(app.timeSlot.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {app.provider.name}
                       </Text>
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.pastPrice}>₹{app.serviceOffering.price}</Text>
-                    <Text style={[styles.pastStatus, { color: badge.text }]}>{app.status}</Text>
+                    <Text style={styles.pastPrice}>₹{app.totalAmount || app.serviceOffering.price}</Text>
+                    <View style={[styles.badge, { backgroundColor: badge.bg, marginTop: 4, paddingHorizontal: 6, paddingVertical: 2 }]}>
+                      <Text style={[styles.badgeText, { color: badge.text, fontSize: 9 }]}>{app.status}</Text>
+                    </View>
                   </View>
                 </View>
               );
@@ -179,11 +187,11 @@ export default function AppointmentsTab() {
         {appointments?.length === 0 && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="calendar-clear-outline" size={40} color="#00B140" />
+              <Ionicons name="calendar-outline" size={48} color="#00B140" />
             </View>
             <Text style={styles.emptyTitle}>No Bookings Yet</Text>
-            <Text style={styles.emptySubtitle}>Book a salon, doctor, or repair service from nearby trusted professionals.</Text>
-            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/')}>
+            <Text style={styles.emptySubtitle}>Book a salon, electrician, or repair service instantly.</Text>
+            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/')} activeOpacity={0.8}>
               <Text style={styles.exploreBtnText}>Explore Services</Text>
             </TouchableOpacity>
           </View>
@@ -195,51 +203,54 @@ export default function AppointmentsTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FB' },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F9FB' },
-  loadingText: { marginTop: 16, color: '#64748B', fontWeight: '500' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' },
+  loadingText: { marginTop: 16, color: '#64748B', fontWeight: '600' },
   
-  header: { paddingHorizontal: 20, paddingBottom: 16, backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5, zIndex: 10 },
-  backBtn: { marginRight: 16 },
-  headerTitle: { fontSize: 28, fontWeight: '900', color: '#0F172A' },
-  headerSubtitle: { color: '#64748B', fontSize: 14, fontWeight: '500', marginTop: 4 },
+  header: { paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 4, zIndex: 10 },
+  backBtn: { marginRight: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 26, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
+  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '500', marginTop: 2 },
   
   scrollContent: { padding: 20, paddingBottom: 100 },
   section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1E293B', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#0F172A', marginBottom: 16, letterSpacing: -0.3 },
   
-  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20, elevation: 4, borderWidth: 1, borderColor: '#F1F5F9' },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 6, borderWidth: 1, borderColor: '#F1F5F9' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   serviceInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 },
-  serviceIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  serviceName: { fontSize: 17, fontWeight: 'bold', color: '#0F172A', marginBottom: 2 },
-  providerName: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  serviceIconWrap: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#DCFCE7' },
+  serviceName: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 4, letterSpacing: -0.2 },
+  providerName: { fontSize: 13, color: '#64748B', fontWeight: '600' },
   
-  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
   
-  dateTimeBox: { backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addressBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  addressIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', marginRight: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+
+  dateTimeBox: { backgroundColor: '#F1F5F9', borderRadius: 16, padding: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dateCol: { flexDirection: 'row', alignItems: 'center' },
-  dtIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  dtLabel: { fontSize: 10, color: '#94A3B8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  dtValue: { fontSize: 14, color: '#0F172A', fontWeight: 'bold' },
-  divider: { height: 32, width: 1, backgroundColor: '#E2E8F0' },
+  dtIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  dtLabel: { fontSize: 11, color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  dtValue: { fontSize: 14, color: '#0F172A', fontWeight: '800' },
+  divider: { height: 40, width: 1, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
   
-  cancelBtn: { backgroundColor: '#FEF2F2', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  cancelBtnText: { color: '#DC2626', fontWeight: 'bold', marginLeft: 8 },
+  cancelBtn: { backgroundColor: '#FEF2F2', paddingVertical: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FEE2E2' },
+  cancelBtnText: { color: '#DC2626', fontWeight: '800', marginLeft: 8, fontSize: 15 },
   
-  pastCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pastCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
   pastInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  pastIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  pastServiceName: { fontWeight: 'bold', color: '#1E293B', fontSize: 15 },
-  pastDateText: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
-  pastPrice: { fontWeight: 'bold', color: '#0F172A' },
+  pastIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  pastServiceName: { fontWeight: '800', color: '#0F172A', fontSize: 15, letterSpacing: -0.2 },
+  pastDateText: { color: '#64748B', fontSize: 12, marginTop: 4, fontWeight: '500' },
+  pastPrice: { fontWeight: '900', color: '#0F172A', fontSize: 15 },
   pastStatus: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 4 },
   
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, marginTop: 40 },
-  emptyIconWrap: { width: 96, height: 96, backgroundColor: '#FFF', borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 10 },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, marginTop: 20 },
+  emptyIconWrap: { width: 100, height: 100, backgroundColor: '#F0FDF4', borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   emptyTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
-  emptySubtitle: { color: '#64748B', textAlign: 'center', marginTop: 8, paddingHorizontal: 32, fontWeight: '500', lineHeight: 20 },
-  exploreBtn: { marginTop: 32, backgroundColor: '#00B140', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 30, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 14, elevation: 8 },
-  exploreBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 }
+  emptySubtitle: { color: '#64748B', textAlign: 'center', marginTop: 8, paddingHorizontal: 32, fontWeight: '500', lineHeight: 20, fontSize: 15 },
+  exploreBtn: { marginTop: 32, backgroundColor: '#00B140', paddingHorizontal: 32, paddingVertical: 18, borderRadius: 30, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 8 },
+  exploreBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16, letterSpacing: 0.3 }
 });
