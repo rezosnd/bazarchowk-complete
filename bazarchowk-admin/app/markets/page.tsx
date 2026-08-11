@@ -193,7 +193,7 @@ export default function MarketsPage() {
 
       if (roleRes.ok) {
         // 3. Assign Admin to Market
-        await fetch(`${API_BASE}/super-admin/markets/${selectedMarketId}`, {
+        const marketRes = await fetch(`${API_BASE}/super-admin/markets/${selectedMarketId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
@@ -202,10 +202,16 @@ export default function MarketsPage() {
           body: JSON.stringify({ adminId: user.id }),
         });
 
-        alert('Market Admin created, role assigned, and linked to market successfully!');
-        setAdminName(''); setAdminEmail(''); setAdminPhone(''); setAdminPassword(''); setSelectedMarketId('');
+        if (marketRes.ok) {
+          alert('Market Admin created, role assigned, and linked to market successfully!');
+          setAdminName(''); setAdminEmail(''); setAdminPhone(''); setAdminPassword(''); setSelectedMarketId('');
+        } else {
+          const mErr = await marketRes.text();
+          alert('Role assigned, but failed to link to Market: ' + mErr);
+        }
       } else {
-        alert('User created, but role assignment failed. Check your Super Admin permissions.');
+        const rErr = await roleRes.text();
+        alert('User created, but role assignment failed: ' + rErr);
       }
     } catch (err) {
       alert('Network Error');
@@ -254,7 +260,8 @@ export default function MarketsPage() {
         alert(`${staffRole} created and role assigned successfully!`);
         setStaffName(''); setStaffEmail(''); setStaffPhone(''); setStaffPassword(''); setStaffRole('');
       } else {
-        alert('User created, but role assignment failed. Check your Super Admin permissions.');
+        const errorText = await roleRes.text();
+        alert('User created, but role assignment failed: ' + errorText);
       }
     } catch (err) {
       alert('Network Error');
