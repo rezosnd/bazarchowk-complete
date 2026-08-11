@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto, CreateTimeSlotDto, UpdateSlotCapacityDto } from './dto/create-appointment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ShopsService } from '../shops/shops.service';
-import { AppointmentStatus } from '@prisma/client';
+import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Injectable()
@@ -175,8 +175,8 @@ export class AppointmentsService {
           status: AppointmentStatus.CONFIRMED,
           notes: dto.notes,
           serviceAddressId: dto.serviceAddressId,
-          paymentMethod: dto.paymentMethod || 'COD',
-          paymentStatus: dto.paymentStatus || 'PENDING',
+          paymentMethod: (dto.paymentMethod as PaymentMethod) || PaymentMethod.COD,
+          paymentStatus: (dto.paymentStatus as PaymentStatus) || PaymentStatus.PENDING,
           totalAmount: serviceOffering.price || 0,
         },
         include: {
@@ -185,7 +185,7 @@ export class AppointmentsService {
           timeSlot: true,
           serviceAddress: true,
         }
-      });
+      }) as any;
 
       this.logger.log(
         `Slot ${dto.timeSlotId}: ${newBookings}/${timeSlot.maxCapacity} booked${isFull ? ' — NOW FULL' : ''}`
