@@ -71,7 +71,7 @@ model User {
   conversations              ConversationParticipant[] @relation("UserConversations")
   sentMessages               Message[]                 @relation("SentMessages")
 
-  managedMarket              Market?
+  managedMarket Market?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -649,6 +649,10 @@ model Appointment {
   notes            String?
   serviceAddressId String?
   serviceAddress   Address?          @relation(fields: [serviceAddressId], references: [id])
+
+  paymentMethod    PaymentMethod     @default(COD)
+  paymentStatus    PaymentStatus     @default(PENDING)
+  totalAmount      Float             @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1450,8 +1454,8 @@ model Market {
   radiusKm    Float   @default(5.0)
   isActive    Boolean @default(true)
 
-  adminId     String? @unique
-  admin       User?   @relation(fields: [adminId], references: [id])
+  adminId String? @unique
+  admin   User?   @relation(fields: [adminId], references: [id])
 
   shops            Shop[]
   deliveryPartners DeliveryPartner[]

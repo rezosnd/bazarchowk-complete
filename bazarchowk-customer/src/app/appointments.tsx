@@ -91,11 +91,24 @@ export default function AppointmentsTab() {
                       </View>
                     </View>
                     
-                    <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                      <Feather name={badge.icon as any} size={12} color={badge.text} />
-                      <Text style={[styles.badgeText, { color: badge.text }]}>{app.status}</Text>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <View style={[styles.badge, { backgroundColor: badge.bg, marginBottom: 8 }]}>
+                        <Feather name={badge.icon as any} size={12} color={badge.text} />
+                        <Text style={[styles.badgeText, { color: badge.text }]}>{app.status}</Text>
+                      </View>
+                      <Text style={{ fontWeight: '900', fontSize: 16, color: '#0F172A' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 'bold', color: app.paymentStatus === 'PAID' ? '#16A34A' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
                     </View>
                   </View>
+
+                  {app.serviceAddress && (
+                    <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
+                      <Feather name="map-pin" size={16} color="#00B140" style={{ marginRight: 8 }} />
+                      <Text style={{ fontSize: 12, color: '#475569', flex: 1 }} numberOfLines={1}>
+                        {app.serviceAddress.streetAddress}, {app.serviceAddress.city}
+                      </Text>
+                    </View>
+                  )}
 
                   <View style={styles.dateTimeBox}>
                     <View style={styles.dateCol}>

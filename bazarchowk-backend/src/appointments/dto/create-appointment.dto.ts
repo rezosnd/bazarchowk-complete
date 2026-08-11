@@ -26,6 +26,16 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsString()
   serviceAddressId?: string;
+
+  @ApiPropertyOptional({ enum: ['COD', 'ONLINE'] })
+  @IsOptional()
+  @IsString()
+  paymentMethod?: 'COD' | 'ONLINE';
+
+  @ApiPropertyOptional({ enum: ['PENDING', 'PAID', 'FAILED'] })
+  @IsOptional()
+  @IsString()
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
 }
 
 export class CreateTimeSlotDto {

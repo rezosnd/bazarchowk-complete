@@ -175,6 +175,9 @@ export class AppointmentsService {
           status: AppointmentStatus.CONFIRMED,
           notes: dto.notes,
           serviceAddressId: dto.serviceAddressId,
+          paymentMethod: dto.paymentMethod || 'COD',
+          paymentStatus: dto.paymentStatus || 'PENDING',
+          totalAmount: serviceOffering.price || 0,
         },
         include: {
           provider: { include: { shop: true } },

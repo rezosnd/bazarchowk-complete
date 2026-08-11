@@ -133,13 +133,22 @@ export default function PartnerServicesScreen() {
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
                     <Text className="font-bold text-lg text-gray-900">{b.serviceOffering.name}</Text>
-                    <Text className="text-gray-500">Customer: {b.customer.firstName} {b.customer.lastName}</Text>
+                    <Text className="text-gray-500 font-bold mt-1">Customer: {b.customer.firstName} {b.customer.lastName}</Text>
+                    <Text className="text-gray-500">Phone: {b.customer.phone || 'N/A'}</Text>
                     <Text className="text-gray-500">Staff: {b.provider.name}</Text>
                   </View>
-                  <View className={`px-3 py-1 rounded-full ${b.status === 'PENDING' ? 'bg-yellow-100' : b.status === 'CONFIRMED' ? 'bg-green-100' : 'bg-gray-100'}`}>
-                    <Text className={`text-xs font-bold ${b.status === 'PENDING' ? 'text-yellow-700' : b.status === 'CONFIRMED' ? 'text-green-700' : 'text-gray-700'}`}>
-                      {b.status}
-                    </Text>
+                  <View className="items-end">
+                    <View className={`px-3 py-1 rounded-full mb-2 ${b.status === 'PENDING' ? 'bg-yellow-100' : b.status === 'CONFIRMED' ? 'bg-green-100' : 'bg-gray-100'}`}>
+                      <Text className={`text-xs font-bold ${b.status === 'PENDING' ? 'text-yellow-700' : b.status === 'CONFIRMED' ? 'text-green-700' : 'text-gray-700'}`}>
+                        {b.status}
+                      </Text>
+                    </View>
+                    <Text className="font-black text-gray-900 text-lg">₹{b.totalAmount || b.serviceOffering.price}</Text>
+                    <View className={`px-2 py-0.5 rounded ${b.paymentStatus === 'PAID' ? 'bg-green-50' : 'bg-amber-50'}`}>
+                      <Text className={`text-[10px] font-bold ${b.paymentStatus === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>
+                        {b.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'COD / UNPAID'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 

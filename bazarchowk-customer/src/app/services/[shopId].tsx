@@ -66,7 +66,9 @@ export default function ShopServicesScreen() {
         providerId: selectedProviderId,
         timeSlotId: slotId,
         serviceAddressId: selectedAddressId,
-        notes: "Booked via BazarChowk App"
+        notes: "Booked via BazarChowk App",
+        paymentMethod: 'COD',
+        paymentStatus: 'PENDING'
       });
     },
     onSuccess: () => {
