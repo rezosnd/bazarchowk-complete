@@ -59,7 +59,10 @@ export default function MarketsPage() {
         fetchMarkets();
       } else {
         const error = await res.json();
-        alert('Failed: ' + (error.message || 'Unknown error'));
+        let errMsg = error.message || error.error || 'Unknown error';
+        if (Array.isArray(errMsg)) errMsg = errMsg.join(', ');
+        else if (typeof errMsg === 'object') errMsg = JSON.stringify(errMsg);
+        alert('Failed: ' + errMsg);
       }
     } catch (err) {
       alert('Network Error');
@@ -89,7 +92,10 @@ export default function MarketsPage() {
       
       if (!res.ok) {
         const error = await res.json();
-        alert('Failed to create user: ' + (error.message || 'Unknown error'));
+        let errMsg = error.message || error.error || 'Unknown error';
+        if (Array.isArray(errMsg)) errMsg = errMsg.join(', ');
+        else if (typeof errMsg === 'object') errMsg = JSON.stringify(errMsg);
+        alert('Failed to create user: ' + errMsg);
         setLoading(false);
         return;
       }
