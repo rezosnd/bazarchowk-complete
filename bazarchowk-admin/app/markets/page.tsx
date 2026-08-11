@@ -130,6 +130,11 @@ export default function MarketsPage() {
     }
     setLoading(true);
     try {
+      // Split name into first and last name
+      const nameParts = adminName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Doe';
+
       // 1. Create User
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
@@ -137,7 +142,8 @@ export default function MarketsPage() {
         body: JSON.stringify({ 
           email: adminEmail, 
           password: adminPassword, 
-          name: adminName,
+          firstName,
+          lastName,
           phone: adminPhone
         }),
       });
