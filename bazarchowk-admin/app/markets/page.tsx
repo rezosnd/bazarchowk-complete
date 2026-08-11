@@ -17,6 +17,7 @@ export default function MarketsPage() {
 
   const [markets, setMarkets] = useState<any[]>([]);
   const [villages, setVillages] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Geo Bootstrap State
@@ -27,10 +28,29 @@ export default function MarketsPage() {
   const [geoVillage, setGeoVillage] = useState('Desari Main');
   const [geoPincode, setGeoPincode] = useState('844504');
 
+  // Global Staff State
+  const [staffRole, setStaffRole] = useState('');
+  const [staffName, setStaffName] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffPhone, setStaffPhone] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+
   React.useEffect(() => {
     fetchMarkets();
     fetchVillages();
+    fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/roles`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const d = await res.json();
+        setRoles(d || []);
+      }
+    } catch (e) { console.error(e); }
+  };
 
   const fetchVillages = async () => {
     try {
@@ -193,6 +213,55 @@ export default function MarketsPage() {
     setLoading(false);
   };
 
+  const handleCreateGlobalStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffRole) {
+      alert('Please select a role.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const nameParts = staffName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Doe';
+
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: staffEmail, password: staffPassword, firstName, lastName, phone: staffPhone }),
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        let errMsg = error.message || error.error || 'Unknown error';
+        if (Array.isArray(errMsg)) errMsg = errMsg.join(', ');
+        else if (typeof errMsg === 'object') errMsg = JSON.stringify(errMsg);
+        alert('Failed to create user: ' + errMsg);
+        setLoading(false);
+        return;
+      }
+      
+      const user = await res.json();
+      const token = localStorage.getItem('admin_token');
+
+      const roleRes = await fetch(`${API_BASE}/roles/assign/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ roleName: staffRole }),
+      });
+
+      if (roleRes.ok) {
+        alert(`${staffRole} created and role assigned successfully!`);
+        setStaffName(''); setStaffEmail(''); setStaffPhone(''); setStaffPassword(''); setStaffRole('');
+      } else {
+        alert('User created, but role assignment failed. Check your Super Admin permissions.');
+      }
+    } catch (err) {
+      alert('Network Error');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
       <h1 className="text-2xl font-extrabold text-gray-900">Markets & Personnel Management</h1>
@@ -279,6 +348,43 @@ export default function MarketsPage() {
               <input required type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter strong password" />
             </div>
             <button disabled={loading} type="submit" className="w-full mt-4 bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Register & Assign Role</button>
+          </form>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-4xl mx-auto">
+          <h2 className="text-lg font-bold text-gray-900 mb-6">Register Global Platform Staff</h2>
+          <p className="text-sm text-gray-500 mb-6 -mt-4">Use this to create District Admins, Support Agents, or System Admins that do not need to be locked to a specific Market.</p>
+          <form onSubmit={handleCreateGlobalStaff} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assign Platform Role</label>
+              <select required value={staffRole} onChange={e=>setStaffRole(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+                <option value="">Select a Role...</option>
+                {roles.filter(r => r.name !== 'CUSTOMER' && r.name !== 'SHOP_OWNER' && r.name !== 'DELIVERY_PARTNER').map(r => (
+                  <option key={r.id} value={r.name}>{r.name.replace('_', ' ')}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Staff Full Name</label>
+                <input required type="text" value={staffName} onChange={e=>setStaffName(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="Jane Smith" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input required type="email" value={staffEmail} onChange={e=>setStaffEmail(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="jane@bazarchowk.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input required type="text" value={staffPhone} onChange={e=>setStaffPhone(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="+91 9999999999" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Secure Password</label>
+                <input required type="password" value={staffPassword} onChange={e=>setStaffPassword(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="Enter strong password" />
+              </div>
+            </div>
+            <button disabled={loading} type="submit" className="w-full mt-4 bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition">Create Staff Account</button>
           </form>
         </div>
       </div>
