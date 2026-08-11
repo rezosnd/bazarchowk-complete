@@ -368,7 +368,7 @@ export default function MarketsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Assign Platform Role</label>
               <select required value={staffRole} onChange={e=>setStaffRole(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 bg-white">
                 <option value="">Select a Role...</option>
-                {roles.filter(r => r.name !== 'CUSTOMER' && r.name !== 'SHOP_OWNER' && r.name !== 'DELIVERY_PARTNER').map(r => (
+                {roles.filter(r => r.name !== 'CUSTOMER' && r.name !== 'SHOP_OWNER' && r.name !== 'DELIVERY_PARTNER' && r.name !== 'MARKET_ADMIN').map(r => (
                   <option key={r.id} value={r.name}>{r.name.replace('_', ' ')}</option>
                 ))}
               </select>
