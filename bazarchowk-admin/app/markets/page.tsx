@@ -16,11 +16,43 @@ export default function MarketsPage() {
   const [selectedMarketId, setSelectedMarketId] = useState('');
 
   const [markets, setMarkets] = useState<any[]>([]);
+  const [villages, setVillages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
     fetchMarkets();
+    fetchVillages();
   }, []);
+
+  const fetchVillages = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/markets/all-villages`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const d = await res.json();
+        setVillages(d || []);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBootstrapGeo = async () => {
+    if (!confirm('This will insert India -> Bihar -> Vaishali -> Desari into the database. Proceed?')) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/markets/bootstrap-default-geo`, { 
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      if (res.ok) {
+        alert('Boostrap successful! Location hierarchy created.');
+        fetchVillages();
+      } else {
+        alert('Failed to bootstrap location data.');
+      }
+    } catch (e) { alert('Network Error'); }
+    setLoading(false);
+  };
 
   const fetchMarkets = async () => {
     try {
@@ -150,8 +182,22 @@ export default function MarketsPage() {
               <input required type="text" value={marketName} onChange={e=>setMarketName(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. Desari Market" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Village ID</label>
-              <input required type="text" value={villageId} onChange={e=>setVillageId(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500" placeholder="UUID of the parent Village" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select Base Village / Zone</label>
+              {villages.length === 0 ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-red-500 text-sm">No locations exist in database!</p>
+                  <button type="button" onClick={handleBootstrapGeo} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm w-fit">
+                    Initialize Default Locations (Desari)
+                  </button>
+                </div>
+              ) : (
+                <select required value={villageId} onChange={e=>setVillageId(e.target.value)} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                  <option value="">Select Village...</option>
+                  {villages.map(v => (
+                    <option key={v.id} value={v.id}>{v.name} ({v.city?.name})</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

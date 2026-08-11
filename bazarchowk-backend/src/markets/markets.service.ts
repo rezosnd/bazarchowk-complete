@@ -109,6 +109,56 @@ export class MarketsService {
     return res;
   }
 
+  async getAllVillages() {
+    return this.prisma.village.findMany({
+      include: {
+        city: {
+          include: {
+            district: {
+              include: { state: true }
+            }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+  }
+
+  async bootstrapDefaultGeo() {
+    // 1. Country
+    const country = await this.prisma.country.upsert({
+      where: { code: 'IN' },
+      update: {},
+      create: { name: 'India', code: 'IN' },
+    });
+    // 2. State
+    const state = await this.prisma.state.upsert({
+      where: { countryId_name: { countryId: country.id, name: 'Bihar' } },
+      update: {},
+      create: { countryId: country.id, name: 'Bihar', code: 'BR' },
+    });
+    // 3. District
+    const district = await this.prisma.district.upsert({
+      where: { stateId_name: { stateId: state.id, name: 'Vaishali' } },
+      update: {},
+      create: { stateId: state.id, name: 'Vaishali' },
+    });
+    // 4. City
+    const city = await this.prisma.city.upsert({
+      where: { districtId_name: { districtId: district.id, name: 'Desari' } },
+      update: {},
+      create: { districtId: district.id, name: 'Desari', pincode: '844504' },
+    });
+    // 5. Village
+    const village = await this.prisma.village.upsert({
+      where: { cityId_name: { cityId: city.id, name: 'Desari Main' } },
+      update: {},
+      create: { cityId: city.id, name: 'Desari Main', pincode: '844504', latitude: 25.6416, longitude: 85.3400 },
+    });
+
+    return { message: 'Boostrap successful', villageId: village.id, villageName: village.name };
+  }
+
   // --- MARKET --- //
   async getAllMarkets(lat?: number, lng?: number) {
     const cacheKey = `markets_all_${lat || 'none'}_${lng || 'none'}`;

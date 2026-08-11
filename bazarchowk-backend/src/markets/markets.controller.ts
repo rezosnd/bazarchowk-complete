@@ -98,6 +98,21 @@ export class MarketsController {
     return this.marketsService.getVillagesByCity(cityId);
   }
 
+  @Get('all-villages')
+  @ApiOperation({ summary: 'Get all villages globally' })
+  getAllVillages() {
+    return this.marketsService.getAllVillages();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth()
+  @Post('bootstrap-default-geo')
+  @ApiOperation({ summary: 'Bootstrap initial geographic zones if empty' })
+  bootstrapDefaultGeo() {
+    return this.marketsService.bootstrapDefaultGeo();
+  }
+
   // --- MARKETS --- //
   @Get()
   @ApiOperation({ summary: 'Get all markets (optionally filtered by location)' })
