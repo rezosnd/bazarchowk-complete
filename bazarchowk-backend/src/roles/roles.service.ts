@@ -20,6 +20,8 @@ export class RolesService implements OnModuleInit {
       'FARMER',
       'RECRUITER',
       'SUPPORT_AGENT',
+      'MARKET_ADMIN',
+      'DISTRICT_ADMIN',
       'ADMIN',
       'SUPER_ADMIN'
     ];
