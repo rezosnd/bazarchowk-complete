@@ -174,7 +174,7 @@ export default function AdsDashboardScreen() {
                 <View style={styles.myAdRow}>
                   <Text style={styles.myAdTitle}>{ad.title || ad.type}</Text>
                   <View style={[styles.statusBadge, ad.status === 'ACTIVE' ? styles.bgGreen : ad.status === 'PENDING' ? styles.bgOrange : styles.bgGray]}>
-                    <Text style={[styles.statusText, ad.status === 'ACTIVE' ? styles.textGreen : ad.status === 'PENDING' ? styles.textOrange : styles.textGray]}>{ad.status}</Text>
+                    <Text style={[ad.status === 'ACTIVE' ? styles.textGreen : ad.status === 'PENDING' ? styles.textOrange : styles.textGray]}>{ad.status}</Text>
                   </View>
                 </View>
                 <View style={styles.statsRow}>

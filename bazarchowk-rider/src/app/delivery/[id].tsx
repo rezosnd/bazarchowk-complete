@@ -71,7 +71,7 @@ export default function ActiveDeliveryScreen() {
 
   // Auto-fetch payment status when QR is showing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (showQR && order?.paymentStatus !== 'PAID') {
       interval = setInterval(() => {
         fetchOrderDetails();

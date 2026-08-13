@@ -17,6 +17,7 @@ export default function RiderEarningsScreen() {
     totalDeliveries: 0,
     deliveryEarnings: 0,
     tips: 0,
+    totalEarnings: 0,
     cashInHand: 0,
     settlementStatus: 'PENDING'
   });
@@ -145,7 +146,7 @@ export default function RiderEarningsScreen() {
             <View style={styles.statusRow}>
               <Text style={styles.statusLabel}>Settlement Status:</Text>
               <View style={[styles.statusBadge, data.settlementStatus === 'SETTLED' ? styles.bgGreen : styles.bgOrange]}>
-                <Text style={[styles.statusText, data.settlementStatus === 'SETTLED' ? styles.textGreen : styles.textOrange]}>
+                <Text style={[data.settlementStatus === 'SETTLED' ? styles.textGreen : styles.textOrange]}>
                   {data.settlementStatus === 'SETTLED' ? 'Admin Settled' : 'Pending Deposit'}
                 </Text>
               </View>

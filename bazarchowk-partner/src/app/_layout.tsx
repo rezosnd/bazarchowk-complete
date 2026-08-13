@@ -44,7 +44,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="light" translucent />
+        <StatusBar style="light" />
         <QueryClientProvider client={queryClient}>
           <BazarChowkSplashOverlay appReady={appReady} />
           <Stack screenOptions={{ headerShown: false }} />

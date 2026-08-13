@@ -240,8 +240,8 @@ export class DeliveryService {
     return {
       totalDeliveries,
       deliveryEarnings,
-      tips: 0, // Mock for now
-      totalEarnings: deliveryEarnings, // + tips
+      tips: 0,
+      totalEarnings: deliveryEarnings,
       cashInHand,
       settlementStatus: cashInHand > 0 ? 'PENDING' : 'SETTLED'
     };

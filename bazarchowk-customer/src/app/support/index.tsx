@@ -177,6 +177,6 @@ const styles = StyleSheet.create({
   listContent: { padding: 20 },
   
   fabContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20 },
-  fabBtn: { backgroundColor: '#00B140', width: '100%', flexDirection: 'row', items: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  fabBtn: { backgroundColor: '#00B140', width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
   fabText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8, letterSpacing: 0.5 }
 });
