@@ -3,22 +3,22 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import api from '@/services/api';
-import { useAuthStore } from '@/store/authStore';
 
 const PRIMARY = '#00B140';
 
 export default function CustomersScreen() {
   const insets = useSafeAreaInsets();
-  const shop = useAuthStore(s => s.shop);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        if (!shop?.id) return;
-        const res = await api.get(`/orders/shop/${shop.id}?status=DELIVERED`);
+        const shopId = await SecureStore.getItemAsync('bazar_shop_id');
+        if (!shopId) return;
+        const res = await api.get(`/orders/shop/${shopId}?status=DELIVERED`);
         const cMap = new Map();
         if (Array.isArray(res.data)) {
           res.data.forEach((o: any) => {
@@ -39,7 +39,7 @@ export default function CustomersScreen() {
       }
     };
     fetchCustomers();
-  }, [shop?.id]);
+  }, []);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
