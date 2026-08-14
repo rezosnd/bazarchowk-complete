@@ -289,7 +289,7 @@ export class SettlementService {
   async markSettlementPaid(settlementId: string, dto: MarkSettlementPaidDto) {
     const settlement = await this.prisma.shopSettlement.findUnique({
       where: { id: settlementId },
-      include: { items: { include: { order: { select: { orderNumber: true, totalAmount: true, paymentMethod: true } } } } }
+      include: { items: { include: { order: { select: { orderNumber: true, totalAmount: true, paymentMethod: true, deliveryAddressId: true } } } } }
     });
     if (!settlement) throw new NotFoundException('Settlement not found');
     if (settlement.status === 'COMPLETED') throw new BadRequestException('Settlement already paid');
@@ -328,7 +328,15 @@ export class SettlementService {
         totalOrders,
         grossSales: updatedSettlement.totalOrderAmount,
         commission: updatedSettlement.platformCommission,
-        netPayout: updatedSettlement.netSettlementAmt
+        netPayout: updatedSettlement.netSettlementAmt,
+        items: settlement.items.map(item => ({
+          orderNumber: item.order.orderNumber,
+          amount: item.order.totalAmount,
+          paymentMethod: item.order.paymentMethod,
+          isSelfPickup: item.order.deliveryAddressId === null,
+          commission: item.commission,
+          netAmount: item.netAmount
+        }))
       });
       this.logger.log(`Settlement PDF Email sent to ${owner.email} for Shop ${updatedSettlement.shop.name}`);
     }

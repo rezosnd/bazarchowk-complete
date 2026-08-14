@@ -16,6 +16,14 @@ interface SettlementDetails {
   grossSales: number;
   commission: number;
   netPayout: number;
+  items: {
+    orderNumber: string;
+    amount: number;
+    paymentMethod: string;
+    isSelfPickup: boolean;
+    commission: number;
+    netAmount: number;
+  }[];
 }
 
 interface EmailPayload {
@@ -471,10 +479,52 @@ export class EmailService {
       doc.text('Payment Method:', 50, startY + 60);
       doc.text(details.paymentMode, 200, startY + 60);
 
-      doc.moveDown(5);
+      doc.moveDown(2);
+
+      // --- ITEMS LIST --- //
+      if (details.items && details.items.length > 0) {
+        doc.fontSize(14).text('ORDER DETAILS:', { underline: true });
+        doc.moveDown(1);
+        
+        doc.fontSize(10).font('Helvetica-Bold');
+        const headerY = doc.y;
+        doc.text('Order #', 50, headerY, { width: 80 });
+        doc.text('Method', 130, headerY, { width: 80 });
+        doc.text('Type', 210, headerY, { width: 80 });
+        doc.text('Amt', 290, headerY, { width: 60, align: 'right' });
+        doc.text('Comm', 350, headerY, { width: 60, align: 'right' });
+        doc.text('Net', 410, headerY, { width: 60, align: 'right' });
+        
+        doc.moveTo(50, doc.y + 5).lineTo(545, doc.y + 5).stroke('#e5e7eb');
+        doc.moveDown(1);
+
+        doc.font('Helvetica');
+        details.items.forEach(item => {
+          const rowY = doc.y;
+          doc.text(item.orderNumber, 50, rowY, { width: 80 });
+          doc.text(item.paymentMethod, 130, rowY, { width: 80 });
+          doc.text(item.isSelfPickup ? 'Pickup' : 'Delivery', 210, rowY, { width: 80 });
+          doc.text(item.amount.toFixed(2), 290, rowY, { width: 60, align: 'right' });
+          doc.text(item.commission.toFixed(2), 350, rowY, { width: 60, align: 'right' });
+          const netStr = item.netAmount >= 0 ? item.netAmount.toFixed(2) : `(${Math.abs(item.netAmount).toFixed(2)})`;
+          doc.text(netStr, 410, rowY, { width: 60, align: 'right' });
+          
+          doc.x = 50;
+          doc.moveDown(0.5);
+          
+          if (doc.y > 750) doc.addPage();
+        });
+        
+        doc.x = 50;
+        doc.moveDown(2);
+      }
+
+      // --- SUMMARY --- //
+      doc.fontSize(14).text('FINANCIAL SUMMARY:', { underline: true });
+      doc.moveDown(1);
 
       doc.rect(50, doc.y, 495, 25).fill('#fff3e0').stroke('#FF8A00');
-      doc.fillColor('#FF8A00').font('Helvetica-Bold');
+      doc.fillColor('#FF8A00').font('Helvetica-Bold').fontSize(12);
       doc.text('Description', 60, doc.y - 18);
       doc.text('Amount (INR)', 400, doc.y - 18, { width: 135, align: 'right' });
       doc.moveDown(1);
