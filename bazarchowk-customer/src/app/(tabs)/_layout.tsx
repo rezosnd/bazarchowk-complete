@@ -144,7 +144,7 @@ function GlobalAIOverlay() {
 
 // ─── AI Button Component ──────────────────────────────────────────────────────
 
-function AIButton({ label, aiActiveState }: { label: string, aiActiveState: SharedValue<number> }) {
+function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveState: SharedValue<number>, onPress?: () => void }) {
   const isListening = useAIStore((state) => state.isListening);
   const toggleListening = useAIStore((state) => state.toggleListening);
 
@@ -187,6 +187,7 @@ function AIButton({ label, aiActiveState }: { label: string, aiActiveState: Shar
             activeOpacity={1} 
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
+            onPress={onPress}
             style={styles.btnCenter}
           >
             <Ionicons name="mic" size={30} color="#FFF" style={{ left: 0, top: 0 }} />
@@ -332,7 +333,7 @@ export default function TabsLayout() {
               activeOpacity={1} 
               style={{ flex: 1 }}
             >
-              <AIButton label={t('tabs.aiAssistant')} aiActiveState={aiActiveState} />
+              <AIButton label={t('tabs.aiAssistant')} aiActiveState={aiActiveState} onPress={props.onPress as any} />
             </TouchableOpacity>
           ),
         }}

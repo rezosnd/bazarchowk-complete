@@ -148,6 +148,20 @@ export class EmailService {
     });
   }
 
+  async sendInvoiceEmailHtml(to: string, name: string, invoiceNumber: string, pdfBuffer: Buffer) {
+    return this.sendTransactionalEmail({
+      to,
+      subject: `Your BazarChowk Invoice: ${invoiceNumber}`,
+      type: 'INVOICE',
+      title: 'Invoice Generated',
+      customerName: name,
+      message: `Please find attached your invoice ${invoiceNumber}.`,
+      buttonText: 'View Orders',
+      buttonUrl: `https://bazarchowk.com/orders`,
+      attachments: [{ filename: `${invoiceNumber}.pdf`, content: pdfBuffer }]
+    });
+  }
+
   // Complete Order Invoice — sends beautiful HTML email (no PDF needed for speed)
   async sendOrderInvoice(
     to: string,

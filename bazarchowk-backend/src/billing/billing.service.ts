@@ -44,7 +44,9 @@ export class BillingService {
         referenceId: order.orderNumber,
         
         billingName: `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim(),
-        billingAddress: `${order.deliveryAddress.addressLine1}, ${order.deliveryAddress.city}`,
+        billingAddress: order.deliveryAddress 
+          ? `${order.deliveryAddress.addressLine1}, ${order.deliveryAddress.city}`
+          : 'Self Pickup',
         billingPhone: order.customer.phone || '',
         
         supplierName: order.shop.name,

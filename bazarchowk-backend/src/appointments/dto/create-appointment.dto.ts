@@ -39,6 +39,11 @@ export class CreateAppointmentDto {
 }
 
 export class CreateTimeSlotDto {
+  @ApiProperty({ description: 'ID of the provider' })
+  @IsString()
+  @IsNotEmpty()
+  providerId: string;
+
   @ApiProperty({ description: 'Start time of the slot (ISO8601)', example: '2026-06-20T10:00:00.000Z' })
   @IsDateString()
   startTime: string;

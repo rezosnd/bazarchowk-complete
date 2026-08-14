@@ -62,8 +62,7 @@ export class AppointmentsController {
     description: 'Set maxCapacity to 1 for exclusive 1-on-1. Set to 3 to allow 3 customers in the same slot (e.g., group classes, multi-chair salons).',
   })
   createSlot(@Body() dto: CreateTimeSlotDto, @CurrentUser() user: any) {
-    // In production, resolve providerId from the logged-in SHOP_OWNER user's provider profile
-    return this.appointmentsService.createTimeSlot(user.providerId || user.id, dto);
+    return this.appointmentsService.createTimeSlot(dto.providerId, dto);
   }
 
   @Get('slots/provider/:providerId')
