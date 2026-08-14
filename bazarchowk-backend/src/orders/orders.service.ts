@@ -206,29 +206,52 @@ export class OrdersService {
       }
     }
 
-    // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)
-    const cityConfig = await this.prisma.cityConfig.findFirst({
-      where: { name: { equals: shop.city, mode: 'insensitive' } }
-    });
-
-    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
-
-    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-      // Tiers should be sorted by uptoKm, but let's sort them just to be safe
-      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-      for (const tier of tiers) {
-        if (distanceKm <= tier.uptoKm) {
-          calculatedDeliveryFee = tier.fee;
-          break;
+    // 4. Resolve Dynamic Delivery Fee from Market Config (configured by Admin)
+    let calculatedDeliveryFee = 0;
+    let taxAmount = 0;
+    
+    if (shop.marketId) {
+      const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
+      if (market) {
+        // GST Calculation
+        taxAmount = (totalAmount * (market.gstPercentage || 18)) / 100;
+        
+        // Delivery Charge Calculation based on Cart Value
+        let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
+        if (market.deliveryChargeConfig) {
+          try {
+            config = typeof market.deliveryChargeConfig === 'string' 
+              ? JSON.parse(market.deliveryChargeConfig) 
+              : market.deliveryChargeConfig;
+          } catch(e) {}
+        }
+        
+        if (config['freeAbove'] && totalAmount >= config['freeAbove']) {
+          calculatedDeliveryFee = 0;
+        } else if (config['<100'] && totalAmount < 100) {
+          calculatedDeliveryFee = config['<100'];
+        } else if (config['<200'] && totalAmount < 200) {
+          calculatedDeliveryFee = config['<200'];
+        } else {
+          calculatedDeliveryFee = config['default'] || 20;
         }
       }
-    }
-
-    let taxAmount = 0;
-    if (cityConfig && cityConfig.taxPercent) {
-      taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
     } else {
-      taxAmount = (totalAmount * 5) / 100; // 5% default
+      // Fallback to CityConfig
+      const cityConfig = await this.prisma.cityConfig.findFirst({
+        where: { name: { equals: shop.city, mode: 'insensitive' } }
+      });
+      calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+      if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+        for (const tier of tiers) {
+          if (distanceKm <= tier.uptoKm) {
+            calculatedDeliveryFee = tier.fee;
+            break;
+          }
+        }
+      }
+      taxAmount = cityConfig?.taxPercent ? (totalAmount * cityConfig.taxPercent) / 100 : (totalAmount * 5) / 100;
     }
 
     const subtotal = totalAmount;

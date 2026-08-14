@@ -240,4 +240,27 @@ export class MarketsService {
     await this.cacheManager.set(cacheKey, market, 3600000);
     return market;
   }
+
+  async updateMarketConfig(id: string, configDto: any, user: any) {
+    const market = await this.prisma.market.findUnique({ where: { id } });
+    if (!market) throw new NotFoundException('Market not found');
+
+    // Make sure they are super admin or the admin of this specific market
+    if (user.role.name !== 'SUPER_ADMIN' && market.adminId !== user.id) {
+      throw new BadRequestException('You do not have permission to update config for this market.');
+    }
+
+    const updated = await this.prisma.market.update({
+      where: { id },
+      data: {
+        deliveryChargeConfig: configDto.deliveryChargeConfig !== undefined ? configDto.deliveryChargeConfig : market.deliveryChargeConfig,
+        gstPercentage: configDto.gstPercentage !== undefined ? parseFloat(configDto.gstPercentage) : market.gstPercentage,
+      }
+    });
+
+    // Clear caches
+    await this.cacheManager.del(`market_details_${id}`);
+    await this.cacheManager.del(`markets_village_${market.villageId}`);
+    return updated;
+  }
 }

@@ -1467,6 +1467,10 @@ model Market {
   radiusKm    Float   @default(5.0)
   isActive    Boolean @default(true)
 
+  // Configuration
+  deliveryChargeConfig Json? // Stores JSON like { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 }
+  gstPercentage        Float @default(18.0)
+
   adminId String? @unique
   admin   User?   @relation(fields: [adminId], references: [id])
 

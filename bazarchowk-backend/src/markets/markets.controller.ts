@@ -141,4 +141,17 @@ export class MarketsController {
   getMarketDetails(@Param('id') id: string) {
     return this.marketsService.getMarketDetails(id);
   }
+
+  @Patch('market-nodes/:id/config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'MARKET_ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update market configuration (delivery charges, GST)' })
+  updateMarketConfig(
+    @Param('id') id: string,
+    @Body() configDto: any,
+    @CurrentUser() user: any
+  ) {
+    return this.marketsService.updateMarketConfig(id, configDto, user);
+  }
 }
