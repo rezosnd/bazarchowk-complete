@@ -606,6 +606,7 @@ model Provider {
   name      String
   specialty String? // "Cardiologist", "Senior Stylist"
   isActive  Boolean @default(true)
+  customersPerHour Int @default(1)
 
   timeSlots    TimeSlot[]
   appointments Appointment[]

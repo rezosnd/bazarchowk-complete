@@ -67,6 +67,7 @@ function AddServiceModal({ visible, onClose, onSuccess }: { visible: boolean; on
 function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: () => void; onSuccess: () => void }) {
   const [name, setName] = useState('');
   const [specialty, setSpecialty] = useState('');
+  const [customersPerHour, setCustomersPerHour] = useState('1');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -74,13 +75,19 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
       Alert.alert('Error', 'Please enter staff name.');
       return;
     }
+    const cph = parseInt(customersPerHour);
+    if (!cph || cph < 1) {
+      Alert.alert('Error', 'Please enter a valid number of customers per hour.');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/appointments/providers', {
         name: name.trim(),
         specialty: specialty.trim() || 'General',
+        customersPerHour: cph,
       });
-      setName(''); setSpecialty('');
+      setName(''); setSpecialty(''); setCustomersPerHour('1');
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -101,6 +108,7 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
           </View>
           <TextInput style={styles.input} placeholder="Staff Name (e.g. Rahul)" placeholderTextColor="#94A3B8" value={name} onChangeText={setName} />
           <TextInput style={styles.input} placeholder="Specialty (e.g. Barber, Plumber)" placeholderTextColor="#94A3B8" value={specialty} onChangeText={setSpecialty} />
+          <TextInput style={styles.input} placeholder="Max Customers Per Hour (e.g. 1)" placeholderTextColor="#94A3B8" value={customersPerHour} onChangeText={setCustomersPerHour} keyboardType="numeric" />
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
             {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Add Staff</Text>}
           </TouchableOpacity>
@@ -110,141 +118,6 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
   );
 }
 
-// ---------- Add Slot Modal ----------
-function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: boolean; onClose: () => void; onSuccess: () => void; providerId: string | null }) {
-  const [capacity, setCapacity] = useState('');
-  const [selectedHours, setSelectedHours] = useState<number[]>([]);
-  const [saving, setSaving] = useState(false);
-
-  // Generate 1-hour time slots for today (8am to 9pm)
-  const timeSlots = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, 10 ... 21
-
-  const toggleHour = (hour: number) => {
-    setSelectedHours(prev =>
-      prev.includes(hour) ? prev.filter(h => h !== hour) : [...prev, hour]
-    );
-  };
-
-  const formatHour = (h: number) => {
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const display = h > 12 ? h - 12 : h;
-    return `${display}:00 ${ampm}`;
-  };
-
-  const handleSave = async () => {
-    if (selectedHours.length === 0) {
-      Alert.alert('Error', 'Please select at least one time slot.');
-      return;
-    }
-    const cap = parseInt(capacity);
-    if (!cap || cap < 1 || cap > 50) {
-      Alert.alert('Error', 'Please enter a valid capacity between 1 and 50.');
-      return;
-    }
-    if (!providerId) {
-      Alert.alert('Error', 'No provider selected.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      await Promise.all(
-        selectedHours.map(hour => {
-          const stDate = new Date(`${today}T${String(hour).padStart(2, '0')}:00:00`);
-          const etDate = new Date(`${today}T${String(hour + 1).padStart(2, '0')}:00:00`);
-          return api.post('/appointments/slots/create', {
-            providerId,
-            startTime: stDate.toISOString(),
-            endTime: etDate.toISOString(),
-            maxCapacity: cap,
-          });
-        })
-      );
-      setCapacity(''); setSelectedHours([]);
-      Alert.alert('Success', `Created ${selectedHours.length} slot(s) with ${cap} customer(s) each!`);
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to add slots');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.sheet, { maxHeight: '85%' }]}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Set Today's Schedule</Text>
-            <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
-          </View>
-
-          {/* Capacity input */}
-          <Text style={{ marginBottom: 8, color: '#64748B', fontWeight: '700', fontSize: 14 }}>
-            Customers per hour slot
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-            {['1','2','3','4','5','6'].map(n => (
-              <TouchableOpacity
-                key={n}
-                onPress={() => setCapacity(n)}
-                style={{
-                  width: 44, height: 44, borderRadius: 22,
-                  backgroundColor: capacity === n ? '#00B140' : '#F1F5F9',
-                  alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 2, borderColor: capacity === n ? '#00B140' : '#E2E8F0',
-                }}
-              >
-                <Text style={{ fontWeight: '800', color: capacity === n ? '#FFF' : '#334155', fontSize: 16 }}>{n}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Time slot picker */}
-          <Text style={{ marginBottom: 8, color: '#64748B', fontWeight: '700', fontSize: 14 }}>
-            Select available hours (tap to toggle)
-          </Text>
-          <ScrollView style={{ maxHeight: 240 }} showsVerticalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 8 }}>
-              {timeSlots.map(hour => {
-                const isSelected = selectedHours.includes(hour);
-                return (
-                  <TouchableOpacity
-                    key={hour}
-                    onPress={() => toggleHour(hour)}
-                    style={{
-                      paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
-                      backgroundColor: isSelected ? '#00B140' : '#F8FAFC',
-                      borderWidth: 1.5, borderColor: isSelected ? '#00B140' : '#E2E8F0',
-                    }}
-                  >
-                    <Text style={{ fontWeight: '700', fontSize: 14, color: isSelected ? '#FFF' : '#334155' }}>
-                      {formatHour(hour)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-
-          {selectedHours.length > 0 && capacity ? (
-            <View style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: 12, marginTop: 12, marginBottom: 4 }}>
-              <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>
-                ✓ {selectedHours.length} slots × {capacity} customers = {selectedHours.length * parseInt(capacity)} total bookings possible today
-              </Text>
-            </View>
-          ) : null}
-
-          <TouchableOpacity style={[styles.saveBtn, { marginTop: 16 }]} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Create {selectedHours.length > 0 ? selectedHours.length : ''} Slot{selectedHours.length !== 1 ? 's' : ''}</Text>}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
 
 // ---------- Main Screen ----------
 export default function PartnerServicesScreen() {
@@ -254,8 +127,6 @@ export default function PartnerServicesScreen() {
   const [activeTab, setActiveTab] = useState<'BOOKINGS' | 'SERVICES' | 'STAFF'>('BOOKINGS');
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showSlotModal, setShowSlotModal] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
   const getShopId = async () => {
     const shopId = await SecureStore.getItemAsync('bazar_shop_id');
@@ -443,14 +314,8 @@ export default function PartnerServicesScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.staffName}>{p.name}</Text>
-                  <Text style={styles.staffSpecialty}>{p.specialty || 'Professional'}</Text>
+                  <Text style={styles.staffSpecialty}>{p.specialty || 'Professional'} • {p.customersPerHour || 1} {p.customersPerHour === 1 ? 'customer' : 'customers'}/hr</Text>
                 </View>
-                <TouchableOpacity 
-                  style={{ padding: 8, backgroundColor: '#F0FDF4', borderRadius: 8 }}
-                  onPress={() => { setSelectedProvider(p.id); setShowSlotModal(true); }}
-                >
-                  <Ionicons name="calendar" size={20} color={PRIMARY} />
-                </TouchableOpacity>
               </View>
             ))}
             <TouchableOpacity style={styles.addBtn} onPress={() => setShowStaffModal(true)}>
@@ -475,14 +340,6 @@ export default function PartnerServicesScreen() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['partner-providers'] });
           Alert.alert('✅ Staff Added', 'Staff member is now visible to customers!');
-        }}
-      />
-      <AddSlotModal
-        visible={showSlotModal}
-        onClose={() => setShowSlotModal(false)}
-        providerId={selectedProvider}
-        onSuccess={() => {
-          Alert.alert('✅ Slot Added', 'Time slot is now available for booking!');
         }}
       />
     </View>

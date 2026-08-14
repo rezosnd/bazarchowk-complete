@@ -54,7 +54,7 @@ export default function ShopServicesScreen() {
       Alert.alert("Success", "Appointment Booked Successfully!");
       queryClient.invalidateQueries({ queryKey: ['provider-slots'] });
       queryClient.invalidateQueries({ queryKey: ['my-appointments'] });
-      router.push('/(tabs)/appointments' as any);
+      router.push('/appointments' as any);
     },
     onError: (err: any) => {
       Alert.alert("Error", err.response?.data?.message || "Failed to book appointment");

@@ -105,21 +105,53 @@ export class AppointmentsService {
    * Get all slots for a provider with live availability counts.
    */
   async getProviderSlots(providerId: string) {
-    const slots = await this.prisma.timeSlot.findMany({
+    const provider = await this.prisma.provider.findUnique({ where: { id: providerId } });
+    if (!provider) throw new NotFoundException('Provider not found');
+    const capacity = provider.customersPerHour || 1;
+
+    const existingSlots = await this.prisma.timeSlot.findMany({
       where: { providerId },
-      include: { _count: { select: { appointments: true } } },
       orderBy: { startTime: 'asc' },
     });
 
-    return slots.map(slot => ({
-      id: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      maxCapacity: slot.maxCapacity,
-      currentBookings: slot.currentBookings,
-      availableSpots: slot.maxCapacity - slot.currentBookings,
-      isFull: slot.isBooked,
-    }));
+    const existingMap = new Map();
+    for (const s of existingSlots) {
+       existingMap.set(s.startTime.toISOString(), s);
+    }
+
+    const virtualSlots = [];
+    const now = new Date();
+    
+    // Generate slots for the next 7 days, 9 AM to 8 PM
+    for (let day = 0; day < 7; day++) {
+      const date = new Date();
+      date.setDate(now.getDate() + day);
+      
+      for (let hour = 9; hour <= 20; hour++) {
+        const start = new Date(date);
+        start.setHours(hour, 0, 0, 0);
+        
+        if (start > now) {
+          const end = new Date(start);
+          end.setHours(hour + 1, 0, 0, 0);
+          
+          const key = start.toISOString();
+          const existing = existingMap.get(key);
+          
+          virtualSlots.push({
+            id: existing ? existing.id : `virtual_${key}`,
+            startTime: start,
+            endTime: end,
+            maxCapacity: existing ? existing.maxCapacity : capacity,
+            currentBookings: existing ? existing.currentBookings : 0,
+            availableSpots: existing ? (existing.maxCapacity - existing.currentBookings) : capacity,
+            isFull: existing ? existing.isBooked : false,
+          });
+        }
+      }
+    }
+    
+    return virtualSlots;
   }
 
   // ==================== CUSTOMER: BOOKING ====================
@@ -131,8 +163,36 @@ export class AppointmentsService {
    */
   async bookAppointment(customerId: string, dto: CreateAppointmentDto) {
     return this.prisma.$transaction(async (tx) => {
+      let timeSlotId = dto.timeSlotId;
+      
+      if (timeSlotId.startsWith('virtual_')) {
+          const startTimeIso = timeSlotId.replace('virtual_', '');
+          const startTime = new Date(startTimeIso);
+          const endTime = new Date(startTime);
+          endTime.setHours(endTime.getHours() + 1);
+          
+          let slot = await tx.timeSlot.findFirst({
+              where: { providerId: dto.providerId, startTime }
+          });
+          
+          if (!slot) {
+              const p = await tx.provider.findUnique({ where: { id: dto.providerId } });
+              slot = await tx.timeSlot.create({
+                  data: {
+                      providerId: dto.providerId,
+                      startTime,
+                      endTime,
+                      maxCapacity: p?.customersPerHour || 1,
+                      currentBookings: 0,
+                      isBooked: false
+                  }
+              });
+          }
+          timeSlotId = slot.id;
+      }
+      
       const timeSlot = await tx.timeSlot.findUnique({
-        where: { id: dto.timeSlotId },
+        where: { id: timeSlotId },
         include: { provider: { include: { shop: true } } }
       });
 
@@ -157,7 +217,7 @@ export class AppointmentsService {
 
       // ✅ DUPLICATE CHECK: Same customer cannot book same slot twice
       const duplicate = await tx.appointment.findFirst({
-        where: { customerId, timeSlotId: dto.timeSlotId, status: { notIn: ['CANCELLED'] } },
+        where: { customerId, timeSlotId: timeSlot.id, status: { notIn: ['CANCELLED'] } },
       });
       if (duplicate) throw new BadRequestException('You have already booked this time slot');
 
@@ -187,7 +247,7 @@ export class AppointmentsService {
           customerId,
           serviceOfferingId: dto.serviceOfferingId,
           providerId: dto.providerId,
-          timeSlotId: dto.timeSlotId,
+          timeSlotId: timeSlot.id,
           status: AppointmentStatus.CONFIRMED,
           notes: dto.notes,
           serviceAddressId: dto.serviceAddressId,
