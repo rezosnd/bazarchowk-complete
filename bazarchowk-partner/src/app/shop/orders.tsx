@@ -118,12 +118,12 @@ export default function ShopOrdersScreen() {
         // Self-pickup: customer comes to shop
         return (
           <View style={{ gap: 8 }}>
-            <View style={[styles.waitingRider, { backgroundColor: '#F5F3FF' }]}>
-              <Ionicons name="bag-handle" size={20} color="#7C3AED" />
-              <Text style={[styles.waitingText, { color: '#7C3AED' }]}>Waiting for Customer to Pickup</Text>
+            <View style={[styles.waitingRider, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1 }]}>
+              <Ionicons name="bag-handle" size={20} color="#0F172A" />
+              <Text style={[styles.waitingText, { color: '#0F172A' }]}>Waiting for Customer</Text>
             </View>
             <TouchableOpacity 
-              style={[styles.btn, { backgroundColor: '#7C3AED' }]} 
+              style={[styles.btn, { backgroundColor: '#00B140' }]} 
               onPress={() => updateStatus(order.id, 'DELIVERED', 'Customer collected self-pickup order')}
             >
               <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>✓ Handed to Customer</Text>
@@ -133,15 +133,15 @@ export default function ShopOrdersScreen() {
       }
       return (
         <View style={{ gap: 8 }}>
-          <View style={styles.waitingRider}>
-            <Ionicons name="bicycle" size={20} color="#F59E0B" />
-            <Text style={styles.waitingText}>Waiting for Rider</Text>
+          <View style={[styles.waitingRider, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1 }]}>
+            <Ionicons name="bicycle" size={20} color="#0F172A" />
+            <Text style={[styles.waitingText, { color: '#0F172A' }]}>Waiting for Rider</Text>
           </View>
           <TouchableOpacity 
             style={[styles.btn, { backgroundColor: '#0F172A' }]} 
             onPress={() => updateStatus(order.id, 'DELIVERED', 'Customer collected in person')}
           >
-            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Handed to Customer (Self-Pickup)</Text>
+            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Handed to Customer</Text>
           </TouchableOpacity>
         </View>
       );
@@ -265,8 +265,8 @@ export default function ShopOrdersScreen() {
                     <Text style={styles.orderId}>{order.orderNumber}</Text>
                     {!order.deliveryAddressId && (
                       <View style={styles.pickupBadge}>
-                        <Ionicons name="bag-handle" size={11} color="#7C3AED" />
-                        <Text style={styles.pickupBadgeText}>SELF PICKUP</Text>
+                        <Ionicons name="bag-handle" size={11} color="#0F172A" />
+                        <Text style={styles.pickupBadgeText}>PICKUP</Text>
                       </View>
                     )}
                   </View>
@@ -360,10 +360,10 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: '#0F172A' },
   primaryText: { color: '#FFF', fontWeight: '700' },
   
-  waitingRider: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12 },
-  waitingText: { color: '#D97706', fontWeight: '700' },
-  pickupBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F5F3FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: '#DDD6FE' },
-  pickupBadgeText: { fontSize: 10, fontWeight: '800', color: '#7C3AED' },
+  waitingRider: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 12 },
+  waitingText: { fontWeight: '700' },
+  pickupBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  pickupBadgeText: { fontSize: 10, fontWeight: '800', color: '#0F172A' },
 
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 48 },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#0F172A' },

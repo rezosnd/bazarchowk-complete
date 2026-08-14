@@ -162,7 +162,102 @@ export class EmailService {
     });
   }
 
-  // Complete Order Invoice — sends beautiful HTML email (no PDF needed for speed)
+  private generateOrderPDF(
+    name: string,
+    orderNumber: string,
+    items: { name: string; qty: number; price: number }[],
+    totalAmt: number,
+    options: any
+  ): Promise<Buffer> {
+    return new Promise((resolve) => {
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      const buffers: any[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+      doc.fillColor('#FF8A00').fontSize(24).text('BazarChowk', { align: 'center', characterSpacing: 2 });
+      doc.moveDown(0.5);
+      doc.fillColor('#0F172A').fontSize(12).text('Your Local Market, Delivered.', { align: 'center' });
+      doc.moveDown(2);
+
+      const logoPath = path.join(__dirname, 'templates', 'logo.png');
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 50, 40, { width: 100 });
+      }
+
+      doc.fontSize(16).fillColor('#0F172A').text('Order Receipt', { align: 'center', underline: true });
+      doc.moveDown(2);
+
+      doc.fontSize(12).text(`Order Number: #${orderNumber}`);
+      doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`);
+      doc.text(`Customer: ${name}`);
+      doc.text(`Shop: ${options?.shopName || 'BazarChowk Partner'}`);
+      doc.text(`Fulfillment: ${options?.deliveryType === 'SELF_PICKUP' ? 'Self Pickup' : 'Home Delivery'}`);
+      doc.text(`Payment Method: ${options?.paymentMethod === 'RAZORPAY' ? 'Paid Online' : options?.paymentMethod || 'COD'}`);
+      doc.moveDown(2);
+
+      // Table Header
+      doc.rect(50, doc.y, 495, 25).fill('#F1F5F9');
+      doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(12);
+      doc.text('Item', 60, doc.y - 18);
+      doc.text('Qty', 350, doc.y - 18, { width: 50, align: 'center' });
+      doc.text('Amount', 450, doc.y - 18, { width: 85, align: 'right' });
+      doc.moveDown(1);
+
+      // Items
+      doc.font('Helvetica').fillColor('#0F172A');
+      for (const item of items) {
+        const startY = doc.y;
+        doc.text(item.name, 60, startY, { width: 280 });
+        doc.text(`x${item.qty}`, 350, startY, { width: 50, align: 'center' });
+        doc.text(`Rs. ${item.price.toFixed(2)}`, 450, startY, { width: 85, align: 'right' });
+        doc.moveDown(0.5);
+      }
+
+      doc.moveDown(1);
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#E2E8F0');
+      doc.moveDown(1);
+
+      // Totals
+      const subtotal = options?.subtotal ?? items.reduce((s, i) => s + i.price, 0);
+      const taxAmount = options?.taxAmount ?? 0;
+      const deliveryFee = options?.deliveryFee ?? 0;
+      const walletUsed = options?.walletAmountUsed ?? 0;
+
+      doc.text('Item Subtotal:', 300, doc.y);
+      doc.text(`Rs. ${subtotal.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
+      doc.moveDown(0.5);
+
+      doc.text('Taxes & GST:', 300, doc.y);
+      doc.text(`Rs. ${taxAmount.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
+      doc.moveDown(0.5);
+
+      doc.text('Delivery Fee:', 300, doc.y);
+      doc.text(deliveryFee === 0 ? 'FREE' : `Rs. ${deliveryFee.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
+      doc.moveDown(0.5);
+
+      if (walletUsed > 0) {
+        doc.fillColor('#FF8A00').text('Wallet Applied:', 300, doc.y);
+        doc.text(`-Rs. ${walletUsed.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
+        doc.moveDown(0.5);
+      }
+
+      doc.moveDown(1);
+      doc.rect(290, doc.y, 255, 30).fill('#FF8A00');
+      doc.fillColor('#FFF').font('Helvetica-Bold').fontSize(14);
+      doc.text('Total Paid:', 300, doc.y - 20);
+      doc.text(`Rs. ${totalAmt.toFixed(2)}`, 400, doc.y - 20, { width: 135, align: 'right' });
+
+      doc.moveDown(4);
+      doc.font('Helvetica').fillColor('#94A3B8').fontSize(10);
+      doc.text('Thank you for shopping with BazarChowk!', { align: 'center' });
+      doc.text('This is a computer-generated receipt.', { align: 'center' });
+
+      doc.end();
+    });
+  }
+
+  // Complete Order Invoice — sends beautiful HTML email AND attached PDF receipt
   async sendOrderInvoice(
     to: string,
     name: string,
@@ -208,7 +303,7 @@ export class EmailService {
   <div style="max-width:580px;margin:32px auto;background:#FFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#00B140,#007A2E);padding:32px 32px 24px;text-align:center;">
+    <div style="background:#FF8A00;padding:32px 32px 24px;text-align:center;">
       <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:12px 24px;margin-bottom:16px;">
         <span style="color:#FFF;font-size:26px;font-weight:900;letter-spacing:1px;">🛒 BazarChowk</span>
       </div>
@@ -228,7 +323,7 @@ export class EmailService {
     <div style="margin:0 32px;background:#F8FAFC;border-radius:12px;padding:14px 20px;border:1px solid #E2E8F0;display:flex;">
       <div style="flex:1;">
         <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Order Number</p>
-        <p style="margin:4px 0 0;font-size:15px;font-weight:800;color:#00B140;">#${orderNumber}</p>
+        <p style="margin:4px 0 0;font-size:15px;font-weight:800;color:#FF8A00;">#${orderNumber}</p>
       </div>
       <div style="flex:1;text-align:center;">
         <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Date</p>
@@ -236,7 +331,7 @@ export class EmailService {
       </div>
       <div style="flex:1;text-align:right;">
         <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Fulfillment</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:${isSelfPickup?'#7C3AED':'#0F172A'};">${isSelfPickup ? '🏪 Pickup' : '🛵 Delivery'}</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:${isSelfPickup?'#FF8A00':'#0F172A'};">${isSelfPickup ? '🏪 Pickup' : '🛵 Delivery'}</p>
       </div>
     </div>
 
@@ -268,10 +363,10 @@ export class EmailService {
         </tr>
         <tr>
           <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Delivery Fee</td>
-          <td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${isSelfPickup||deliveryFee===0?'#00B140':'#0F172A'};">${isSelfPickup||deliveryFee===0?'FREE 🎉':'₹'+deliveryFee.toFixed(2)}</td>
+          <td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${isSelfPickup||deliveryFee===0?'#FF8A00':'#0F172A'};">${isSelfPickup||deliveryFee===0?'FREE 🎉':'₹'+deliveryFee.toFixed(2)}</td>
         </tr>
         ${walletRow}
-        <tr style="background:#00B140;">
+        <tr style="background:#FF8A00;">
           <td colspan="2" style="padding:14px 16px;color:#FFF;font-size:16px;font-weight:800;">Total Paid</td>
           <td style="padding:14px 16px;text-align:right;color:#FFF;font-size:18px;font-weight:900;">₹${totalAmt.toFixed(2)}</td>
         </tr>
@@ -279,24 +374,24 @@ export class EmailService {
     </div>
 
     <!-- Payment Method -->
-    <div style="margin:16px 32px;background:#F0FDF4;border-radius:12px;padding:14px 20px;border:1px solid #DCFCE7;display:flex;align-items:center;gap:12px;">
+    <div style="margin:16px 32px;background:#FFF7ED;border-radius:12px;padding:14px 20px;border:1px solid #FFEDD5;display:flex;align-items:center;gap:12px;">
       <span style="font-size:22px;">${payMethod==='RAZORPAY'?'💳':payMethod==='WALLET'?'👛':'💵'}</span>
       <div>
         <p style="margin:0;font-size:12px;color:#64748B;font-weight:600;">Payment Method</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:800;color:#15803D;">${payLabel}</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:800;color:#C2410C;">${payLabel}</p>
       </div>
     </div>
 
     <!-- Self Pickup Note -->
     ${isSelfPickup ? `
-    <div style="margin:0 32px 16px;background:#F5F3FF;border-radius:12px;padding:14px 20px;border:1px solid #DDD6FE;">
-      <p style="margin:0;font-size:13px;font-weight:800;color:#5B21B6;">📍 Pickup Instructions</p>
-      <p style="margin:6px 0 0;font-size:13px;color:#6D28D9;line-height:20px;">Show this email at <strong>${shopName}</strong> and quote order <strong>#${orderNumber}</strong> to collect your items.</p>
+    <div style="margin:0 32px 16px;background:#F8FAFC;border-radius:12px;padding:14px 20px;border:1px solid #E2E8F0;">
+      <p style="margin:0;font-size:13px;font-weight:800;color:#0F172A;">📍 Pickup Instructions</p>
+      <p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:20px;">Show this email at <strong>${shopName}</strong> and quote order <strong>#${orderNumber}</strong> to collect your items.</p>
     </div>` : ''}
 
     <!-- Footer -->
     <div style="padding:24px 32px;text-align:center;border-top:1px solid #F1F5F9;margin-top:16px;">
-      <p style="margin:0;font-size:13px;color:#64748B;">Questions? Contact us at <a href="mailto:support@bazarchowk.com" style="color:#00B140;text-decoration:none;font-weight:700;">support@bazarchowk.com</a></p>
+      <p style="margin:0;font-size:13px;color:#64748B;">Questions? Contact us at <a href="mailto:support@bazarchowk.com" style="color:#FF8A00;text-decoration:none;font-weight:700;">support@bazarchowk.com</a></p>
       <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;">© ${new Date().getFullYear()} BazarChowk · Your Local Market, Delivered</p>
     </div>
 
@@ -304,12 +399,21 @@ export class EmailService {
 </body>
 </html>`;
 
+    const pdfBuffer = await this.generateOrderPDF(name, orderNumber, items, totalAmt, options);
+
     try {
       await this.transporter.sendMail({
         from: `"BazarChowk" <${process.env.SMTP_USER}>`,
         to,
         subject: `🧾 Your Receipt for Order #${orderNumber} — BazarChowk`,
         html,
+        attachments: [
+          {
+            filename: `BazarChowk_Receipt_${orderNumber}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }
+        ]
       });
       await this.prisma.emailLog.create({
         data: { toEmail: to, subject: `Receipt #${orderNumber}`, type: 'INVOICE', status: 'SENT' }

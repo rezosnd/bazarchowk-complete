@@ -197,7 +197,7 @@ export default function CheckoutScreen() {
         {/* ── SELF PICKUP INFO BANNER ── */}
         {isSelfPickup && (
           <View style={styles.pickupBanner}>
-            <Ionicons name="storefront" size={22} color="#7C3AED" />
+            <Ionicons name="storefront" size={22} color="#0F172A" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</Text>
               {shopInfo?.address && <Text style={styles.pickupAddr}>{shopInfo.address}</Text>}
@@ -392,10 +392,10 @@ const styles = StyleSheet.create({
   toggleSub: { fontSize: 11, color: '#94A3B8', textAlign: 'center', fontWeight: '500' },
 
   // Self pickup banner
-  pickupBanner: { flexDirection: 'row', backgroundColor: '#F5F3FF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#DDD6FE' },
-  pickupTitle: { fontSize: 15, fontWeight: '800', color: '#5B21B6', marginBottom: 4 },
-  pickupAddr: { fontSize: 13, color: '#6D28D9', marginBottom: 4 },
-  pickupHint: { fontSize: 12, color: '#7C3AED', lineHeight: 18 },
+  pickupBanner: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  pickupTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  pickupAddr: { fontSize: 13, color: '#334155', marginBottom: 4 },
+  pickupHint: { fontSize: 12, color: '#64748B', lineHeight: 18 },
 
   // Address
   emptyCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
