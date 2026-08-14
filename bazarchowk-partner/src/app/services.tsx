@@ -108,6 +108,8 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
       </View>
     </Modal>
   );
+}
+
 // ---------- Add Slot Modal ----------
 function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: boolean; onClose: () => void; onSuccess: () => void; providerId: string | null }) {
   const [startTime, setStartTime] = useState('');
