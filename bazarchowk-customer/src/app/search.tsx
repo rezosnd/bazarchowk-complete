@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import api from '@/services/api';
 
@@ -13,9 +13,11 @@ const PRIMARY = '#00B140';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState('');
+  const params = useLocalSearchParams();
+  const initialQ = Array.isArray(params.q) ? params.q[0] : (params.q as string) || '';
+  const [query, setQuery] = useState(initialQ);
   const [results, setResults] = useState<{ products: any[]; shops: any[] }>({ products: [], shops: [] });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!initialQ);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // Use AuthStore and useQuery to get the default location
@@ -59,6 +61,12 @@ export default function SearchScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialQ) {
+      fetchSearch(initialQ);
+    }
+  }, [initialQ]);
 
   const handleTextChange = (text: string) => {
     setQuery(text);

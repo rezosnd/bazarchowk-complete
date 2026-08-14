@@ -218,6 +218,7 @@ export class MarketsService {
     const market = await this.prisma.market.findUnique({
       where: { id },
       include: {
+        shops: true,
         village: {
           include: {
             city: {

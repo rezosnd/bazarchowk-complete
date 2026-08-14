@@ -337,6 +337,34 @@ function CategoriesGrid() {
   );
 }
 
+function ServicesCategoryGrid() {
+  const { t } = useTranslation();
+  
+  const services = [
+    { id: 'salon', name: 'Salon', icon: 'cut', color: '#EC4899', bg: '#FCE7F3', type: 'Salon' },
+    { id: 'plumber', name: 'Plumber', icon: 'build', color: '#3B82F6', bg: '#DBEAFE', type: 'Plumber' },
+    { id: 'electrician', name: 'Electrician', icon: 'flash', color: '#EAB308', bg: '#FEF08A', type: 'Electrician' },
+    { id: 'cleaning', name: 'Cleaning', icon: 'sparkles', color: '#14B8A6', bg: '#CCFBF1', type: 'Cleaning' },
+  ];
+
+  return (
+    <View style={[styles.categoryGrid, { marginTop: 16 }]}>
+       {services.map((s) => (
+          <TouchableOpacity 
+             key={s.id} 
+             style={styles.catItem} 
+             onPress={() => router.push(`/search?q=${s.type}`)}
+          >
+             <View style={[styles.catIconWrap, { backgroundColor: s.bg }]}>
+                <Ionicons name={s.icon as any} size={26} color={s.color} />
+             </View>
+             <Text style={styles.catText} numberOfLines={1}>{s.name}</Text>
+          </TouchableOpacity>
+       ))}
+    </View>
+  );
+}
+
 function SectionHeader({ title }: { title: string }) {
   const { t } = useTranslation();
   return (
@@ -681,6 +709,7 @@ export default function HomeScreen() {
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <CategoriesGrid />
+          <ServicesCategoryGrid />
 
           <NearbyServices lat={location?.lat} lng={location?.lng} city={location?.city} />
           <NearbyShops lat={location?.lat} lng={location?.lng} city={location?.city} />

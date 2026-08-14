@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -12,7 +12,9 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete
 export default function RevenueDashboardScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<'TODAY' | 'WEEK' | 'MONTH'>('TODAY');
+  const [filter, setFilter] = useState<'TODAY' | 'WEEK' | 'MONTH' | 'CUSTOM'>('TODAY');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
   const [data, setData] = useState({
     grossSales: 0,
@@ -28,13 +30,18 @@ export default function RevenueDashboardScreen() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/settlement/shop/dashboard`);
+      let url = `/settlement/shop/dashboard`;
+      if (filter === 'CUSTOM' && customStart && customEnd) {
+        url += `?startDate=${customStart}&endDate=${customEnd}`;
+      }
+      const response = await api.get(url);
       
       if (response.data) {
         // Map the correct timeframe based on filter
         let currentPeriodData = response.data.today;
         if (filter === 'WEEK') currentPeriodData = response.data.last7Days;
         if (filter === 'MONTH') currentPeriodData = response.data.thisMonth;
+        if (filter === 'CUSTOM') currentPeriodData = response.data.custom || response.data.today;
         
         setData({
           grossSales: currentPeriodData?.grossSales || 0,
@@ -65,6 +72,13 @@ export default function RevenueDashboardScreen() {
             if (filter === 'TODAY') return orderDate >= todayStart;
             if (filter === 'WEEK') return orderDate >= weekStart;
             if (filter === 'MONTH') return orderDate >= monthStart;
+            if (filter === 'CUSTOM' && customStart && customEnd) {
+              const start = new Date(customStart);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date(customEnd);
+              end.setHours(23, 59, 59, 999);
+              return orderDate >= start && orderDate <= end;
+            }
             return true;
           });
           
@@ -95,18 +109,47 @@ export default function RevenueDashboardScreen() {
       {/* Date Filter Tabs */}
       <View style={styles.tabContainer}>
         <View style={styles.tabRow}>
-          {['TODAY', 'WEEK', 'MONTH'].map((f) => (
+          {['TODAY', 'WEEK', 'MONTH', 'CUSTOM'].map((f) => (
             <TouchableOpacity 
               key={f} 
               style={[styles.tab, filter === f && styles.tabActive]} 
               onPress={() => setFilter(f as any)}
             >
               <Text style={[styles.tabText, filter === f && styles.tabTextActive]}>
-                {f === 'TODAY' ? 'Today' : f === 'WEEK' ? 'Last 7 Days' : 'This Month'}
+                {f === 'TODAY' ? 'Today' : f === 'WEEK' ? 'Last 7 Days' : f === 'MONTH' ? 'This Month' : 'Custom'}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+        
+        {filter === 'CUSTOM' && (
+          <View style={{ flexDirection: 'row', marginTop: 12, gap: 8, alignItems: 'center' }}>
+            <TextInput 
+              style={styles.dateInput} 
+              placeholder="YYYY-MM-DD" 
+              value={customStart} 
+              onChangeText={setCustomStart} 
+              maxLength={10} 
+            />
+            <Text style={{ color: '#64748B', fontWeight: 'bold' }}>TO</Text>
+            <TextInput 
+              style={styles.dateInput} 
+              placeholder="YYYY-MM-DD" 
+              value={customEnd} 
+              onChangeText={setCustomEnd} 
+              maxLength={10} 
+            />
+            <TouchableOpacity 
+              style={{ backgroundColor: '#00B140', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
+              onPress={() => {
+                if (!customStart || !customEnd) return Alert.alert('Enter both start and end dates');
+                fetchData();
+              }}
+            >
+              <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {loading ? (
@@ -223,6 +266,8 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   tabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   tabTextActive: { color: '#0F172A', fontWeight: '800' },
+  
+  dateInput: { flex: 1, backgroundColor: '#F1F5F9', padding: 8, borderRadius: 8, fontSize: 14, textAlign: 'center', fontWeight: '600', color: '#0F172A' },
   
   scroll: { padding: 16, paddingBottom: 100 },
   
