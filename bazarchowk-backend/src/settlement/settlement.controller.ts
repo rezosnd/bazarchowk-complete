@@ -50,7 +50,7 @@ export class SettlementController {
 
   @Get('deposits/pending')
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'DISTRICT_ADMIN', 'FINANCE_ADMIN')
   @ApiOperation({ summary: 'Admin: Get all pending rider cash deposits awaiting verification' })
   getPendingDeposits(@CurrentUser() user: any) {
     return this.settlementService.getPendingDeposits(user);
@@ -58,7 +58,7 @@ export class SettlementController {
 
   @Patch('deposits/:id/verify')
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'DISTRICT_ADMIN', 'FINANCE_ADMIN')
   @ApiOperation({ summary: 'Admin: Verify or reject a rider cash deposit' })
   verifyDeposit(@Param('id') id: string, @Body() dto: VerifyDepositDto, @CurrentUser() user: any) {
     return this.settlementService.verifyDeposit(id, user.id, dto);
@@ -80,7 +80,7 @@ export class SettlementController {
 
   @Post('shops/create')
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'DISTRICT_ADMIN', 'FINANCE_ADMIN')
   @ApiOperation({ summary: 'Admin: Generate a settlement for a shop for a given date range' })
   createSettlement(@Body() dto: CreateSettlementDto, @CurrentUser() user: any) {
     return this.settlementService.createShopSettlement(user.id, dto);
@@ -88,7 +88,7 @@ export class SettlementController {
 
   @Get('shops/list')
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'DISTRICT_ADMIN', 'FINANCE_ADMIN')
   @ApiOperation({ summary: 'Admin: List all shop settlements with filters' })
   @ApiQuery({ name: 'shopId', required: false })
   @ApiQuery({ name: 'status', required: false })

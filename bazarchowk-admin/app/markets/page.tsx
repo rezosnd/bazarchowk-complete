@@ -1,9 +1,12 @@
-"use client";
-import React, { useState } from 'react';
+import { AdminContext } from '../auth-guard';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function MarketsPage() {
+  const adminContext = React.useContext(AdminContext);
+  const profile = adminContext?.profile;
+  const role = profile?.role?.name;
+  
   const [marketName, setMarketName] = useState('');
   const [villageId, setVillageId] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -35,11 +38,29 @@ export default function MarketsPage() {
   const [staffPhone, setStaffPhone] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
 
+  // Market Admin Settings State
+  const [gstPercentage, setGstPercentage] = useState('18');
+  const [deliveryBase, setDeliveryBase] = useState('20');
+  const [myMarket, setMyMarket] = useState<any>(null);
+
   React.useEffect(() => {
     fetchMarkets();
     fetchVillages();
     fetchRoles();
   }, []);
+
+  React.useEffect(() => {
+    if (role === 'MARKET_ADMIN' && markets.length > 0 && profile) {
+      const market = markets.find(m => m.adminId === profile.id);
+      if (market) {
+        setMyMarket(market);
+        setGstPercentage(market.gstPercentage?.toString() || '18');
+        if (market.deliveryChargeConfig?.default) {
+          setDeliveryBase(market.deliveryChargeConfig.default.toString());
+        }
+      }
+    }
+  }, [role, markets, profile]);
 
   const fetchRoles = async () => {
     try {
@@ -150,12 +171,10 @@ export default function MarketsPage() {
     }
     setLoading(true);
     try {
-      // Split name into first and last name
       const nameParts = adminName.trim().split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Doe';
 
-      // 1. Create User
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +200,6 @@ export default function MarketsPage() {
       const user = await res.json();
       const token = localStorage.getItem('admin_token');
 
-      // 2. Assign Role
       const roleRes = await fetch(`${API_BASE}/roles/assign/${user.id}`, {
         method: 'PATCH',
         headers: { 
@@ -192,7 +210,6 @@ export default function MarketsPage() {
       });
 
       if (roleRes.ok) {
-        // 3. Assign Admin to Market
         const marketRes = await fetch(`${API_BASE}/super-admin/markets/${selectedMarketId}`, {
           method: 'PATCH',
           headers: { 
@@ -268,6 +285,70 @@ export default function MarketsPage() {
     }
     setLoading(false);
   };
+
+  const handleUpdateMyMarket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!myMarket) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/super-admin/markets/${myMarket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ 
+          gstPercentage: parseFloat(gstPercentage),
+          deliveryChargeConfig: { default: parseFloat(deliveryBase) }
+        }),
+      });
+      if (res.ok) {
+        alert('Market configuration updated successfully!');
+      } else {
+        alert('Failed to update market configuration.');
+      }
+    } catch (err) {
+      alert('Network Error');
+    }
+    setLoading(false);
+  };
+
+  if (role === 'MARKET_ADMIN') {
+    return (
+      <div className="p-8 bg-slate-50 min-h-screen">
+        <h1 className="text-2xl font-extrabold text-gray-900">Manage My Market</h1>
+        <p className="text-sm text-gray-500 mt-1">Configure global platform settings like GST and Delivery Charges for your local market.</p>
+        
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-2xl">
+          {!myMarket ? (
+            <p className="text-gray-500">Loading your market details...</p>
+          ) : (
+            <form onSubmit={handleUpdateMyMarket} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Market Name</label>
+                <input type="text" value={myMarket.name} disabled className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-500 outline-none" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GST Percentage (%)</label>
+                  <input required type="number" step="any" value={gstPercentage} onChange={e=>setGstPercentage(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                  <p className="text-xs text-gray-400 mt-1">Standard tax applied to platform fees.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Delivery Fee (₹)</label>
+                  <input required type="number" step="any" value={deliveryBase} onChange={e=>setDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                  <p className="text-xs text-gray-400 mt-1">Default rider delivery charge.</p>
+                </div>
+              </div>
+
+              <button disabled={loading} type="submit" className="w-full mt-4 bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">
+                {loading ? 'Saving...' : 'Save Market Settings'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
