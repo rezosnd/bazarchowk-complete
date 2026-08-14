@@ -74,7 +74,8 @@ export default function SettlementsPage() {
         fetchSettlements();
       } else {
         const err = await res.json();
-        alert(err?.message || 'Failed to generate settlement.');
+        const msg = Array.isArray(err?.message) ? err.message.join('\n') : (err?.message || 'Failed to generate settlement.');
+        alert(msg);
       }
     } catch (err) { alert('Network Error'); }
     setGenerating(false);

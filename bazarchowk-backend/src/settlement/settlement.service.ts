@@ -196,7 +196,9 @@ export class SettlementService {
       commissionPct = dto.commissionPercent;
     }
     const periodStart = new Date(dto.periodStart);
+    periodStart.setUTCHours(0, 0, 0, 0);
     const periodEnd = new Date(dto.periodEnd);
+    periodEnd.setUTCHours(23, 59, 59, 999);
 
     // Wrap the entire settlement generation in an interactive transaction to prevent race conditions
     const settlement = await this.prisma.$transaction(async (tx) => {
