@@ -51,7 +51,7 @@ export default function ShopOrdersScreen() {
     }
   };
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
+  const updateStatus = async (orderId: string, newStatus: string, customNotes?: string) => {
     setProcessingId(orderId);
     try {
       const token = await SecureStore.getItemAsync('partner_token');
@@ -61,7 +61,7 @@ export default function ShopOrdersScreen() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ status: newStatus, notes: `Status updated to ${newStatus}` })
+        body: JSON.stringify({ status: newStatus, notes: customNotes || `Status updated to ${newStatus}` })
       });
       
       if (res.ok) {
@@ -104,16 +104,47 @@ export default function ShopOrdersScreen() {
     }
     if (order.status === 'PREPARING') {
       return (
-        <TouchableOpacity style={[styles.btn, styles.primaryBtn]} onPress={() => updateStatus(order.id, 'READY')}>
+        <TouchableOpacity style={[styles.btn, styles.primaryBtn]} onPress={() => updateStatus(order.id, 'READY_FOR_PICKUP')}>
           <Text style={styles.primaryText}>Mark as Ready</Text>
         </TouchableOpacity>
       );
     }
-    if (order.status === 'READY') {
+    if (order.status === 'READY_FOR_PICKUP' || order.status === 'READY') {
       return (
-        <View style={styles.waitingRider}>
-          <Ionicons name="bicycle" size={20} color="#F59E0B" />
-          <Text style={styles.waitingText}>Waiting for Rider Pickup</Text>
+        <View style={{ gap: 8 }}>
+          <View style={styles.waitingRider}>
+            <Ionicons name="bicycle" size={20} color="#F59E0B" />
+            <Text style={styles.waitingText}>Waiting for Rider</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.btn, { backgroundColor: '#0F172A' }]} 
+            onPress={() => updateStatus(order.id, 'CUSTOMER_PICKUP')}
+          >
+            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Handed to Customer (Self-Pickup)</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (order.status === 'RETURNING_TO_SHOP') {
+      return (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: '#DC2626', fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>
+            Rider is returning this order.
+          </Text>
+          <View style={styles.actionRow}>
+            <TouchableOpacity 
+              style={[styles.btn, { backgroundColor: '#FEE2E2' }]} 
+              onPress={() => updateStatus(order.id, 'RETURNED_TO_SHOP', 'Damaged')}
+            >
+              <Text style={{ color: '#DC2626', fontWeight: 'bold', fontSize: 13 }}>Mark Damaged</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.btn, { backgroundColor: '#00B140' }]} 
+              onPress={() => updateStatus(order.id, 'RETURNED_TO_SHOP', 'Restored')}
+            >
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>Restore Inventory</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
@@ -125,10 +156,11 @@ export default function ShopOrdersScreen() {
   }
 
   const filteredOrders = orders.filter(o => {
+    const pastStatuses = ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'CUSTOMER_PICKUP', 'RETURNED_TO_SHOP', 'INVENTORY_RESTORED'];
     if (activeTab === 'LIVE') {
-      return !['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'].includes(o.status);
+      return !pastStatuses.includes(o.status);
     } else {
-      return ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'].includes(o.status);
+      return pastStatuses.includes(o.status);
     }
   });
 

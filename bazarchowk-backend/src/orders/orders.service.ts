@@ -616,17 +616,106 @@ export class OrdersService {
                 status: 'PENDING'
               }
             });
+        }
+      }
+
+      // Inventory Restoration logic for Returns
+      if (dto.status === OrderStatus.RETURNED_TO_SHOP) {
+        // If not explicitly marked as DAMAGED, automatically restore inventory
+        if (!dto.notes || !dto.notes.toLowerCase().includes('damaged')) {
+          const items = await this.prisma.orderItem.findMany({ where: { orderId } });
+          
+          for (const item of items) {
+            await this.prisma.productVariant.update({
+              where: { id: item.productVariantId },
+              data: { stock: { increment: item.quantity } }
+            });
+            
+            const inventory = await this.prisma.inventory.findUnique({ where: { productVariantId: item.productVariantId } });
+            if (inventory) {
+              await this.prisma.inventory.update({
+                where: { id: inventory.id },
+                data: { quantity: { increment: item.quantity } }
+              });
+              await this.prisma.inventoryLog.create({
+                data: {
+                  inventoryId: inventory.id,
+                  userId: order.shop.ownerId, // system on behalf of shopkeeper
+                  type: 'RETURN',
+                  quantity: item.quantity,
+                  reason: 'Customer Refused / Returned',
+                  referenceId: order.id,
+                }
+              });
+            }
+          }
+
+          // Move to INVENTORY_RESTORED
+          await this.prisma.order.update({
+             where: { id: orderId },
+             data: { status: OrderStatus.INVENTORY_RESTORED }
+          });
+          
+          await this.prisma.orderStatusHistory.create({
+             data: {
+                orderId,
+                status: OrderStatus.INVENTORY_RESTORED,
+                notes: 'System auto-restored inventory to stock',
+                createdBy: 'SYSTEM'
+             }
+          });
+        } else {
+          // It is damaged. We log a DAMAGE transaction but don't increase stock.
+          const items = await this.prisma.orderItem.findMany({ where: { orderId } });
+          for (const item of items) {
+            const inventory = await this.prisma.inventory.findUnique({ where: { productVariantId: item.productVariantId } });
+            if (inventory) {
+              await this.prisma.inventoryLog.create({
+                data: {
+                  inventoryId: inventory.id,
+                  userId: order.shop.ownerId,
+                  type: 'DAMAGE',
+                  quantity: 0, // stock already deducted, we don't add it back
+                  reason: 'Returned Damaged',
+                  referenceId: order.id,
+                }
+              });
+            }
           }
         }
       }
 
-      // Notify customer
-      await this.notifications.sendInAppNotification(
-        order.customerId,
-        'Order Update',
-        `Your order ${order.orderNumber} is now ${dto.status}`,
-        'ORDER'
-      );
+          }
+        }
+        
+        // Notify shop owner that it was returned/damaged
+        await this.notifications.sendInAppNotification(
+          order.shop.ownerId,
+          'Return Processed',
+          `Order ${order.orderNumber} return has been processed.`,
+          'SYSTEM'
+        );
+      }
+
+      if (dto.status === OrderStatus.READY_FOR_PICKUP || dto.status === OrderStatus.READY) {
+        // Notify Customer for self pickup (if applicable)
+        await this.notifications.sendInAppNotification(
+          order.customerId,
+          'Order Ready!',
+          `Your order ${order.orderNumber} from ${order.shop.name} is ready.`,
+          'ORDER'
+        );
+      }
+
+      // Notify customer of general status updates (if not handled above)
+      if (dto.status !== OrderStatus.READY_FOR_PICKUP && dto.status !== OrderStatus.READY && dto.status !== OrderStatus.RETURNED_TO_SHOP && dto.status !== OrderStatus.INVENTORY_RESTORED) {
+        await this.notifications.sendInAppNotification(
+          order.customerId,
+          'Order Update',
+          `Your order ${order.orderNumber} is now ${dto.status.replace(/_/g, ' ')}`,
+          'ORDER'
+        );
+      }
 
       // Realtime websocket broadcast
       this.realtime.sendToUser(order.customerId, 'order_status_update', {

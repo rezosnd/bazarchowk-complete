@@ -163,30 +163,29 @@ export default function CategoryDetailScreen() {
     if (!id) return;
     setLoading(true);
     try {
-      // Dynamic service categories (e.g. dyn-salon) don't have real DB products
-      if (id.startsWith('dyn-')) {
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-
-      // Build location params — backend will filter to nearby shops if lat/lng provided
-      // If shop has no GPS set yet, backend still includes it (no false negatives)
       const locParams = location?.lat && location?.lng
         ? `&lat=${location.lat}&lng=${location.lng}&city=${encodeURIComponent(location.city || '')}`
         : (location?.city ? `&city=${encodeURIComponent(location.city)}` : '');
 
-      const [subRes, catRes] = await Promise.all([
-        api.get(`/products?subCategoryId=${id}${locParams}`).catch(() => ({ data: [] })),
-        api.get(`/products?categoryId=${id}${locParams}`).catch(() => ({ data: [] })),
-      ]);
-      const subData = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.items || []);
-      const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.items || []);
-      const mergedMap = new Map<string, any>();
-      [...subData, ...catData].forEach(p => mergedMap.set(p.id, p));
-      setProducts(Array.from(mergedMap.values()));
+      if (id.startsWith('dyn-')) {
+        const partnerType = id.replace('dyn-', '').toUpperCase();
+        // Fallback for salon vs saloon
+        const type = partnerType === 'SALOON' ? 'SALON' : partnerType;
+        const res = await api.get(`/shops?partnerType=${type}${locParams}`);
+        setProducts(Array.isArray(res.data) ? res.data : []);
+      } else {
+        const [subRes, catRes] = await Promise.all([
+          api.get(`/products?subCategoryId=${id}${locParams}`).catch(() => ({ data: [] })),
+          api.get(`/products?categoryId=${id}${locParams}`).catch(() => ({ data: [] })),
+        ]);
+        const subData = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.items || []);
+        const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.items || []);
+        const mergedMap = new Map<string, any>();
+        [...subData, ...catData].forEach(p => mergedMap.set(p.id, p));
+        setProducts(Array.from(mergedMap.values()));
+      }
     } catch (e) {
-      console.warn('Failed to load products', e);
+      console.warn('Failed to load items', e);
     } finally {
       setLoading(false);
     }
@@ -222,7 +221,7 @@ export default function CategoryDetailScreen() {
       </LinearGradient>
 
       {/* ── Sort Bar ── */}
-      {!loading && products.length > 0 && (
+      {!loading && products.length > 0 && !id.startsWith('dyn-') && (
         <View style={styles.sortBar}>
           <Text style={styles.resultCount}>{products.length} items</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -245,7 +244,7 @@ export default function CategoryDetailScreen() {
         </View>
       )}
 
-      {/* ── Products Grid ── */}
+      {/* ── Grid ── */}
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -253,16 +252,16 @@ export default function CategoryDetailScreen() {
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={styles.loadingText}>Loading items...</Text>
+            <Text style={styles.loadingText}>Loading...</Text>
           </View>
         ) : sorted.length === 0 ? (
           <View style={styles.centered}>
             <Ionicons name="location-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyTitle}>No shops near you</Text>
+            <Text style={styles.emptyTitle}>No options near you</Text>
             <Text style={styles.emptyText}>
               {location?.city
-                ? `No shops in ${location.city} carry this category yet.`
-                : 'No products available in this category right now.'}
+                ? `No providers in ${location.city} found.`
+                : 'No options available in this category right now.'}
             </Text>
             <TouchableOpacity
               onPress={fetchProducts}
@@ -270,6 +269,47 @@ export default function CategoryDetailScreen() {
             >
               <Text style={{ color: '#FFF', fontWeight: '700' }}>Retry</Text>
             </TouchableOpacity>
+          </View>
+        ) : id.startsWith('dyn-') ? (
+          <View style={{ gap: 16 }}>
+            {sorted.map((shop, idx) => (
+              <TouchableOpacity 
+                key={shop.id} 
+                style={{
+                  flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 16,
+                  padding: 12, gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2
+                }} 
+                activeOpacity={0.9} 
+                onPress={() => router.push(`/services/${shop.id}`)}
+              >
+                <View style={{ width: 90, height: 90, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F1F5F9' }}>
+                  {shop.bannerUrl || shop.logoUrl ? (
+                    <Image source={{ uri: shop.bannerUrl || shop.logoUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                  ) : (
+                    <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="briefcase-outline" size={32} color="#CBD5E1" />
+                    </View>
+                  )}
+                  {shop.status?.isOpen && (
+                    <View style={{ position: 'absolute', bottom: 6, left: 6, backgroundColor: PRIMARY, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                      <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>OPEN</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 }}>{shop.name}</Text>
+                  <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 6 }}>
+                    <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
+                  </Text>
+                  <TouchableOpacity 
+                    style={{ alignSelf: 'flex-start', backgroundColor: '#EA580C', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                    onPress={() => router.push(`/services/${shop.id}`)}
+                  >
+                    <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Book Appointment</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         ) : (
           <View style={styles.grid}>

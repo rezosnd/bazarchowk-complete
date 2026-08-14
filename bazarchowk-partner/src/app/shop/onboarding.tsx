@@ -148,11 +148,7 @@ export default function ShopOnboardingScreen() {
         await SecureStore.setItemAsync('bazar_shop_id', newShop.id);
         
         alert('Business Profile Completed Successfully!');
-        if (hasServices && !hasProducts) {
-          router.push('/services' as any);
-        } else {
-          router.push('/' as any);
-        }
+        router.replace('/' as any);
       } else {
         const err = await res.json();
         alert(err.message || 'Failed to register shop');

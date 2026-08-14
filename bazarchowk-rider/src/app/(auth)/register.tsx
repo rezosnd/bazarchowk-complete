@@ -202,7 +202,32 @@ export default function RiderRegisterScreen() {
             <View style={{ height: 16 }} />
 
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Select Your Market</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={styles.inputLabel}>Select Your Market</Text>
+                <TouchableOpacity onPress={async () => {
+                  setLoading(true);
+                  try {
+                    const Location = require('expo-location');
+                    const { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status !== 'granted') throw new Error('Permission denied');
+                    let loc = await Location.getCurrentPositionAsync({});
+                    if (loc) {
+                      const res = await fetch(`${API_URL}/markets?lat=${loc.coords.latitude}&lng=${loc.coords.longitude}`);
+                      if (res.ok) {
+                        const data = await res.json();
+                        setMarkets(data);
+                        if (data.length > 0) setMarketId(data[0].id);
+                      }
+                    }
+                  } catch (e: any) {
+                    alert(e.message || 'Failed to auto-detect market');
+                  } finally {
+                    setLoading(false);
+                  }
+                }} style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
+                  <Text style={{ color: '#00B140', fontSize: 12, fontWeight: '700' }}>Auto Detect GPS</Text>
+                </TouchableOpacity>
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {markets.length === 0 ? (
                   <Text style={{ color: '#9CA3AF', padding: 8 }}>No markets found.</Text>
@@ -222,7 +247,7 @@ export default function RiderRegisterScreen() {
                       }}
                     >
                       <Text style={{ fontWeight: '700', color: marketId === m.id ? '#00B140' : '#374151' }}>{m.name}</Text>
-                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{m.village?.name || 'Local'} Area</Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{m.distanceKm ? `${m.distanceKm.toFixed(1)} km away` : (m.village?.name || 'Local')}</Text>
                     </TouchableOpacity>
                   ))
                 )}
