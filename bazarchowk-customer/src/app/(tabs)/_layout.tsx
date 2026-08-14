@@ -168,7 +168,6 @@ function AIButton({ label, aiActiveState }: { label: string, aiActiveState: Shar
 
   const handlePressOut = () => {
     pressScale.value = withSpring(1, { damping: 12, stiffness: 280, mass: 0.7 });
-    router.push('/(tabs)/ai-assistant');
   };
 
   // Styles
