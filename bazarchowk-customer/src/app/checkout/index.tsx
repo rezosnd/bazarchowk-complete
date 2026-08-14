@@ -130,6 +130,9 @@ export default function CheckoutScreen() {
             razorpaySignature: data.razorpay_signature
           });
         } catch (error: any) {
+          try {
+            await api.patch(`/orders/${orderId}/status`, { status: 'CANCELLED', notes: 'Payment cancelled or failed' });
+          } catch (e) {}
           Alert.alert('Payment Failed', error?.description || 'Payment cancelled.');
           router.replace('/(tabs)/orders' as any); return;
         }

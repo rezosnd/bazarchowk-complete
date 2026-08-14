@@ -449,36 +449,38 @@ export class OrdersService {
     })) as any;
 
     // 4. Send Notifications
-    // To Shop Owner
-    await this.notifications.sendInAppNotification(
-      order.shop.ownerId,
-      'New Order Received',
-      `You have a new order (${order.orderNumber}) for ₹${order.totalAmount}`,
-      'ORDER'
-    );
+    if (paymentMethod !== 'RAZORPAY') {
+      // To Shop Owner
+      await this.notifications.sendInAppNotification(
+        order.shop.ownerId,
+        'New Order Received',
+        `You have a new order (${order.orderNumber}) for ₹${order.totalAmount}`,
+        'ORDER'
+      );
 
-    // To Customer
-    await this.notifications.sendInAppNotification(
-      customerId,
-      'Order Placed Successfully',
-      `Your order (${order.orderNumber}) for ₹${order.totalAmount} has been placed.`,
-      'ORDER'
-    );
+      // To Customer
+      await this.notifications.sendInAppNotification(
+        customerId,
+        'Order Placed Successfully',
+        `Your order (${order.orderNumber}) for ₹${order.totalAmount} has been placed.`,
+        'ORDER'
+      );
 
-    // Realtime broadcast to the specific shop's connected devices
-    this.realtime.sendToShop(order.shopId, 'new_order', {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      totalAmount: order.totalAmount
-    });
+      // Realtime broadcast to the specific shop's connected devices
+      this.realtime.sendToShop(order.shopId, 'new_order', {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        totalAmount: order.totalAmount
+      });
 
-    // Realtime broadcast to admins for global dashboard
-    this.realtime.sendToAdmins('new_platform_order', {
-      orderId: order.id,
-      shopId: order.shopId,
-      totalAmount: order.totalAmount,
-      timestamp: new Date()
-    });
+      // Realtime broadcast to admins for global dashboard
+      this.realtime.sendToAdmins('new_platform_order', {
+        orderId: order.id,
+        shopId: order.shopId,
+        totalAmount: order.totalAmount,
+        timestamp: new Date()
+      });
+    }
 
     if (createDto.idempotencyKey) {
       await this.cacheManager.set(`order_idempotency_${createDto.idempotencyKey}`, order.id, 86400000); // lock for 24h
@@ -527,7 +529,13 @@ export class OrdersService {
     }
 
     return this.prisma.order.findMany({
-      where: { shopId },
+      where: { 
+        shopId,
+        NOT: {
+          paymentMethod: 'RAZORPAY',
+          paymentStatus: 'PENDING'
+        }
+      },
       include: { customer: true, items: { include: { productVariant: { include: { product: true } } } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -614,7 +622,7 @@ export class OrdersService {
       });
 
       // If the shop just ACCEPTED the order, push it to the Delivery Queue!
-      if (dto.status === OrderStatus.ACCEPTED) {
+      if (dto.status === OrderStatus.ACCEPTED && order.deliveryAddressId !== null) {
         // Ensure we don't create duplicate delivery rows if they toggle status
         const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
         if (!existingDelivery) {
@@ -700,6 +708,34 @@ export class OrdersService {
                 totalAmount,
                 type,
                 status: 'PENDING'
+              }
+            });
+          }
+        }
+      }
+
+      // Inventory Restoration logic for Cancellations
+      if (dto.status === OrderStatus.CANCELLED) {
+        const items = await this.prisma.orderItem.findMany({ where: { orderId } });
+        for (const item of items) {
+          await this.prisma.productVariant.update({
+            where: { id: item.productVariantId },
+            data: { stock: { increment: item.quantity } }
+          });
+          const inventory = await this.prisma.inventory.findUnique({ where: { productVariantId: item.productVariantId } });
+          if (inventory) {
+            await this.prisma.inventory.update({
+              where: { id: inventory.id },
+              data: { quantity: { increment: item.quantity } }
+            });
+            await this.prisma.inventoryLog.create({
+              data: {
+                inventoryId: inventory.id,
+                userId: userId,
+                type: 'RETURN',
+                quantity: item.quantity,
+                reason: 'Order Cancelled',
+                referenceId: order.id,
               }
             });
           }

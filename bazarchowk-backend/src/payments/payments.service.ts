@@ -5,6 +5,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import * as crypto from 'crypto';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 // Using commonjs require since razorpay has issues with esModuleInterop sometimes
 const Razorpay = require('razorpay');
 
@@ -16,6 +17,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly realtime: RealtimeGateway,
   ) {
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
       this.razorpay = new Razorpay({
@@ -142,10 +144,23 @@ export class PaymentsService {
     // Notify Shop Owner
     await this.notifications.sendInAppNotification(
       payment.order.shop.ownerId,
-      'Payment Received',
-      `Online payment of ₹${payment.amount} received for order ${payment.order.orderNumber}`,
-      'PAYMENT'
+      'New Order Received',
+      `You have a new order (${payment.order.orderNumber}) for ₹${payment.order.totalAmount} (Paid via Online)`,
+      'ORDER'
     );
+
+    this.realtime.sendToShop(payment.order.shopId, 'new_order', {
+      orderId: payment.order.id,
+      orderNumber: payment.order.orderNumber,
+      totalAmount: payment.order.totalAmount
+    });
+
+    this.realtime.sendToAdmins('new_platform_order', {
+      orderId: payment.order.id,
+      shopId: payment.order.shopId,
+      totalAmount: payment.order.totalAmount,
+      timestamp: new Date()
+    });
 
     return { success: true, message: 'Payment verified successfully' };
   }
@@ -173,6 +188,7 @@ export class PaymentsService {
 
       const payment = await this.prisma.payment.findUnique({
         where: { razorpayOrderId },
+        include: { order: { include: { shop: true } } },
       });
 
       if (payment && payment.status !== PaymentStatus.PAID) {
@@ -190,6 +206,23 @@ export class PaymentsService {
           }),
         ]);
         this.logger.log(`Payment captured via webhook for order ${payment.orderId}`);
+        await this.notifications.sendInAppNotification(
+          payment.order.shop.ownerId,
+          'New Order Received',
+          `You have a new order (${payment.order.orderNumber}) for ₹${payment.order.totalAmount} (Paid via Online)`,
+          'ORDER'
+        );
+        this.realtime.sendToShop(payment.order.shopId, 'new_order', {
+          orderId: payment.order.id,
+          orderNumber: payment.order.orderNumber,
+          totalAmount: payment.order.totalAmount
+        });
+        this.realtime.sendToAdmins('new_platform_order', {
+          orderId: payment.order.id,
+          shopId: payment.order.shopId,
+          totalAmount: payment.order.totalAmount,
+          timestamp: new Date()
+        });
       }
     } else if (event === 'payment.failed') {
        const razorpayOrderId = payload.payload.payment.entity.order_id;
