@@ -113,12 +113,11 @@ export default function OrdersAdminPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-gray-500 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 font-semibold">Order</th>
-                <th className="px-6 py-4 font-semibold">Customer</th>
-                <th className="px-6 py-4 font-semibold">Shop / Market</th>
+                <th className="px-6 py-4 font-semibold">Order Details</th>
+                <th className="px-6 py-4 font-semibold">Customer & Shop</th>
                 <th className="px-6 py-4 font-semibold">Items</th>
-                <th className="px-6 py-4 font-semibold">Amount</th>
-                <th className="px-6 py-4 font-semibold text-right">Status / Actions</th>
+                <th className="px-6 py-4 font-semibold">Delivery Boy</th>
+                <th className="px-6 py-4 font-semibold text-right">Status & Tracking</th>
               </tr>
             </thead>
             <tbody>
@@ -140,35 +139,61 @@ export default function OrdersAdminPage() {
                 </tr>
               ) : filtered.map(order => (
                 <tr key={order.id} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="font-mono text-xs font-bold text-orange-600">{order.orderNumber}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{new Date(order.createdAt).toLocaleString('en-IN')}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-semibold text-gray-900">{order.customer?.firstName} {order.customer?.lastName}</div>
-                    <div className="text-xs text-gray-400">{order.customer?.email || order.customer?.phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-800">{order.shop?.name}</div>
-                    {order.shop?.market && <span className="text-xs text-blue-600">{order.shop.market.name}</span>}
+                    <div className="font-bold text-gray-900 mt-1">₹{order.totalAmount}</div>
+                    <div className="text-xs font-medium text-gray-500">{order.paymentMethod} • {order.paymentStatus}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="max-w-[180px] text-xs text-gray-600 truncate">
-                      {order.items?.map((it: any) => `${it.quantity}× ${it.productVariant?.product?.name || 'Item'} (${it.productVariant?.name})`).join(', ') || '—'}
+                    <div className="font-semibold text-gray-900">Customer: {order.customer?.firstName} {order.customer?.lastName}</div>
+                    <div className="text-xs text-gray-500 mb-2">{order.customer?.phone}</div>
+                    <div className="font-semibold text-gray-900">Shop: {order.shop?.name}</div>
+                    <div className="text-xs text-blue-600">{order.shop?.city}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="max-w-[200px] text-xs text-gray-700">
+                      {order.items?.length > 0 
+                        ? order.items.map((it: any) => (
+                            <div key={it.id} className="truncate">
+                              {it.quantity}x {it.productVariant?.product?.name || 'Product'} {it.productVariant?.name && `(${it.productVariant.name})`}
+                            </div>
+                          ))
+                        : <span className="text-gray-400 italic">Items missing</span>
+                      }
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-bold text-gray-900">₹{order.totalAmount}</div>
-                    <div className="text-xs text-gray-400">{order.paymentMethod}</div>
+                  <td className="px-6 py-4">
+                    {order.rider ? (
+                      <div className="bg-slate-50 p-2 rounded border border-slate-200">
+                        <div className="font-bold text-gray-900 text-sm">{order.rider.firstName} {order.rider.lastName}</div>
+                        <div className="text-xs text-gray-600 font-mono mt-0.5">{order.rider.phone}</div>
+                        {order.trackingPoints && order.trackingPoints.length > 0 && (
+                          <div className="text-[10px] text-blue-600 mt-1 font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                            Live location active
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400 italic">Not Assigned</div>
+                    )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[order.status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[order.status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
                         {order.status?.replace(/_/g,' ')}
                       </span>
-                      {order.paymentStatus === 'PAID' && order.status !== 'DELIVERED' && (
-                        <button onClick={() => handleRefund(order.id)} className="text-xs text-red-500 hover:text-red-700 font-bold underline">
-                          Refund
+                      
+                      {order.statusHistory && order.statusHistory.length > 0 && (
+                        <div className="text-[10px] text-gray-500 max-w-[150px] truncate" title={order.statusHistory[0].notes}>
+                          Last updated: {new Date(order.statusHistory[0].createdAt).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit'})}
+                        </div>
+                      )}
+
+                      {order.paymentStatus === 'PAID' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
+                        <button onClick={() => handleRefund(order.id)} className="text-xs text-red-500 hover:text-red-700 font-bold underline mt-1">
+                          Refund Order
                         </button>
                       )}
                     </div>

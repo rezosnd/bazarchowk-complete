@@ -230,7 +230,11 @@ export class SuperAdminService {
         where, skip, take: limit,
         include: {
           customer: { select: { firstName: true, email: true, phone: true } },
-          shop: { select: { name: true, city: true } }
+          shop: { select: { name: true, city: true } },
+          rider: { select: { firstName: true, lastName: true, phone: true } },
+          items: { include: { productVariant: { include: { product: true } } } },
+          statusHistory: { orderBy: { createdAt: 'desc' } },
+          trackingPoints: { orderBy: { createdAt: 'desc' }, take: 1 }
         },
         orderBy: { createdAt: 'desc' },
       }),
