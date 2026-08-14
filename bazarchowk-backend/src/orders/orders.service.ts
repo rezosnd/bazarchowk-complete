@@ -152,19 +152,21 @@ export class OrdersService {
       }
       await this.cacheManager.set(cacheKey, 'PROCESSING', 60000); // 1 minute lock
     }
-    // 1. Fetch Cart and Address
-    const [cart, deliveryAddress] = await Promise.all([
-      this.prisma.cart.findUnique({
-        where: { userId: customerId },
-        include: { items: { include: { productVariant: { include: { product: true } } } } }
-      }),
-      this.prisma.address.findUnique({
-        where: { id: createDto.deliveryAddressId }
-      })
-    ]);
+    const isSelfPickup = createDto.deliveryType === 'SELF_PICKUP';
 
-    if (!deliveryAddress || deliveryAddress.userId !== customerId) {
-      throw new BadRequestException('Invalid delivery address');
+    // 1. Fetch Cart and Address
+    const cart = await this.prisma.cart.findUnique({
+      where: { userId: customerId },
+      include: { items: { include: { productVariant: { include: { product: true } } } } }
+    });
+
+    let deliveryAddress: any = null;
+    if (!isSelfPickup) {
+      if (!createDto.deliveryAddressId) throw new BadRequestException('Delivery address is required for home delivery');
+      deliveryAddress = await this.prisma.address.findUnique({ where: { id: createDto.deliveryAddressId } });
+      if (!deliveryAddress || deliveryAddress.userId !== customerId) {
+        throw new BadRequestException('Invalid delivery address');
+      }
     }
 
     if (!cart || cart.items.length === 0) {
@@ -202,55 +204,61 @@ export class OrdersService {
     if (!shop) throw new NotFoundException('Shop not found');
     if (!shop.isOpen) throw new BadRequestException('This shop is currently closed. You cannot place orders right now.');
 
-    // Only compute distance if BOTH shop and address have valid non-zero coordinates
-    const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);
-    const addrHasCoords = deliveryAddress.latitude && deliveryAddress.longitude && (deliveryAddress.latitude !== 0 || deliveryAddress.longitude !== 0);
-
+    // Skip delivery distance check for self-pickup orders
     let distanceKm = 0;
-    if (shopHasCoords && addrHasCoords) {
-      const R = 6371; // Earth's radius in km
-      const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
-      const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(deliveryAddress.latitude * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      distanceKm = R * c;
+    if (!isSelfPickup) {
+      // Only compute distance if BOTH shop and address have valid non-zero coordinates
+      const shopHasCoords = shop.latitude && shop.longitude && (shop.latitude !== 0 || shop.longitude !== 0);
+      const addrHasCoords = deliveryAddress?.latitude && deliveryAddress?.longitude && (deliveryAddress.latitude !== 0 || deliveryAddress.longitude !== 0);
 
-      const maxRadius = shop.deliveryRadius || 5.0;
-      if (distanceKm > maxRadius) {
-        throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius for this shop is ${maxRadius} km.`);
-      }
-    } else {
-      if (shop.city?.toLowerCase() !== deliveryAddress.city?.toLowerCase()) {
-        throw new BadRequestException(`Delivery not available in ${deliveryAddress.city}. This shop only delivers within ${shop.city}.`);
-      }
-    }
-
-    // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)
-    const cityConfig = await this.prisma.cityConfig.findFirst({
-      where: { name: { equals: shop.city, mode: 'insensitive' } }
-    });
-
-    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
-
-    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-      // Tiers should be sorted by uptoKm, but let's sort them just to be safe
-      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-      for (const tier of tiers) {
-        if (distanceKm <= tier.uptoKm) {
-          calculatedDeliveryFee = tier.fee;
-          break;
+      if (shopHasCoords && addrHasCoords) {
+        const R = 6371;
+        const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
+        const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(deliveryAddress.latitude * (Math.PI / 180)) * Math.cos(shop.latitude * (Math.PI / 180)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distanceKm = R * c;
+        const maxRadius = shop.deliveryRadius || 5.0;
+        if (distanceKm > maxRadius) {
+          throw new BadRequestException(`Delivery address is out of range (${distanceKm.toFixed(1)} km). Maximum delivery radius for this shop is ${maxRadius} km.`);
+        }
+      } else {
+        if (shop.city?.toLowerCase() !== deliveryAddress?.city?.toLowerCase()) {
+          throw new BadRequestException(`Delivery not available in ${deliveryAddress?.city}. This shop only delivers within ${shop.city}.`);
         }
       }
     }
 
+    // Self-pickup: no delivery fee
+    let calculatedDeliveryFee = 0;
     let taxAmount = 0;
-    if (cityConfig && cityConfig.taxPercent) {
-      taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+
+    if (!isSelfPickup) {
+      // 4. Resolve Dynamic Delivery Fee from City Config
+      const cityConfig = await this.prisma.cityConfig.findFirst({
+        where: { name: { equals: shop.city, mode: 'insensitive' } }
+      });
+
+      calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+
+      if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+        for (const tier of tiers) {
+          if (distanceKm <= tier.uptoKm) { calculatedDeliveryFee = tier.fee; break; }
+        }
+      }
+
+      if (cityConfig && cityConfig.taxPercent) {
+        taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+      } else {
+        taxAmount = (totalAmount * 5) / 100;
+      }
     } else {
-      taxAmount = (totalAmount * 5) / 100; // 5% default
+      // Self-pickup: still apply tax
+      taxAmount = (totalAmount * 5) / 100;
     }
 
     const subtotal = totalAmount;
@@ -314,7 +322,7 @@ export class OrdersService {
           orderNumber,
           customerId,
           shopId: createDto.shopId,
-          deliveryAddressId: createDto.deliveryAddressId,
+          deliveryAddressId: isSelfPickup ? null : createDto.deliveryAddressId,
           paymentMethod,
           paymentStatus,
           status: OrderStatus.PLACED,
@@ -323,13 +331,11 @@ export class OrdersService {
           deliveryFee: calculatedDeliveryFee,
           walletAmountUsed,
           totalAmount,
-          items: {
-            create: orderItemsData,
-          },
+          items: { create: orderItemsData },
           statusHistory: {
             create: {
               status: OrderStatus.PLACED,
-              notes: 'Order placed by customer',
+              notes: isSelfPickup ? 'Self-pickup order placed by customer' : 'Order placed by customer',
               createdBy: customerId,
             }
           }

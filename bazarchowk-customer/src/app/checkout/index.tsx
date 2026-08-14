@@ -3,219 +3,211 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 let RazorpayCheckout: any = null;
-try {
-  RazorpayCheckout = require('react-native-razorpay').default;
-} catch (e) {
-  console.log('Razorpay not available in Expo Go');
-}
+try { RazorpayCheckout = require('react-native-razorpay').default; } catch (e) {}
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
 
 const PRIMARY = '#00B140';
 
+type DeliveryType = 'DELIVERY' | 'SELF_PICKUP';
+type PaymentMethodType = 'COD' | 'RAZORPAY' | 'WALLET';
+
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { shopId } = useLocalSearchParams();
-  
+
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
-  
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI' | 'RAZORPAY' | 'WALLET'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('COD');
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('DELIVERY');
   const [useWallet, setUseWallet] = useState(false);
   const [billDetails, setBillDetails] = useState<any>(null);
   const [fetchingBill, setFetchingBill] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [shopInfo, setShopInfo] = useState<any>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { cart, fetchCart } = useCartStore();
+
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      // Load cart and addresses in parallel
-      const [addrRes] = await Promise.all([
+      const [addrRes, shopRes] = await Promise.all([
         api.get('/addresses'),
-        fetchCart(), // ensure cart is populated for fallback
+        shopId ? api.get(`/shops/${shopId}`) : Promise.resolve({ data: null }),
+        fetchCart(),
       ]);
       setAddresses(addrRes.data);
-      
-      const defAddr = addrRes.data.find((a: any) => a.isDefault);
-      if (defAddr) {
-        setSelectedAddressId(defAddr.id);
-      } else if (addrRes.data.length > 0) {
-        setSelectedAddressId(addrRes.data[0].id);
-      }
-    } catch (error) {
-      console.warn('Failed to fetch checkout data');
-    } finally {
-      setLoading(false);
-    }
+      setShopInfo(shopRes.data);
+      const defAddr = addrRes.data.find((a: any) => a.isDefault) || addrRes.data[0];
+      if (defAddr) setSelectedAddressId(defAddr.id);
+    } catch { console.warn('Failed to fetch checkout data'); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
-    if (selectedAddressId && shopId) {
+    if (deliveryType === 'SELF_PICKUP') {
+      // Self-pickup: no address needed, compute local bill
+      const items = cart?.items || [];
+      const itemTotal = items.reduce((sum: number, item: any) => sum + (item.productVariant?.price ?? 0) * (item.quantity || 1), 0);
+      const taxAmount = Math.round(itemTotal * 0.05 * 100) / 100;
+      setBillDetails({ itemTotal, taxAmount, deliveryFee: 0, walletAmountUsed: 0, payableAmount: itemTotal + taxAmount, walletBalance: 0 });
+    } else if (selectedAddressId && shopId) {
       fetchBillDetails();
     }
-  }, [selectedAddressId, useWallet, shopId]);
-
-  const { cart, fetchCart } = useCartStore();
+  }, [selectedAddressId, useWallet, shopId, deliveryType]);
 
   const fetchBillDetails = async () => {
     try {
       setFetchingBill(true);
       setDeliveryError(null);
-      const res = await api.post('/orders/checkout-preview', {
-        shopId,
-        deliveryAddressId: selectedAddressId,
-        useWallet
-      });
+      const res = await api.post('/orders/checkout-preview', { shopId, deliveryAddressId: selectedAddressId, useWallet });
       setBillDetails(res.data);
-      if (res.data.walletBalance > 0 && !useWallet) {
-        setUseWallet(true); // Auto-apply wallet if balance exists
-      }
-      if (res.data.payableAmount === 0 && (useWallet || res.data.walletBalance > 0)) {
-        setPaymentMethod('WALLET');
-      } else if (paymentMethod === 'WALLET') {
-        setPaymentMethod('COD'); // Fallback if wallet doesn't cover full amount
-      }
+      if (res.data.walletBalance > 0 && !useWallet) setUseWallet(true);
+      if (res.data.payableAmount === 0 && (useWallet || res.data.walletBalance > 0)) setPaymentMethod('WALLET');
+      else if (paymentMethod === 'WALLET') setPaymentMethod('COD');
     } catch (e: any) {
-      const status = e?.response?.status;
-      const errorMsg = e?.response?.data?.message || '';
-      
-      if (status === 400 && (errorMsg.includes('out of range') || errorMsg.includes('not available'))) {
-        setDeliveryError("Order can't be placed. This shop does not deliver to the selected location.");
+      const msg = e?.response?.data?.message || '';
+      if (e?.response?.status === 400 && (msg.includes('out of range') || msg.includes('not available') || msg.includes('not deliver'))) {
+        setDeliveryError("This shop doesn't deliver to your selected address. Try Self-Pickup instead.");
       }
-      
-      console.warn('Failed to fetch bill details', e);
-      // Graceful fallback: compute total from local cart store (correct field path: item.productVariant.price)
-      const shopItems = (cart?.items || []);
-      const itemTotal = shopItems.reduce((sum: number, item: any) => {
-        // Backend cart item shape: { productVariant: { price: number }, quantity: number }
-        const price = item.productVariant?.price 
-          ?? item.price 
-          ?? item.variant?.price 
-          ?? 0;
-        return sum + price * (item.quantity || 1);
-      }, 0);
-      setBillDetails({
-        itemTotal,
-        taxAmount: Math.round(itemTotal * 0.05 * 100) / 100, // 5% tax estimate
-        deliveryFee: 0, // default delivery fee
-        walletAmountUsed: 0,
-        payableAmount: itemTotal + Math.round(itemTotal * 0.05 * 100) / 100 + 0,
-        walletBalance: 0,
-      });
-    } finally {
-      setFetchingBill(false);
-    }
+      // fallback
+      const items = cart?.items || [];
+      const itemTotal = items.reduce((sum: number, item: any) => sum + (item.productVariant?.price ?? 0) * (item.quantity || 1), 0);
+      const taxAmount = Math.round(itemTotal * 0.05 * 100) / 100;
+      setBillDetails({ itemTotal, taxAmount, deliveryFee: 0, walletAmountUsed: 0, payableAmount: itemTotal + taxAmount, walletBalance: 0 });
+    } finally { setFetchingBill(false); }
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddressId) {
-      Alert.alert('Error', 'Please select a delivery address');
-      return;
+    if (deliveryType === 'DELIVERY' && !selectedAddressId) {
+      Alert.alert('Error', 'Please select a delivery address'); return;
     }
-    if (!shopId) {
-      Alert.alert('Error', 'Missing shop ID');
-      return;
-    }
+    if (!shopId) { Alert.alert('Error', 'Missing shop ID'); return; }
+
     setPlacingOrder(true);
     try {
-      const res = await api.post('/orders', {
+      const payload: any = {
         shopId,
-        deliveryAddressId: selectedAddressId,
         paymentMethod,
-        useWallet
-      });
+        useWallet,
+        deliveryType,
+      };
+      if (deliveryType === 'DELIVERY') {
+        payload.deliveryAddressId = selectedAddressId;
+      }
 
+      const res = await api.post('/orders', payload);
       const orderId = res.data.id;
 
       if (paymentMethod === 'RAZORPAY') {
-        // 1. Generate Razorpay Order
         const paymentRes = await api.post('/payments/create', { orderId });
         const { razorpayOrderId, amount } = paymentRes.data;
-
-        // 2. Open Native Razorpay Checkout
         try {
-          if (!RazorpayCheckout) {
-            throw new Error('Razorpay is not available on web or in this environment.');
-          }
+          if (!RazorpayCheckout) throw new Error('Razorpay not available');
           const data = await RazorpayCheckout.open({
-            key: 'rzp_live_Sr05Li4YOC8ZQo', // Use your public key
-            amount: amount,
+            key: 'rzp_live_Sr05Li4YOC8ZQo',
+            amount,
             name: 'BazarChowk',
             description: 'Order Payment',
-            image: 'https://bazarchowk.com/logo.png', // Add your hosted logo
             order_id: razorpayOrderId,
-            theme: { color: '#00B140' }
+            theme: { color: PRIMARY }
           });
-          
-          // Verify on backend
           await api.post('/payments/verify', {
             razorpayOrderId: data.razorpay_order_id,
             razorpayPaymentId: data.razorpay_payment_id,
             razorpaySignature: data.razorpay_signature
           });
         } catch (error: any) {
-          const errorMsg = error?.description || error?.response?.data?.message || error?.message || 'Payment cancelled or failed';
-          Alert.alert('Payment Failed', typeof errorMsg === 'string' ? errorMsg : 'Payment failed or cancelled.');
-          // You could redirect them to orders here so they can retry later.
-          router.replace('/(tabs)/orders' as any);
-          return;
+          Alert.alert('Payment Failed', error?.description || 'Payment cancelled.');
+          router.replace('/(tabs)/orders' as any); return;
         }
       }
 
-      // Clear the local cart
       await useCartStore.getState().fetchCart();
-      Alert.alert('Success', paymentMethod === 'RAZORPAY' ? 'Checkout completed. Check orders for status.' : `Order Placed Successfully! ID: ${res.data.orderNumber}`);
-      router.replace('/(tabs)/orders' as any); // Assume orders tab exists
+      // Navigate to receipt screen
+      router.replace(`/order/${orderId}` as any);
     } catch (error: any) {
-      const globalErrorMsg = error?.response?.data?.message || error?.message || 'Failed to place order';
-      Alert.alert('Error', typeof globalErrorMsg === 'string' ? globalErrorMsg : 'Failed to place order');
-    } finally {
-      setPlacingOrder(false);
-    }
+      Alert.alert('Error', error?.response?.data?.message || error?.message || 'Failed to place order');
+    } finally { setPlacingOrder(false); }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={PRIMARY} />
-      </View>
-    );
-  }
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
+
+  const isSelfPickup = deliveryType === 'SELF_PICKUP';
+  const totalToPay = billDetails?.payableAmount ?? 0;
+  const canPlaceOrder = isSelfPickup ? true : (!!selectedAddressId && !deliveryError);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
+        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        
-        {/* Delivery Address */}
+
+        {/* ── DELIVERY TYPE TOGGLE ── */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <TouchableOpacity onPress={() => router.push('/addresses/new' as any)}>
-              <Text style={styles.addText}>+ Add New</Text>
+          <Text style={styles.sectionTitle}>How do you want to receive it?</Text>
+          <View style={styles.toggleRow}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, deliveryType === 'DELIVERY' && styles.toggleBtnActive]}
+              onPress={() => setDeliveryType('DELIVERY')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="bicycle" size={22} color={deliveryType === 'DELIVERY' ? '#FFF' : '#64748B'} />
+              <Text style={[styles.toggleText, deliveryType === 'DELIVERY' && styles.toggleTextActive]}>Home Delivery</Text>
+              <Text style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.8)' }]}>Rider brings to you</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleBtn, deliveryType === 'SELF_PICKUP' && styles.toggleBtnActive]}
+              onPress={() => setDeliveryType('SELF_PICKUP')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="bag-handle" size={22} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#64748B'} />
+              <Text style={[styles.toggleText, deliveryType === 'SELF_PICKUP' && styles.toggleTextActive]}>Self Pickup</Text>
+              <Text style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.8)' }]}>FREE · Pick from shop</Text>
             </TouchableOpacity>
           </View>
-          
-          {addresses.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No addresses found. Add one to continue.</Text>
+        </View>
+
+        {/* ── SELF PICKUP INFO BANNER ── */}
+        {isSelfPickup && (
+          <View style={styles.pickupBanner}>
+            <Ionicons name="storefront" size={22} color="#7C3AED" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</Text>
+              {shopInfo?.address && <Text style={styles.pickupAddr}>{shopInfo.address}</Text>}
+              <Text style={styles.pickupHint}>Bring this order ID to the shop counter. The shop will prepare your order.</Text>
             </View>
-          ) : (
-            addresses.map(addr => (
-              <TouchableOpacity 
-                key={addr.id} 
+          </View>
+        )}
+
+        {/* ── DELIVERY ADDRESS (only for home delivery) ── */}
+        {!isSelfPickup && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Delivery Address</Text>
+              <TouchableOpacity onPress={() => router.push('/addresses/new' as any)}>
+                <Text style={styles.addText}>+ Add New</Text>
+              </TouchableOpacity>
+            </View>
+            {addresses.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No addresses found. Add one to continue.</Text>
+              </View>
+            ) : addresses.map(addr => (
+              <TouchableOpacity
+                key={addr.id}
                 style={[styles.addressCard, selectedAddressId === addr.id && styles.addressCardActive]}
                 onPress={() => setSelectedAddressId(addr.id)}
                 activeOpacity={0.7}
@@ -233,123 +225,134 @@ export default function CheckoutScreen() {
                   </Text>
                 </View>
               </TouchableOpacity>
-            ))
-          )}
-        </View>
+            ))}
+          </View>
+        )}
 
-        {/* Delivery Error Warning */}
-        {deliveryError && (
+        {/* ── DELIVERY ERROR ── */}
+        {deliveryError && !isSelfPickup && (
           <View style={styles.errorCard}>
-            <View style={styles.errorIconBg}>
-              <Ionicons name="location-outline" size={24} color="#EF4444" />
-            </View>
+            <Ionicons name="warning" size={22} color="#EF4444" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.errorTitle}>Out of Delivery Range</Text>
               <Text style={styles.errorDesc}>{deliveryError}</Text>
+              <TouchableOpacity onPress={() => setDeliveryType('SELF_PICKUP')} style={styles.switchPickupBtn}>
+                <Text style={styles.switchPickupText}>Switch to Self Pickup →</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Payment Method */}
+        {/* ── PAYMENT METHOD ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          
-          <TouchableOpacity 
+
+          {/* COD */}
+          <TouchableOpacity
             style={[styles.paymentCard, paymentMethod === 'COD' && styles.paymentCardActive]}
             onPress={() => setPaymentMethod('COD')}
           >
-            <Ionicons name="cash-outline" size={24} color={paymentMethod === 'COD' ? PRIMARY : '#64748B'} />
-            <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>Cash on Delivery</Text>
+            <View style={[styles.payIcon, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="cash" size={20} color={PRIMARY} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>
+                {isSelfPickup ? 'Pay at Shop (Cash)' : 'Cash on Delivery'}
+              </Text>
+              <Text style={styles.paymentSub}>Pay when you {isSelfPickup ? 'collect' : 'receive'} your order</Text>
+            </View>
             <View style={[styles.radio, paymentMethod === 'COD' && styles.radioActive]}>
               {paymentMethod === 'COD' && <View style={styles.radioInner} />}
             </View>
           </TouchableOpacity>
 
+          {/* Pay Online */}
+          <TouchableOpacity
+            style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
+            onPress={() => setPaymentMethod('RAZORPAY')}
+          >
+            <View style={[styles.payIcon, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons name="card" size={20} color="#3B82F6" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online</Text>
+              <Text style={styles.paymentSub}>Cards · UPI · Net Banking · EMI</Text>
+            </View>
+            <View style={[styles.radio, paymentMethod === 'RAZORPAY' && styles.radioActive]}>
+              {paymentMethod === 'RAZORPAY' && <View style={styles.radioInner} />}
+            </View>
+          </TouchableOpacity>
+
+          {/* Wallet */}
           {billDetails?.walletBalance > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.paymentCard, useWallet && styles.paymentCardActive]}
               onPress={() => setUseWallet(!useWallet)}
             >
-              <Ionicons name="wallet-outline" size={24} color={useWallet ? PRIMARY : '#64748B'} />
+              <View style={[styles.payIcon, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="wallet" size={20} color="#D97706" />
+              </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.paymentText, useWallet && styles.paymentTextActive, { marginLeft: 0 }]}>Use BazarChowk Wallet</Text>
-                <Text style={{ fontSize: 12, color: PRIMARY, fontWeight: '600' }}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</Text>
+                <Text style={[styles.paymentText, useWallet && styles.paymentTextActive]}>BazarChowk Wallet</Text>
+                <Text style={styles.paymentSub}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</Text>
               </View>
               <View style={[styles.checkbox, useWallet && styles.checkboxActive]}>
                 {useWallet && <Ionicons name="checkmark" size={14} color="#FFF" />}
               </View>
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity 
-            style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
-            onPress={() => setPaymentMethod('RAZORPAY')}
-          >
-            <Ionicons name="card-outline" size={24} color={paymentMethod === 'RAZORPAY' ? PRIMARY : '#64748B'} />
-            <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online (Cards/UPI/NetBanking)</Text>
-            <View style={[styles.radio, paymentMethod === 'RAZORPAY' && styles.radioActive]}>
-              {paymentMethod === 'RAZORPAY' && <View style={styles.radioInner} />}
-            </View>
-          </TouchableOpacity>
         </View>
 
-        {/* Bill Details */}
+        {/* ── BILL DETAILS ── */}
         {billDetails && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billCard}>
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Item Total</Text>
-                <Text style={styles.billValue}>₹{(billDetails.itemTotal ?? 0).toFixed(2)}</Text>
-              </View>
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Taxes & Charges</Text>
-                <Text style={styles.billValue}>₹{(billDetails.taxAmount ?? 0).toFixed(2)}</Text>
-              </View>
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Delivery Fee</Text>
-                <Text style={styles.billValue}>₹{(billDetails.deliveryFee ?? 0).toFixed(2)}</Text>
-              </View>
+              <BillRow label="Item Total" value={`₹${(billDetails.itemTotal ?? 0).toFixed(2)}`} />
+              <BillRow label="Taxes & Charges" value={`₹${(billDetails.taxAmount ?? 0).toFixed(2)}`} />
+              <BillRow
+                label={isSelfPickup ? 'Delivery Fee' : 'Delivery Fee'}
+                value={isSelfPickup ? '₹0.00 FREE 🎉' : `₹${(billDetails.deliveryFee ?? 0).toFixed(2)}`}
+                valueColor={isSelfPickup ? PRIMARY : undefined}
+              />
               {(billDetails.walletAmountUsed ?? 0) > 0 && (
-                <View style={styles.billRow}>
-                  <Text style={[styles.billLabel, { color: PRIMARY }]}>Wallet Applied</Text>
-                  <Text style={[styles.billValue, { color: PRIMARY }]}>-₹{(billDetails.walletAmountUsed ?? 0).toFixed(2)}</Text>
-                </View>
+                <BillRow label="Wallet Applied" value={`-₹${billDetails.walletAmountUsed.toFixed(2)}`} valueColor={PRIMARY} />
               )}
-              <View style={[styles.billRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>To Pay</Text>
-                <Text style={styles.totalValue}>₹{(billDetails.payableAmount ?? 0).toFixed(2)}</Text>
-              </View>
+              <View style={styles.totalDivider} />
+              <BillRow label="Total to Pay" value={`₹${totalToPay.toFixed(2)}`} isTotal />
             </View>
           </View>
         )}
 
       </ScrollView>
 
-      {/* Action Bar */}
+      {/* ── BOTTOM BAR ── */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 24 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>{paymentMethod}</Text>
+          <Text style={styles.bottomLabel}>{isSelfPickup ? '🏪 Self Pickup · FREE delivery' : '🛵 Home Delivery'}</Text>
           {fetchingBill ? (
             <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start' }} />
           ) : (
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A' }}>
-              ₹{billDetails ? (billDetails.payableAmount ?? 0).toFixed(2) : '--'}
-            </Text>
+            <Text style={styles.bottomTotal}>₹{totalToPay.toFixed(2)}</Text>
           )}
         </View>
-        <TouchableOpacity 
-          style={[styles.placeOrderBtn, (!selectedAddressId || placingOrder || !!deliveryError) && { opacity: 0.6, backgroundColor: deliveryError ? '#94A3B8' : PRIMARY }]} 
-          disabled={!selectedAddressId || placingOrder || !!deliveryError}
+        <TouchableOpacity
+          style={[styles.placeBtn, (!canPlaceOrder || placingOrder) && { opacity: 0.6 }]}
+          disabled={!canPlaceOrder || placingOrder}
           onPress={handlePlaceOrder}
         >
-          {placingOrder ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.placeOrderText}>Place Order</Text>
-          )}
+          {placingOrder ? <ActivityIndicator color="#FFF" /> : <Text style={styles.placeBtnText}>Place Order</Text>}
         </TouchableOpacity>
       </View>
+    </View>
+  );
+}
+
+function BillRow({ label, value, valueColor, isTotal }: { label: string; value: string; valueColor?: string; isTotal?: boolean }) {
+  return (
+    <View style={[styles.billRow, isTotal && { marginTop: 4 }]}>
+      <Text style={[styles.billLabel, isTotal && styles.billLabelTotal]}>{label}</Text>
+      <Text style={[styles.billValue, isTotal && styles.billValueTotal, valueColor ? { color: valueColor } : {}]}>{value}</Text>
     </View>
   );
 }
@@ -357,61 +360,71 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 16,
-    backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0',
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#0F172A', marginLeft: 8 },
-  
-  scroll: { padding: 20, gap: 24, paddingBottom: 100 },
-  
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  scroll: { padding: 20, paddingBottom: 120, gap: 20 },
   section: {},
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
   addText: { fontSize: 14, fontWeight: '700', color: PRIMARY },
-  
+
+  // Delivery type toggle
+  toggleRow: { flexDirection: 'row', gap: 12 },
+  toggleBtn: { flex: 1, backgroundColor: '#FFF', borderRadius: 18, padding: 16, alignItems: 'center', gap: 6, borderWidth: 2, borderColor: '#E2E8F0' },
+  toggleBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  toggleText: { fontSize: 14, fontWeight: '800', color: '#334155', textAlign: 'center' },
+  toggleTextActive: { color: '#FFF' },
+  toggleSub: { fontSize: 11, color: '#94A3B8', textAlign: 'center', fontWeight: '500' },
+
+  // Self pickup banner
+  pickupBanner: { flexDirection: 'row', backgroundColor: '#F5F3FF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#DDD6FE' },
+  pickupTitle: { fontSize: 15, fontWeight: '800', color: '#5B21B6', marginBottom: 4 },
+  pickupAddr: { fontSize: 13, color: '#6D28D9', marginBottom: 4 },
+  pickupHint: { fontSize: 12, color: '#7C3AED', lineHeight: 18 },
+
+  // Address
   emptyCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
   emptyText: { color: '#64748B', textAlign: 'center' },
-
-  addressCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#F3FAF5' },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  addressCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#E2E8F0', marginBottom: 10 },
+  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#F0FDF4' },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   radioActive: { borderColor: PRIMARY },
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: PRIMARY },
   addressInfo: { flex: 1, marginLeft: 12 },
   addressType: { fontSize: 12, fontWeight: '700', color: '#64748B' },
   addressFull: { fontSize: 14, color: '#0F172A', marginTop: 4, lineHeight: 20 },
 
-  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#F3FAF5' },
-  paymentText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#64748B', marginLeft: 12 },
-  paymentTextActive: { color: '#0F172A', fontWeight: '700' },
+  // Error
+  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FECACA' },
+  errorTitle: { fontSize: 14, fontWeight: '800', color: '#991B1B', marginBottom: 4 },
+  errorDesc: { fontSize: 13, color: '#B91C1C', lineHeight: 18 },
+  switchPickupBtn: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  switchPickupText: { color: '#DC2626', fontWeight: '700', fontSize: 13 },
 
-  bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9',
-    paddingHorizontal: 20, paddingTop: 16,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10,
-  },
-  placeOrderBtn: { flex: 1, backgroundColor: PRIMARY, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  placeOrderText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-
+  // Payment
+  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#E2E8F0', marginBottom: 10 },
+  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#F0FDF4' },
+  payIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  paymentText: { fontSize: 15, fontWeight: '700', color: '#334155' },
+  paymentTextActive: { color: '#0F172A', fontWeight: '800' },
+  paymentSub: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
   checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
   checkboxActive: { borderColor: PRIMARY, backgroundColor: PRIMARY },
 
-  billCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', marginTop: 8 },
-  billTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 },
+  // Bill
+  billCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9' },
   billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   billLabel: { fontSize: 14, color: '#64748B', fontWeight: '500' },
   billValue: { fontSize: 14, color: '#0F172A', fontWeight: '600' },
-  totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', marginBottom: 0 },
-  totalLabel: { fontSize: 16, color: '#0F172A', fontWeight: '800' },
-  totalValue: { fontSize: 18, color: PRIMARY, fontWeight: '800' },
+  billLabelTotal: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  billValueTotal: { fontSize: 18, fontWeight: '900', color: PRIMARY },
+  totalDivider: { height: 1, backgroundColor: '#F1F5F9', marginBottom: 12 },
 
-  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FECACA', marginBottom: 12 },
-  errorIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
-  errorTitle: { fontSize: 15, fontWeight: '700', color: '#991B1B', marginBottom: 4 },
-  errorDesc: { fontSize: 13, color: '#B91C1C', lineHeight: 18 },
+  // Bottom bar
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10 },
+  bottomLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  bottomTotal: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
+  placeBtn: { flex: 1, backgroundColor: PRIMARY, height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10, elevation: 6 },
+  placeBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
 });
