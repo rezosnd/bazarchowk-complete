@@ -130,7 +130,7 @@ export default function SearchScreen() {
         ) : loading ? (
           <View style={styles.centerLoad}>
             <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={styles.loadText}>Searching PostgreSQL Full Text Index...</Text>
+            <Text style={styles.loadText}>Searching for best results...</Text>
           </View>
         ) : (
           <View>

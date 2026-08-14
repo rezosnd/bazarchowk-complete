@@ -123,7 +123,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (error.message === 'Network Error' || (error.response && error.response.status >= 500)) {
+    if (error.response && error.response.status === 503) {
       authEventEmitter.emit('backend_down');
     }
 

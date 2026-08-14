@@ -11,7 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BazarChowkSplashOverlay } from '@/components/splash-screen';
 import { useAuthStore } from '@/store';
 import { authEventEmitter } from '@/services/api';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 SplashScreen.preventAutoHideAsync();
@@ -111,6 +111,24 @@ export default function RootLayout() {
                 <Ionicons name="construct" size={80} color="#00B140" />
                 <Text style={{ fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</Text>
                 <Text style={{ fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</Text>
+                
+                <TouchableOpacity 
+                  onPress={() => setBackendDown(false)}
+                  style={{
+                    marginTop: 32,
+                    backgroundColor: '#00B140',
+                    paddingVertical: 14,
+                    paddingHorizontal: 32,
+                    borderRadius: 12,
+                    elevation: 2,
+                    shadowColor: '#00B140',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Try Again</Text>
+                </TouchableOpacity>
               </LinearGradient>
             </View>
           )}
