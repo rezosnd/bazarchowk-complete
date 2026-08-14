@@ -28,6 +28,7 @@ export class CreateOrderDto {
 
   @ApiPropertyOptional({ enum: ['DELIVERY', 'SELF_PICKUP'], default: 'DELIVERY', description: 'Delivery method: DELIVERY or SELF_PICKUP' })
   @IsOptional()
+  @IsString()
   @IsIn(['DELIVERY', 'SELF_PICKUP'])
   deliveryType?: 'DELIVERY' | 'SELF_PICKUP';
 }

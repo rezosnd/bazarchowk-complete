@@ -92,14 +92,25 @@ export class OrdersService {
           } catch(e) {}
         }
         
-        if (config['freeAbove'] && itemTotal >= config['freeAbove']) {
-          deliveryFee = 0;
-        } else if (config['<100'] && itemTotal < 100) {
-          deliveryFee = config['<100'];
-        } else if (config['<200'] && itemTotal < 200) {
-          deliveryFee = config['<200'];
+        if (config.tiers && Array.isArray(config.tiers)) {
+          let foundFee = config.default !== undefined ? config.default : 20;
+          for (const tier of config.tiers) {
+            if (itemTotal >= tier.minOrder && itemTotal <= tier.maxOrder) {
+              foundFee = tier.fee;
+              break;
+            }
+          }
+          deliveryFee = foundFee;
         } else {
-          deliveryFee = config['default'] || 20;
+          if (config['freeAbove'] && itemTotal >= config['freeAbove']) {
+            deliveryFee = 0;
+          } else if (config['<100'] && itemTotal < 100) {
+            deliveryFee = config['<100'];
+          } else if (config['<200'] && itemTotal < 200) {
+            deliveryFee = config['<200'];
+          } else {
+            deliveryFee = config['default'] !== undefined ? config['default'] : 20;
+          }
         }
       }
     } else {
@@ -237,28 +248,66 @@ export class OrdersService {
     let taxAmount = 0;
 
     if (!isSelfPickup) {
-      // 4. Resolve Dynamic Delivery Fee from City Config
-      const cityConfig = await this.prisma.cityConfig.findFirst({
-        where: { name: { equals: shop.city, mode: 'insensitive' } }
-      });
+      if (shop.marketId) {
+        const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
+        if (market) {
+          taxAmount = (totalAmount * (market.gstPercentage || 18)) / 100;
+          let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
+          if (market.deliveryChargeConfig) {
+            try {
+              config = typeof market.deliveryChargeConfig === 'string' 
+                ? JSON.parse(market.deliveryChargeConfig) 
+                : market.deliveryChargeConfig;
+            } catch(e) {}
+          }
+          if (config.tiers && Array.isArray(config.tiers)) {
+            let foundFee = config.default !== undefined ? config.default : 20;
+            for (const tier of config.tiers) {
+              if (totalAmount >= tier.minOrder && totalAmount <= tier.maxOrder) {
+                foundFee = tier.fee;
+                break;
+              }
+            }
+            calculatedDeliveryFee = foundFee;
+          } else {
+            if (config['freeAbove'] && totalAmount >= config['freeAbove']) {
+              calculatedDeliveryFee = 0;
+            } else if (config['<100'] && totalAmount < 100) {
+              calculatedDeliveryFee = config['<100'];
+            } else if (config['<200'] && totalAmount < 200) {
+              calculatedDeliveryFee = config['<200'];
+            } else {
+              calculatedDeliveryFee = config['default'] !== undefined ? config['default'] : 20;
+            }
+          }
+        }
+      } else {
+        const cityConfig = await this.prisma.cityConfig.findFirst({
+          where: { name: { equals: shop.city, mode: 'insensitive' } }
+        });
 
-      calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+        calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
 
-      if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-        for (const tier of tiers) {
-          if (distanceKm <= tier.uptoKm) { calculatedDeliveryFee = tier.fee; break; }
+        if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+          const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+          for (const tier of tiers) {
+            if (distanceKm <= tier.uptoKm) { calculatedDeliveryFee = tier.fee; break; }
+          }
+        }
+
+        if (cityConfig && cityConfig.taxPercent) {
+          taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+        } else {
+          taxAmount = (totalAmount * 5) / 100;
         }
       }
-
-      if (cityConfig && cityConfig.taxPercent) {
-        taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+    } else {
+      if (shop.marketId) {
+        const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
+        taxAmount = (totalAmount * (market?.gstPercentage || 18)) / 100;
       } else {
         taxAmount = (totalAmount * 5) / 100;
       }
-    } else {
-      // Self-pickup: still apply tax
-      taxAmount = (totalAmount * 5) / 100;
     }
 
     const subtotal = totalAmount;

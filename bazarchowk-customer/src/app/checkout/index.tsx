@@ -99,7 +99,7 @@ export default function CheckoutScreen() {
         useWallet,
         deliveryType,
       };
-      if (deliveryType === 'DELIVERY') {
+      if (deliveryType === 'DELIVERY' && selectedAddressId) {
         payload.deliveryAddressId = selectedAddressId;
       }
 

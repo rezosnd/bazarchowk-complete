@@ -1,75 +1,55 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import Animated, { withRepeat, withTiming, withSequence, useSharedValue, useAnimatedStyle, useEffect } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
 export default function AIAssistant() {
   const insets = useSafeAreaInsets();
-  const pulse = useRef(new Animated.Value(1)).current;
-  const float = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
+  
+  const pulse = useSharedValue(1);
+  const float = useSharedValue(0);
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 1800, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 1800, useNativeDriver: true }),
-      ])
-    ).start();
+  React.useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 1800 }),
+        withTiming(1, { duration: 1800 })
+      ),
+      -1,
+      true
+    );
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(float, { toValue: -12, duration: 2200, useNativeDriver: true }),
-        Animated.timing(float, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
+    float.value = withRepeat(
+      withSequence(
+        withTiming(-12, { duration: 2200 }),
+        withTiming(0, { duration: 2200 })
+      ),
+      -1,
+      true
+    );
   }, []);
 
-  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
+  const orbStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }, { translateY: float.value }]
+  }));
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <LinearGradient colors={['#0A0A1A', '#0D1B2A', '#0A0F1E']} style={StyleSheet.absoluteFill} />
 
-      {/* Stars */}
-      {[...Array(20)].map((_, i) => (
-        <View
-          key={i}
-          style={{
-            position: 'absolute',
-            width: Math.random() * 3 + 1,
-            height: Math.random() * 3 + 1,
-            borderRadius: 2,
-            backgroundColor: '#FFF',
-            opacity: Math.random() * 0.6 + 0.2,
-            top: `${Math.random() * 60}%`,
-            left: `${Math.random() * 100}%`,
-          }}
-        />
-      ))}
-
       {/* Back button */}
-      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <TouchableOpacity onPress={() => router.navigate('/(tabs)')} style={styles.backBtn}>
         <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.8)" />
       </TouchableOpacity>
 
       <View style={styles.content}>
-        {/* Glow ring */}
-        <Animated.View style={[styles.glowRing, { opacity: glowOpacity }]} />
-
         {/* AI Orb */}
-        <Animated.View style={[styles.orbWrap, { transform: [{ scale: pulse }, { translateY: float }] }]}>
+        <Animated.View style={[styles.orbWrap, orbStyle]}>
           <LinearGradient
             colors={['#7C3AED', '#4F46E5', '#2563EB']}
             style={styles.orb}
@@ -120,8 +100,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 56, left: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-
-  glowRing: { position: 'absolute', width: 220, height: 220, borderRadius: 110, borderWidth: 1, borderColor: '#7C3AED', top: '18%' },
 
   orbWrap: { marginBottom: 24 },
   orb: { width: 130, height: 130, borderRadius: 65, alignItems: 'center', justifyContent: 'center', shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 20 },

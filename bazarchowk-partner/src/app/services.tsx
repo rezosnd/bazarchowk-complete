@@ -129,8 +129,18 @@ function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: bo
       // Assuming user inputs something like "2024-01-01T10:00:00" or we just use today + time
       
       const today = new Date().toISOString().split('T')[0];
-      let st = new Date(`${today}T${startTime}:00`).toISOString();
-      let et = new Date(`${today}T${endTime}:00`).toISOString();
+      
+      const stDate = new Date(`${today}T${startTime.padStart(5, '0')}:00`);
+      const etDate = new Date(`${today}T${endTime.padStart(5, '0')}:00`);
+
+      if (isNaN(stDate.getTime()) || isNaN(etDate.getTime())) {
+        Alert.alert('Error', 'Invalid time format. Use HH:MM (e.g. 09:30 or 14:00)');
+        setSaving(false);
+        return;
+      }
+
+      let st = stDate.toISOString();
+      let et = etDate.toISOString();
 
       await api.post('/appointments/slots/create', {
         providerId,
