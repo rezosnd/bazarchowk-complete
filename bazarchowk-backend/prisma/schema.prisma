@@ -70,6 +70,7 @@ model User {
   approvedBatches            SettlementBatch[]         @relation("BatchApprover")
   conversations              ConversationParticipant[] @relation("UserConversations")
   sentMessages               Message[]                 @relation("SentMessages")
+  riderEarnings              RiderEarning[]            @relation("RiderEarnings")
 
   managedMarket Market?
 
@@ -432,11 +433,20 @@ enum PaymentStatus {
 
 enum OrderStatus {
   PLACED
+  PAYMENT_VERIFIED
   ACCEPTED
   PREPARING
   READY
+  READY_FOR_PICKUP
+  ASSIGNED_TO_RIDER
   PICKED_UP
+  OUT_FOR_DELIVERY
   DELIVERED
+  CUSTOMER_REFUSED
+  RETURNING_TO_SHOP
+  RETURNED_TO_SHOP
+  INVENTORY_RESTORED
+  CUSTOMER_PICKUP
   CANCELLED
   REFUNDED
 }
@@ -478,6 +488,7 @@ model Order {
   settlementItem SettlementItem?      @relation("OrderSettlementItem")
   commission     Commission?          @relation("OrderCommission")
   conversations  Conversation[]
+  refundTransaction RefundTransaction?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -713,6 +724,8 @@ model Delivery {
 
   proofOfDeliveryImageUrl String?
   deliveryNotes           String?
+  
+  riderEarning            RiderEarning?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2302,4 +2315,40 @@ model MessageAttachment {
   createdAt DateTime @default(now())
 
   @@index([messageId])
+}
+
+model RiderEarning {
+  id          String   @id @default(uuid())
+  riderId     String
+  rider       User     @relation("RiderEarnings", fields: [riderId], references: [id])
+  deliveryId  String?  @unique
+  delivery    Delivery? @relation(fields: [deliveryId], references: [id])
+  
+  baseAmount    Float
+  distanceBonus Float @default(0)
+  peakBonus     Float @default(0)
+  returnCompensation Float @default(0)
+  totalAmount   Float
+
+  type          String @default("DELIVERY") // "DELIVERY", "RETURN", "ADJUSTMENT"
+  status        String @default("PENDING") // "PENDING", "SETTLED"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([riderId])
+}
+
+model RefundTransaction {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  refundAmount    Float
+  status          String   @default("INITIATED") // INITIATED, PROCESSED, FAILED
+  gatewayRefundId String?
+  reason          String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

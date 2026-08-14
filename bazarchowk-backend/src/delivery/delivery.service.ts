@@ -209,27 +209,23 @@ export class DeliveryService {
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
-    const deliveries = await this.prisma.delivery.findMany({
+    const earnings = await this.prisma.riderEarning.findMany({
       where: {
-        deliveryPartner: { userId: riderId },
-        status: 'DELIVERED',
+        riderId,
         createdAt: { gte: startDate }
-      },
-      include: {
-        order: true
       }
     });
 
-    const totalDeliveries = deliveries.length;
-    let deliveryEarnings = 0;
+    const deliveriesCompleted = earnings.filter(e => e.type === 'DELIVERY').length;
+    const deliveriesReturned = earnings.filter(e => e.type === 'RETURN').length;
+    const totalDeliveries = earnings.length;
     
-    deliveries.forEach(d => {
-      // Assuming rider gets 80% of the delivery fee for instance, or 100%. Let's say 100% of delivery fee is their earnings.
-      deliveryEarnings += d.order.deliveryFee || 0;
+    let totalEarnings = 0;
+    
+    earnings.forEach(e => {
+      totalEarnings += e.totalAmount || 0;
     });
 
-    // Cash In Hand: Total COD orders that are DELIVERED but not yet submitted (this requires looking at CashCollection model, 
-    // but if it's not strictly linked to delivery timeline, we can look at all unsubmitted cash collections for this rider).
     const unsubmittedCash = await this.prisma.cashCollection.aggregate({
       _sum: { amountCollected: true },
       where: { riderId, status: 'COLLECTED' }
@@ -239,9 +235,11 @@ export class DeliveryService {
 
     return {
       totalDeliveries,
-      deliveryEarnings,
-      tips: 0,
-      totalEarnings: deliveryEarnings,
+      deliveriesCompleted,
+      deliveriesReturned,
+      deliveryEarnings: totalEarnings, // for backwards compatibility
+      tips: 0, // tips could be added to RiderEarning schema if requested later
+      totalEarnings,
       cashInHand,
       settlementStatus: cashInHand > 0 ? 'PENDING' : 'SETTLED'
     };

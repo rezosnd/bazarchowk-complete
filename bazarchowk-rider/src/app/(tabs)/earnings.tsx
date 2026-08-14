@@ -15,6 +15,8 @@ export default function RiderEarningsScreen() {
 
   const [data, setData] = useState({
     totalDeliveries: 0,
+    deliveriesCompleted: 0,
+    deliveriesReturned: 0,
     deliveryEarnings: 0,
     tips: 0,
     totalEarnings: 0,
@@ -33,6 +35,8 @@ export default function RiderEarningsScreen() {
       if (response.data) {
         setData({
           totalDeliveries: response.data.totalDeliveries || 0,
+          deliveriesCompleted: response.data.deliveriesCompleted || 0,
+          deliveriesReturned: response.data.deliveriesReturned || 0,
           deliveryEarnings: response.data.deliveryEarnings || 0,
           tips: response.data.tips || 0,
           totalEarnings: response.data.totalEarnings || 0,
@@ -107,9 +111,17 @@ export default function RiderEarningsScreen() {
                 <Text style={styles.heroLabel}>Total Earnings</Text>
                 <Text style={styles.heroAmount}>₹{data.totalEarnings}</Text>
               </View>
-              <View style={styles.deliveryBadge}>
-                <Ionicons name="bicycle" size={16} color="#00B140" />
-                <Text style={styles.deliveryBadgeText}>{data.totalDeliveries} Trips</Text>
+              <View style={{ gap: 8, alignItems: 'flex-end' }}>
+                <View style={[styles.deliveryBadge, { backgroundColor: '#DCFCE7' }]}>
+                  <Ionicons name="checkmark-done" size={16} color="#00B140" />
+                  <Text style={[styles.deliveryBadgeText, { color: '#00B140' }]}>{data.deliveriesCompleted} Done</Text>
+                </View>
+                {data.deliveriesReturned > 0 && (
+                  <View style={[styles.deliveryBadge, { backgroundColor: '#FEE2E2' }]}>
+                    <Ionicons name="return-down-back" size={16} color="#DC2626" />
+                    <Text style={[styles.deliveryBadgeText, { color: '#DC2626' }]}>{data.deliveriesReturned} Returns</Text>
+                  </View>
+                )}
               </View>
             </View>
 

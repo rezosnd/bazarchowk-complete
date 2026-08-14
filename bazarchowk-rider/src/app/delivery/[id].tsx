@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -22,6 +22,9 @@ export default function ActiveDeliveryScreen() {
   const [showQR, setShowQR] = useState(false);
   const [riderLocation, setRiderLocation] = useState<{ latitude: number, longitude: number } | null>(null);
   const [riderUpi, setRiderUpi] = useState<string>('');
+
+  const [showRefusalModal, setShowRefusalModal] = useState(false);
+  const [refusalReason, setRefusalReason] = useState('');
 
   useEffect(() => {
     fetchOrderDetails();
@@ -134,6 +137,42 @@ export default function ActiveDeliveryScreen() {
       }
     } catch (e) {
       Alert.alert('Error', 'Failed to connect');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRefusal = async () => {
+    if (!refusalReason) {
+      Alert.alert('Required', 'Please select a reason for refusal');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const token = await SecureStore.getItemAsync('rider_token');
+      const res = await fetch(`${API_BASE}/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ 
+          status: 'CUSTOMER_REFUSED',
+          notes: `Returned: ${refusalReason}`
+        })
+      });
+
+      if (res.ok) {
+        Alert.alert('Order Returned', `Order marked as refused and is returning to shop.`);
+        setShowRefusalModal(false);
+        router.replace('/(tabs)/orders' as any);
+      } else {
+        const errorData = await res.json();
+        Alert.alert('Error', errorData.message || 'Failed to return order');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to connect to server');
     } finally {
       setUpdating(false);
     }
@@ -407,11 +446,61 @@ export default function ActiveDeliveryScreen() {
         )}
         
         {deliveryStatus === 'IN_TRANSIT' && (
-          <TouchableOpacity style={styles.primaryBtn} disabled={updating} onPress={() => handleUpdateStatus('DELIVERED')}>
-            {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Mark as Delivered</Text>}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity 
+              style={[styles.primaryBtn, { flex: 1, backgroundColor: '#DC2626', shadowColor: '#DC2626' }]} 
+              disabled={updating} 
+              onPress={() => setShowRefusalModal(true)}
+            >
+              <Text style={styles.primaryBtnText}>Return Order</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.primaryBtn, { flex: 1.5 }]} 
+              disabled={updating} 
+              onPress={() => handleUpdateStatus('DELIVERED')}
+            >
+              {updating ? <ActivityIndicator color="#FFF"/> : <Text style={styles.primaryBtnText}>Delivered</Text>}
+            </TouchableOpacity>
+          </View>
         )}
       </View>
+
+      {/* Refusal Modal */}
+      <Modal visible={showRefusalModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Return Order to Shop</Text>
+            <Text style={styles.modalSub}>Please select the exact reason why this order is being returned. This is required for inventory and earnings adjustments.</Text>
+            
+            <ScrollView style={{ maxHeight: 300, marginVertical: 16 }}>
+              {['Customer refused delivery', 'Customer unavailable', 'Wrong address', 'Customer requested cancellation', 'Items damaged during transit', 'Other'].map(reason => (
+                <TouchableOpacity 
+                  key={reason} 
+                  style={[styles.reasonBtn, refusalReason === reason && styles.reasonBtnActive]}
+                  onPress={() => setRefusalReason(reason)}
+                >
+                  <Text style={[styles.reasonText, refusalReason === reason && styles.reasonTextActive]}>{reason}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#F1F5F9' }]} onPress={() => setShowRefusalModal(false)}>
+                <Text style={{ color: '#64748B', fontWeight: 'bold' }}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalBtn, { backgroundColor: '#DC2626' }]} 
+                onPress={handleRefusal}
+                disabled={updating}
+              >
+                {updating ? <ActivityIndicator color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Confirm Return</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -455,5 +544,15 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   
   qrBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0F172A', marginTop: 16, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, width: '100%', justifyContent: 'center' },
-  qrBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 }
+  qrBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#FFF', width: '100%', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+  modalSub: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  reasonBtn: { padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 8, backgroundColor: '#F8FAFC' },
+  reasonBtnActive: { borderColor: '#DC2626', backgroundColor: '#FEF2F2' },
+  reasonText: { fontSize: 15, color: '#475569', fontWeight: '500' },
+  reasonTextActive: { color: '#DC2626', fontWeight: '700' },
+  modalBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }
 });

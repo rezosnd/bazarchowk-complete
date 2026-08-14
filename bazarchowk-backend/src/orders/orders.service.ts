@@ -9,6 +9,7 @@ import { PaymentMethod, PaymentStatus, OrderStatus, TransactionType, Transaction
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { OrderStateMachineService } from './order-state-machine.service';
 
 @Injectable()
 export class OrdersService {
@@ -18,6 +19,7 @@ export class OrdersService {
     private readonly realtime: RealtimeGateway,
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
+    private readonly stateMachine: OrderStateMachineService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -485,6 +487,17 @@ export class OrdersService {
       throw new ForbiddenException('Not authorized to update this order');
     }
 
+    // Role name for the state machine checks (fallback to RIDER if it's the assigned rider but role name is missing)
+    const roleName = userObj.role?.name || (isAssignedRider ? 'RIDER' : 'UNKNOWN');
+
+    if (dto.status) {
+      this.stateMachine.validateTransition(order.status, dto.status, roleName);
+    }
+
+    if (dto.paymentStatus) {
+      this.stateMachine.validatePaymentStatus(order.paymentStatus, dto.paymentStatus, roleName);
+    }
+
     const data: any = {};
     if (dto.paymentStatus) data.paymentStatus = dto.paymentStatus;
     if (dto.status) data.status = dto.status;
@@ -564,6 +577,44 @@ export class OrdersService {
             this.realtime.sendToAllRiders('new_delivery', {
               deliveryId: newDel.id,
               orderId: newDel.orderId
+            });
+          }
+        }
+      }
+
+      // Rider Earning Creation logic
+      if (dto.status === OrderStatus.DELIVERED || dto.status === OrderStatus.CUSTOMER_REFUSED) {
+        if (order.riderId) {
+          const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
+          const existingEarning = await this.prisma.riderEarning.findFirst({ where: { deliveryId: existingDelivery?.id } });
+          
+          if (existingDelivery && !existingEarning) {
+            // Calculate base earning, distance bonus, etc.
+            const distance = existingDelivery.distanceKm || 0;
+            const baseAmount = 30; // 30 Rs base
+            const distanceBonus = distance > 5 ? (distance - 5) * 5 : 0; // 5 Rs per extra km
+            
+            let returnCompensation = 0;
+            let type = 'DELIVERY';
+            if (dto.status === OrderStatus.CUSTOMER_REFUSED) {
+               returnCompensation = 15; // 15 Rs compensation for refused
+               type = 'RETURN';
+            }
+
+            const totalAmount = baseAmount + distanceBonus + returnCompensation;
+
+            await this.prisma.riderEarning.create({
+              data: {
+                riderId: order.riderId,
+                deliveryId: existingDelivery.id,
+                baseAmount,
+                distanceBonus,
+                peakBonus: 0,
+                returnCompensation,
+                totalAmount,
+                type,
+                status: 'PENDING'
+              }
             });
           }
         }
