@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,6 +107,19 @@ export default function SupportIndexScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Support</Text>
         <Text style={styles.subtitle}>Get help with your orders and account</Text>
+        
+        <TouchableOpacity 
+          style={{ marginTop: 16, backgroundColor: '#DCFCE7', padding: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }} 
+          onPress={() => Linking.openURL('tel:8709442363')}
+        >
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#BBF7D0', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="call" size={20} color="#166534" />
+          </View>
+          <View style={{ marginLeft: 12 }}>
+            <Text style={{ color: '#166534', fontWeight: 'bold', fontSize: 16 }}>Call Support Team</Text>
+            <Text style={{ color: '#15803D', fontWeight: '500', fontSize: 13, marginTop: 2 }}>+91 8709442363</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {loading ? (

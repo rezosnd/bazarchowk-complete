@@ -13,6 +13,7 @@ export default function PartnerDashboard() {
   const [shopName, setShopName] = useState('Your Shop');
   const [hasProducts, setHasProducts] = useState(false);
   const [hasServices, setHasServices] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
   const [todayOrders, setTodayOrders] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
@@ -64,6 +65,7 @@ export default function PartnerDashboard() {
         setShopName(data.name || 'Your Shop');
         setHasProducts(data.hasProducts);
         setHasServices(data.hasServices);
+        setIsVerified(data.isVerified ?? false);
         setIsOpen(data.isOpen ?? true);
         await SecureStore.setItemAsync('bazar_shop_id', data.id);
 
@@ -157,6 +159,27 @@ export default function PartnerDashboard() {
     return (
       <View style={[styles.center, { backgroundColor: '#F8FAFC' }]}>
         <ActivityIndicator size="large" color="#00B140" />
+      </View>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <View style={[styles.container, styles.center, { padding: 24, paddingTop: insets.top }]}>
+        <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+          <Ionicons name="time" size={48} color="#D97706" />
+        </View>
+        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0F172A', textAlign: 'center', marginBottom: 12 }}>Pending Verification</Text>
+        <Text style={{ fontSize: 16, color: '#64748B', textAlign: 'center', lineHeight: 24, marginBottom: 32 }}>
+          Your business profile has been submitted successfully! Please wait while the Market Admin verifies your details and documents. You will be notified once approved.
+        </Text>
+        <TouchableOpacity style={[styles.logoutBtn, { width: '100%', alignItems: 'center', backgroundColor: '#F1F5F9' }]} onPress={async () => {
+          await SecureStore.deleteItemAsync('partner_token');
+          await SecureStore.deleteItemAsync('bazar_shop_id');
+          router.replace('/(auth)/login');
+        }}>
+          <Text style={{ color: '#64748B', fontWeight: 'bold' }}>Logout for now</Text>
+        </TouchableOpacity>
       </View>
     );
   }

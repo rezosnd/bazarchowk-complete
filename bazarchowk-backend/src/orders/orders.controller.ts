@@ -48,10 +48,10 @@ export class OrdersController {
 
   @Get('global')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'MARKET_ADMIN')
   @ApiOperation({ summary: 'Get all platform orders (Admin)' })
-  getAllOrders() {
-    return this.ordersService.getAllOrders();
+  getAllOrders(@CurrentUser() user: any) {
+    return this.ordersService.getAllOrders(user);
   }
 
   @Get(':id')

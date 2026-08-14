@@ -13,6 +13,7 @@ export default function RiderOrdersScreen() {
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [activeDeliveries, setActiveDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(true);
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,14 +50,22 @@ export default function RiderOrdersScreen() {
         console.warn('Location error', e);
       }
 
-      const [res, activeRes] = await Promise.all([
+      const [res, activeRes, profileRes] = await Promise.all([
         fetch(`${API_BASE}/delivery/available?lat=${lat}&lng=${lng}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_BASE}/delivery/my-active`, {
           headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE}/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
+
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setIsVerified(profile.kycStatus === 'VERIFIED');
+      }
 
       if (res.ok) {
         const data = await res.json();
@@ -121,6 +130,26 @@ export default function RiderOrdersScreen() {
 
   if (loading) {
     return <View style={styles.center}><ActivityIndicator size="large" color="#00B140" /></View>;
+  }
+
+  if (!isVerified) {
+    return (
+      <View style={[styles.container, styles.center, { padding: 24, paddingTop: insets.top }]}>
+        <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+          <Ionicons name="time" size={48} color="#D97706" />
+        </View>
+        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0F172A', textAlign: 'center', marginBottom: 12 }}>Pending Verification</Text>
+        <Text style={{ fontSize: 16, color: '#64748B', textAlign: 'center', lineHeight: 24, marginBottom: 32 }}>
+          Your rider application has been submitted successfully! Please wait while the Market Admin verifies your details and documents. You will be notified once approved.
+        </Text>
+        <TouchableOpacity style={{ width: '100%', padding: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#F1F5F9' }} onPress={async () => {
+          await SecureStore.deleteItemAsync('rider_token');
+          router.replace('/(auth)/login');
+        }}>
+          <Text style={{ color: '#64748B', fontWeight: 'bold' }}>Logout for now</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
