@@ -51,9 +51,9 @@ function AddServiceModal({ visible, onClose, onSuccess }: { visible: boolean; on
             <Text style={styles.sheetTitle}>Add New Service</Text>
             <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
           </View>
-          <TextInput style={styles.input} placeholder="Service Name (e.g. Haircut)" value={name} onChangeText={setName} />
-          <TextInput style={styles.input} placeholder="Price (₹)" value={price} onChangeText={setPrice} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Duration in minutes (e.g. 30)" value={duration} onChangeText={setDuration} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Service Name (e.g. Haircut)" placeholderTextColor="#94A3B8" value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="Price (₹)" placeholderTextColor="#94A3B8" value={price} onChangeText={setPrice} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Duration in minutes (e.g. 30)" placeholderTextColor="#94A3B8" value={duration} onChangeText={setDuration} keyboardType="numeric" />
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
             {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Add Service</Text>}
           </TouchableOpacity>
@@ -99,10 +99,70 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
             <Text style={styles.sheetTitle}>Add Staff Member</Text>
             <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
           </View>
-          <TextInput style={styles.input} placeholder="Staff Name (e.g. Rahul)" value={name} onChangeText={setName} />
-          <TextInput style={styles.input} placeholder="Specialty (e.g. Barber, Plumber)" value={specialty} onChangeText={setSpecialty} />
+          <TextInput style={styles.input} placeholder="Staff Name (e.g. Rahul)" placeholderTextColor="#94A3B8" value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="Specialty (e.g. Barber, Plumber)" placeholderTextColor="#94A3B8" value={specialty} onChangeText={setSpecialty} />
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
             {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Add Staff</Text>}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+// ---------- Add Slot Modal ----------
+function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: boolean; onClose: () => void; onSuccess: () => void; providerId: string | null }) {
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [capacity, setCapacity] = useState('1');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!startTime || !endTime || !capacity || !providerId) {
+      Alert.alert('Error', 'Please fill all fields.');
+      return;
+    }
+    setSaving(true);
+    try {
+      // Basic time parsing assuming YYYY-MM-DDTHH:mm:ss format for simplicity
+      // For production ready, we would use a proper date picker.
+      // Assuming user inputs something like "2024-01-01T10:00:00" or we just use today + time
+      
+      const today = new Date().toISOString().split('T')[0];
+      let st = new Date(`${today}T${startTime}:00`).toISOString();
+      let et = new Date(`${today}T${endTime}:00`).toISOString();
+
+      await api.post('/appointments/slots/create', {
+        providerId,
+        startTime: st,
+        endTime: et,
+        maxCapacity: parseInt(capacity),
+      });
+      setStartTime(''); setEndTime(''); setCapacity('1');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to add slot');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Add Time Slot (Today)</Text>
+            <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
+          </View>
+          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>Start Time (e.g. 10:00)</Text>
+          <TextInput style={styles.input} placeholder="10:00" placeholderTextColor="#94A3B8" value={startTime} onChangeText={setStartTime} />
+          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>End Time (e.g. 11:00)</Text>
+          <TextInput style={styles.input} placeholder="11:00" placeholderTextColor="#94A3B8" value={endTime} onChangeText={setEndTime} />
+          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>Max Customers Allowed</Text>
+          <TextInput style={styles.input} placeholder="e.g. 1 or 3" placeholderTextColor="#94A3B8" value={capacity} onChangeText={setCapacity} keyboardType="numeric" />
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+            {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Add Slot</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -118,6 +178,8 @@ export default function PartnerServicesScreen() {
   const [activeTab, setActiveTab] = useState<'BOOKINGS' | 'SERVICES' | 'STAFF'>('BOOKINGS');
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showSlotModal, setShowSlotModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
   const getShopId = async () => {
     const shopId = await SecureStore.getItemAsync('bazar_shop_id');
@@ -303,10 +365,16 @@ export default function PartnerServicesScreen() {
                 <View style={styles.staffAvatar}>
                   <Ionicons name="person" size={22} color={PRIMARY} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.staffName}>{p.name}</Text>
                   <Text style={styles.staffSpecialty}>{p.specialty || 'Professional'}</Text>
                 </View>
+                <TouchableOpacity 
+                  style={{ padding: 8, backgroundColor: '#F0FDF4', borderRadius: 8 }}
+                  onPress={() => { setSelectedProvider(p.id); setShowSlotModal(true); }}
+                >
+                  <Ionicons name="calendar" size={20} color={PRIMARY} />
+                </TouchableOpacity>
               </View>
             ))}
             <TouchableOpacity style={styles.addBtn} onPress={() => setShowStaffModal(true)}>
@@ -331,6 +399,14 @@ export default function PartnerServicesScreen() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['partner-providers'] });
           Alert.alert('✅ Staff Added', 'Staff member is now visible to customers!');
+        }}
+      />
+      <AddSlotModal
+        visible={showSlotModal}
+        onClose={() => setShowSlotModal(false)}
+        providerId={selectedProvider}
+        onSuccess={() => {
+          Alert.alert('✅ Slot Added', 'Time slot is now available for booking!');
         }}
       />
     </View>
