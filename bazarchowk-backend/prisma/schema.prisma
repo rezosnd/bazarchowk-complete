@@ -461,8 +461,8 @@ model Order {
   riderId     String?
   rider       User?   @relation(name: "RiderOrders", fields: [riderId], references: [id])
 
-  deliveryAddressId String
-  deliveryAddress   Address @relation(fields: [deliveryAddressId], references: [id])
+  deliveryAddressId String?
+  deliveryAddress   Address? @relation(fields: [deliveryAddressId], references: [id])
 
   paymentMethod PaymentMethod @default(COD)
   paymentStatus PaymentStatus @default(PENDING)

@@ -132,7 +132,11 @@ export default function CheckoutScreen() {
       // Navigate to branded receipt
       router.replace(`/receipt/${orderId}` as any);
     } catch (error: any) {
-      Alert.alert('Error', error?.response?.data?.message || error?.message || 'Failed to place order');
+      let msg = error?.response?.data?.message || error?.message || 'Failed to place order';
+      if (Array.isArray(msg)) msg = msg.join(', ');
+      else if (typeof msg === 'object') msg = JSON.stringify(msg);
+      
+      Alert.alert('Error', msg);
     } finally { setPlacingOrder(false); }
   };
 
