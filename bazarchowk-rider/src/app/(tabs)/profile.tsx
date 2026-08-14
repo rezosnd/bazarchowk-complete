@@ -72,18 +72,15 @@ export default function RiderProfileScreen() {
   };
 
   const fetchMarkets = async () => {
-    setLoadingMarkets(true);
     try {
-      const token = await SecureStore.getItemAsync('rider_token');
-      const res = await fetch(`${API_BASE}/super-admin/markets?limit=100`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      setLoadingMarkets(true);
+      const res = await fetch(`${API_BASE}/markets`);
       if (res.ok) {
         const data = await res.json();
-        setMarkets(data.data || data || []);
+        setMarkets(data);
       }
     } catch (e) {
-      Alert.alert('Error', 'Could not load markets. Please try again.');
+      console.error('Failed to fetch markets');
     } finally {
       setLoadingMarkets(false);
     }
