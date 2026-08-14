@@ -1466,6 +1466,7 @@ model Market {
   longitude   Float
   radiusKm    Float   @default(5.0)
   isActive    Boolean @default(true)
+  imageUrl    String?
 
   // Configuration
   deliveryChargeConfig Json? // Stores JSON like { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 }

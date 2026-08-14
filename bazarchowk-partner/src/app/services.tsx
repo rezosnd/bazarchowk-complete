@@ -99,7 +99,34 @@ export default function PartnerServicesScreen() {
                 <Text className="font-bold text-gray-900">₹{s.price}</Text>
               </View>
             ))}
-            <TouchableOpacity className="bg-blue-50 py-4 mt-4 rounded-xl items-center border border-blue-200">
+            <TouchableOpacity 
+              className="bg-blue-50 py-4 mt-4 rounded-xl items-center border border-blue-200"
+              onPress={() => {
+                Alert.prompt(
+                  "Add Service",
+                  "Enter name, price, duration (e.g. 'Haircut, 150, 30')",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Add", onPress: async (text) => {
+                      if (!text) return;
+                      const parts = text.split(',');
+                      if (parts.length < 3) return Alert.alert("Error", "Format: Name, Price, Duration");
+                      try {
+                        await api.post('/appointments/services', {
+                          name: parts[0].trim(),
+                          price: parseFloat(parts[1].trim()),
+                          durationMin: parseInt(parts[2].trim())
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['partner-services'] });
+                      } catch (err) { Alert.alert("Error", "Failed to add service"); }
+                    }}
+                  ],
+                  "plain-text",
+                  "",
+                  "default"
+                );
+              }}
+            >
               <Text className="font-bold text-blue-600">+ Add New Service</Text>
             </TouchableOpacity>
           </View>
@@ -119,7 +146,30 @@ export default function PartnerServicesScreen() {
                 </View>
               </View>
             ))}
-            <TouchableOpacity className="bg-blue-50 py-4 mt-4 rounded-xl items-center border border-blue-200">
+            <TouchableOpacity 
+              className="bg-blue-50 py-4 mt-4 rounded-xl items-center border border-blue-200"
+              onPress={() => {
+                Alert.prompt(
+                  "Add Staff Member",
+                  "Enter name and specialty (e.g. 'John, Barber')",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Add", onPress: async (text) => {
+                      if (!text) return;
+                      const parts = text.split(',');
+                      try {
+                        await api.post('/appointments/providers', {
+                          name: parts[0].trim(),
+                          specialty: parts[1] ? parts[1].trim() : "General"
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['partner-providers'] });
+                      } catch (err) { Alert.alert("Error", "Failed to add staff"); }
+                    }}
+                  ],
+                  "plain-text"
+                );
+              }}
+            >
               <Text className="font-bold text-blue-600">+ Add Staff Member</Text>
             </TouchableOpacity>
           </View>

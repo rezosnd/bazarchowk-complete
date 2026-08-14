@@ -297,7 +297,8 @@ export default function MarketsPage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
           gstPercentage: parseFloat(gstPercentage),
-          deliveryChargeConfig: { default: parseFloat(deliveryBase) }
+          deliveryChargeConfig: { default: parseFloat(deliveryBase) },
+          imageUrl: myMarket.imageUrl
         }),
       });
       if (res.ok) {
@@ -338,6 +339,18 @@ export default function MarketsPage() {
                   <input required type="number" step="any" value={deliveryBase} onChange={e=>setDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                   <p className="text-xs text-gray-400 mt-1">Default rider delivery charge.</p>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Market Image URL</label>
+                <input 
+                  type="text" 
+                  value={myMarket.imageUrl || ''} 
+                  onChange={e => setMyMarket({...myMarket, imageUrl: e.target.value})} 
+                  placeholder="https://example.com/market-image.jpg"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" 
+                />
+                <p className="text-xs text-gray-400 mt-1">Provide an image URL to show this market nicely in the customer app.</p>
               </div>
 
               <button disabled={loading} type="submit" className="w-full mt-4 bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">

@@ -255,6 +255,37 @@ export default function RiderProfileScreen() {
         </View>
 
         <View style={styles.section}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => {
+            Alert.prompt(
+              "Change Market",
+              "Enter the ID of the market you want to switch to",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Update", onPress: async (marketId) => {
+                  if (!marketId) return;
+                  try {
+                    const token = await SecureStore.getItemAsync('rider_token');
+                    await fetch(`${API_BASE}/delivery/rider/profile`, {
+                      method: 'PATCH',
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                      },
+                      body: JSON.stringify({ marketId: marketId.trim() })
+                    });
+                    Alert.alert('Success', 'Market updated. Restart app to see changes.');
+                  } catch (e) {
+                    Alert.alert('Error', 'Failed to update market');
+                  }
+                }}
+              ]
+            )
+          }}>
+            <Ionicons name="location-outline" size={24} color="#64748B" />
+            <Text style={styles.menuText}>Change Operating Market</Text>
+            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+          </TouchableOpacity>
+          <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/earnings')}>
             <Ionicons name="document-text-outline" size={24} color="#64748B" />
             <Text style={styles.menuText}>Delivery History</Text>
