@@ -100,6 +100,21 @@ export class UpdateMarketDto {
   @IsOptional()
   @IsString()
   adminId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  gstPercentage?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  deliveryChargeConfig?: any;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
 
 export class CreateCityConfigDto {
