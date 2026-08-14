@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput, Image, Modal, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -21,6 +21,13 @@ export default function RiderProfileScreen() {
   const [savingUpi, setSavingUpi] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Market selection modal state
+  const [showMarketModal, setShowMarketModal] = useState(false);
+  const [markets, setMarkets] = useState<any[]>([]);
+  const [loadingMarkets, setLoadingMarkets] = useState(false);
+  const [savingMarket, setSavingMarket] = useState(false);
+  const [currentMarketName, setCurrentMarketName] = useState<string>('');
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -36,12 +43,73 @@ export default function RiderProfileScreen() {
         setProfile(data);
         setEditPhone(data.phone || '');
       }
+
+      // Also fetch rider delivery partner info for marketId
+      const riderRes = await fetch(`${API_BASE}/delivery/rider/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (riderRes.ok) {
+        const riderData = await riderRes.json();
+        if (riderData?.market?.name) {
+          setCurrentMarketName(riderData.market.name);
+        }
+      }
     } catch (error) {
       console.warn('Failed to fetch profile');
     } finally {
       const storedUpi = await SecureStore.getItemAsync('rider_upi_id');
       if (storedUpi) setUpiId(storedUpi);
       setLoading(false);
+    }
+  };
+
+  const fetchMarkets = async () => {
+    setLoadingMarkets(true);
+    try {
+      const token = await SecureStore.getItemAsync('rider_token');
+      const res = await fetch(`${API_BASE}/super-admin/markets?limit=100`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMarkets(data.data || data || []);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not load markets. Please try again.');
+    } finally {
+      setLoadingMarkets(false);
+    }
+  };
+
+  const handleOpenMarketModal = () => {
+    setShowMarketModal(true);
+    fetchMarkets();
+  };
+
+  const handleSelectMarket = async (market: any) => {
+    setSavingMarket(true);
+    try {
+      const token = await SecureStore.getItemAsync('rider_token');
+      const res = await fetch(`${API_BASE}/delivery/rider/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ marketId: market.id })
+      });
+      if (res.ok) {
+        setCurrentMarketName(market.name);
+        setShowMarketModal(false);
+        Alert.alert('✅ Market Updated', `You are now operating in "${market.name}". Orders from this zone will be assigned to you.`);
+      } else {
+        const err = await res.json();
+        Alert.alert('Error', err?.message || 'Failed to update market. Please try again.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not connect to server.');
+    } finally {
+      setSavingMarket(false);
     }
   };
 
@@ -55,9 +123,9 @@ export default function RiderProfileScreen() {
       const token = await SecureStore.getItemAsync('rider_token');
       const res = await fetch(`${API_BASE}/users/me`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ phone: editPhone })
       });
@@ -83,7 +151,6 @@ export default function RiderProfileScreen() {
         aspect: [1, 1],
         quality: 0.8,
       });
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         uploadImage(result.assets[0].uri);
       }
@@ -96,31 +163,18 @@ export default function RiderProfileScreen() {
     setUploadingImage(true);
     try {
       const formData = new FormData();
-      formData.append('file', {
-        uri,
-        name: 'avatar.jpg',
-        type: 'image/jpeg'
-      } as any);
+      formData.append('file', { uri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
       formData.append('folder', 'profiles');
-
       const uploadRes = await axios.post(`${API_BASE}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
       const imageUrl = uploadRes.data.url || uploadRes.data.secure_url;
-
       const token = await SecureStore.getItemAsync('rider_token');
       const updateRes = await fetch(`${API_BASE}/users/me`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ avatarUrl: imageUrl })
       });
-
       if (updateRes.ok) {
         fetchProfile();
         Alert.alert('Success', 'Profile picture updated');
@@ -150,8 +204,8 @@ export default function RiderProfileScreen() {
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Logout', 
+      {
+        text: 'Logout',
         style: 'destructive',
         onPress: async () => {
           await SecureStore.deleteItemAsync('rider_token');
@@ -171,8 +225,9 @@ export default function RiderProfileScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
       </View>
-      
+
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Profile Card */}
         <View style={styles.profileCard}>
           <TouchableOpacity onPress={handlePickImage} disabled={uploadingImage} style={styles.avatar}>
             {uploadingImage ? (
@@ -188,16 +243,9 @@ export default function RiderProfileScreen() {
           </TouchableOpacity>
           <View style={styles.info}>
             <Text style={styles.name}>{profile?.firstName} {profile?.lastName}</Text>
-            
             {editing ? (
               <View style={styles.editRow}>
-                <TextInput
-                  style={styles.input}
-                  value={editPhone}
-                  onChangeText={setEditPhone}
-                  placeholder="Enter Phone Number"
-                  keyboardType="phone-pad"
-                />
+                <TextInput style={styles.input} value={editPhone} onChangeText={setEditPhone} placeholder="Enter Phone Number" keyboardType="phone-pad" />
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveProfile} disabled={saving}>
                   {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save</Text>}
                 </TouchableOpacity>
@@ -213,13 +261,13 @@ export default function RiderProfileScreen() {
                 </TouchableOpacity>
               </View>
             )}
-
             <View style={styles.badge}>
               <Text style={styles.badgeText}>Verified Rider</Text>
             </View>
           </View>
         </View>
 
+        {/* UPI Card */}
         <View style={[styles.profileCard, { paddingVertical: 16 }]}>
           <View style={[styles.avatar, { width: 48, height: 48, backgroundColor: '#E0E7FF' }]}>
             <Ionicons name="qr-code" size={24} color="#4338CA" />
@@ -228,13 +276,7 @@ export default function RiderProfileScreen() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 4 }}>My UPI ID (For COD Settlement)</Text>
             {editingUpi ? (
               <View style={styles.editRow}>
-                <TextInput
-                  style={styles.input}
-                  value={upiId}
-                  onChangeText={setUpiId}
-                  placeholder="e.g. yourname@upi"
-                  autoCapitalize="none"
-                />
+                <TextInput style={styles.input} value={upiId} onChangeText={setUpiId} placeholder="e.g. yourname@upi" autoCapitalize="none" />
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveUpi} disabled={savingUpi}>
                   {savingUpi ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
                 </TouchableOpacity>
@@ -254,46 +296,47 @@ export default function RiderProfileScreen() {
           </View>
         </View>
 
+        {/* Current Market Banner */}
+        {currentMarketName ? (
+          <View style={styles.marketBanner}>
+            <Ionicons name="location" size={20} color="#00B140" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>Operating Market</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#0F172A' }}>{currentMarketName}</Text>
+            </View>
+            <TouchableOpacity onPress={handleOpenMarketModal} style={styles.changeBtn}>
+              <Text style={styles.changeBtnText}>Change</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* Menu Section */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => {
-            Alert.prompt(
-              "Change Market",
-              "Enter the ID of the market you want to switch to",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Update", onPress: async (marketId) => {
-                  if (!marketId) return;
-                  try {
-                    const token = await SecureStore.getItemAsync('rider_token');
-                    await fetch(`${API_BASE}/delivery/rider/profile`, {
-                      method: 'PATCH',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
-                      },
-                      body: JSON.stringify({ marketId: marketId.trim() })
-                    });
-                    Alert.alert('Success', 'Market updated. Restart app to see changes.');
-                  } catch (e) {
-                    Alert.alert('Error', 'Failed to update market');
-                  }
-                }}
-              ]
-            )
-          }}>
-            <Ionicons name="location-outline" size={24} color="#64748B" />
-            <Text style={styles.menuText}>Change Operating Market</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={handleOpenMarketModal}>
+            <View style={[styles.menuIcon, { backgroundColor: '#F0FDF4' }]}>
+              <Ionicons name="location-outline" size={22} color="#00B140" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuText}>Change Operating Market</Text>
+              <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
+                {currentMarketName ? `Currently: ${currentMarketName}` : 'No market selected'}
+              </Text>
+            </View>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/earnings')}>
-            <Ionicons name="document-text-outline" size={24} color="#64748B" />
+            <View style={[styles.menuIcon, { backgroundColor: '#FFF7ED' }]}>
+              <Ionicons name="document-text-outline" size={22} color="#EA580C" />
+            </View>
             <Text style={styles.menuText}>Delivery History</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Support', 'Please email support@bazarchowk.com or call 1800-BAZAR-HELP')}>
-            <Ionicons name="help-buoy-outline" size={24} color="#64748B" />
+            <View style={[styles.menuIcon, { backgroundColor: '#EFF6FF' }]}>
+              <Ionicons name="help-buoy-outline" size={22} color="#3B82F6" />
+            </View>
             <Text style={styles.menuText}>Support & Help</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </TouchableOpacity>
@@ -304,6 +347,64 @@ export default function RiderProfileScreen() {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* ---- Market Selection Modal ---- */}
+      <Modal visible={showMarketModal} animationType="slide" transparent onRequestClose={() => setShowMarketModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Your Market</Text>
+              <TouchableOpacity onPress={() => setShowMarketModal(false)}>
+                <Ionicons name="close-circle" size={28} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>Choose the market zone you want to operate in. You'll receive delivery orders only from this area.</Text>
+
+            {loadingMarkets ? (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <ActivityIndicator size="large" color="#00B140" />
+                <Text style={{ color: '#64748B', marginTop: 12 }}>Loading markets...</Text>
+              </View>
+            ) : markets.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Ionicons name="location-outline" size={48} color="#CBD5E1" />
+                <Text style={{ color: '#64748B', marginTop: 12, fontWeight: '600' }}>No markets found</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={markets}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ paddingBottom: 32 }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.marketItem, item.name === currentMarketName && styles.marketItemActive]}
+                    onPress={() => handleSelectMarket(item)}
+                    disabled={savingMarket}
+                  >
+                    <View style={[styles.marketIcon, { backgroundColor: item.name === currentMarketName ? '#DCFCE7' : '#F8FAFC' }]}>
+                      <Ionicons name="storefront-outline" size={22} color={item.name === currentMarketName ? '#00B140' : '#64748B'} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.marketItemName, item.name === currentMarketName && { color: '#00B140' }]}>{item.name}</Text>
+                      {item.village?.name && (
+                        <Text style={styles.marketItemSub}>{item.village.name}</Text>
+                      )}
+                    </View>
+                    {item.name === currentMarketName ? (
+                      <Ionicons name="checkmark-circle" size={22} color="#00B140" />
+                    ) : savingMarket ? (
+                      <ActivityIndicator size="small" color="#00B140" />
+                    ) : (
+                      <Ionicons name="radio-button-off" size={22} color="#CBD5E1" />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -313,8 +414,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: { padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
   title: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
-  scroll: { padding: 16, gap: 24 },
-  
+  scroll: { padding: 16, gap: 16, paddingBottom: 40 },
+
   profileCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', gap: 16 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 32, fontWeight: '800', color: '#0F172A' },
@@ -330,11 +431,29 @@ const styles = StyleSheet.create({
   badge: { alignSelf: 'flex-start', backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 12, fontWeight: '700', color: '#D97706' },
 
+  marketBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#BBF7D0' },
+  changeBtn: { backgroundColor: '#00B140', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  changeBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+
   section: { backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+  menuIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   menuText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#334155' },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 52 },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 68 },
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FEE2E2' },
-  logoutText: { fontSize: 16, fontWeight: '700', color: '#DC2626' }
+  logoutText: { fontSize: 16, fontWeight: '700', color: '#DC2626' },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '80%' },
+  modalHandle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  modalTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A' },
+  modalSubtitle: { fontSize: 14, color: '#64748B', marginBottom: 24, lineHeight: 20 },
+  marketItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 10, backgroundColor: '#FAFAFA', gap: 12 },
+  marketItemActive: { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
+  marketIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  marketItemName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  marketItemSub: { fontSize: 13, color: '#64748B', marginTop: 2 },
 });
