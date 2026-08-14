@@ -444,5 +444,39 @@ export class SettlementService {
       pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || estimateNet(ordersThisMonth._sum.totalAmount || 0),
     };
   }
+  async getUnsettledShopsSummary(user?: any) {
+    const marketId = await this.getAdminMarketId(user);
+
+    // Find all shops that have DELIVERED orders not yet linked to any settlement item
+    const shops = await this.prisma.shop.findMany({
+      where: marketId ? { marketId } : {},
+      select: { id: true, name: true }
+    });
+
+    const result = [];
+
+    for (const shop of shops) {
+      const orders = await this.prisma.order.findMany({
+        where: {
+          shopId: shop.id,
+          status: 'DELIVERED',
+          settlementItem: null, // not yet in any settlement
+        },
+        select: { id: true, totalAmount: true }
+      });
+
+      if (orders.length > 0) {
+        const grossAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+        result.push({
+          shopId: shop.id,
+          shopName: shop.name,
+          orderCount: orders.length,
+          grossAmount,
+        });
+      }
+    }
+
+    return result;
+  }
 }
 

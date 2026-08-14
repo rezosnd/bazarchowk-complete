@@ -102,10 +102,18 @@ export class SettlementController {
     return this.settlementService.getSettlements(shopId, status, Number(page), Number(limit), user);
   }
 
+  @Get('shops/unsettled-summary')
+  @UseGuards(RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'DISTRICT_ADMIN', 'FINANCE_ADMIN')
+  @ApiOperation({ summary: 'Admin: Get shops with unsettled delivered orders (for generating new settlements)' })
+  getUnsettledShops(@CurrentUser() user?: any) {
+    return this.settlementService.getUnsettledShopsSummary(user);
+  }
+
   @Patch('shops/:id/mark-paid')
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN')
-  @ApiOperation({ summary: 'SuperAdmin: Mark a settlement as COMPLETED with payment reference' })
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'FINANCE_ADMIN')
+  @ApiOperation({ summary: 'Admin: Mark a settlement as COMPLETED with payment reference' })
   markPaid(@Param('id') id: string, @Body() dto: MarkSettlementPaidDto) {
     return this.settlementService.markSettlementPaid(id, dto);
   }

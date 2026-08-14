@@ -242,11 +242,13 @@ export class EmailService {
         doc.moveDown(0.5);
       }
 
-      doc.moveDown(1);
-      doc.rect(290, doc.y, 255, 30).fill('#FF8A00');
-      doc.fillColor('#FFF').font('Helvetica-Bold').fontSize(14);
-      doc.text('Total Paid:', 300, doc.y - 20);
-      doc.text(`Rs. ${totalAmt.toFixed(2)}`, 400, doc.y - 20, { width: 135, align: 'right' });
+      doc.moveDown(2);
+      const totalBoxY = doc.y;
+      doc.rect(290, totalBoxY, 255, 32).fill('#FF8A00');
+      doc.fillColor('#FFF').font('Helvetica-Bold').fontSize(13);
+      doc.text('Total Paid:', 300, totalBoxY + 9, { width: 120 });
+      doc.text(`Rs. ${totalAmt.toFixed(2)}`, 400, totalBoxY + 9, { width: 135, align: 'right' });
+      doc.y = totalBoxY + 40;
 
       doc.moveDown(4);
       doc.font('Helvetica').fillColor('#94A3B8').fontSize(10);
@@ -292,8 +294,8 @@ export class EmailService {
 
     const walletRow = walletUsed > 0 ? `
       <tr>
-        <td colspan="2" style="padding:6px 12px;color:#00B140;font-size:13px;">Wallet Applied</td>
-        <td style="padding:6px 12px;text-align:right;color:#00B140;font-weight:700;font-size:13px;">-₹${walletUsed.toFixed(2)}</td>
+        <td colspan="2" style="padding:6px 12px;color:#FF8A00;font-size:13px;">Wallet Applied</td>
+        <td style="padding:6px 12px;text-align:right;color:#FF8A00;font-weight:700;font-size:13px;">-₹${walletUsed.toFixed(2)}</td>
       </tr>` : '';
 
     const html = `<!DOCTYPE html>
@@ -303,11 +305,10 @@ export class EmailService {
   <div style="max-width:580px;margin:32px auto;background:#FFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     
     <!-- Header -->
-    <div style="background:#FF8A00;padding:32px 32px 24px;text-align:center;">
-      <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:12px 24px;margin-bottom:16px;">
-        <span style="color:#FFF;font-size:26px;font-weight:900;letter-spacing:1px;">🛒 BazarChowk</span>
-      </div>
-      <h1 style="color:#FFF;margin:0;font-size:22px;font-weight:800;">Order Confirmed!</h1>
+    <div style="background:#FF8A00;padding:28px 32px 20px;text-align:center;">
+      <img src="https://bazarchowk.com/logo.png" alt="BazarChowk" height="48" style="display:inline-block;margin-bottom:12px;filter:brightness(0) invert(1);" onerror="this.style.display='none'" />
+      <div style="display:block;color:#FFF;font-size:26px;font-weight:900;letter-spacing:1px;margin-bottom:8px;">BazarChowk</div>
+      <h1 style="color:#FFF;margin:0;font-size:20px;font-weight:700;">Order Confirmed!</h1>
       <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">Your receipt for Order <strong>#${orderNumber}</strong></p>
     </div>
 

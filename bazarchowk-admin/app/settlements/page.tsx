@@ -4,55 +4,86 @@ import React, { useState, useEffect } from 'react';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function SettlementsPage() {
-  const [activeTab, setActiveTab] = useState('PENDING'); // 'PENDING' or 'COMPLETED'
+  const [activeTab, setActiveTab] = useState('PENDING');
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [settlements, setSettlements] = useState<any[]>([]);
+  const [unsettledShops, setUnsettledShops] = useState<any[]>([]);
+  const [showGenerate, setShowGenerate] = useState(false);
 
-  useEffect(() => {
-    fetchSettlements();
-  }, [activeTab]);
+  useEffect(() => { fetchSettlements(); }, [activeTab]);
+  useEffect(() => { if (showGenerate) fetchUnsettledShops(); }, [showGenerate]);
 
   const fetchSettlements = async () => {
     try {
       const token = localStorage.getItem('admin_token');
       const res = await fetch(`${API_BASE}/settlement/shops/list?status=${activeTab}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const json = await res.json();
         setSettlements(json.data || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch settlements', err);
-    }
+    } catch (err) { console.error('Failed to fetch settlements', err); }
+  };
+
+  const fetchUnsettledShops = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      // Get all shops with delivered orders not yet in a settlement
+      const res = await fetch(`${API_BASE}/settlement/shops/unsettled-summary`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setUnsettledShops(json || []);
+      }
+    } catch (err) { console.error('Failed to fetch unsettled shops', err); }
+  };
+
+  const handleGenerateSettlement = async (shopId: string, shopName: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    setGenerating(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/settlement/shops/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ shopId, periodStart: weekAgo, periodEnd: today })
+      });
+      if (res.ok) {
+        alert(`Settlement generated for ${shopName}! It will appear in the Pending tab.`);
+        setShowGenerate(false);
+        setActiveTab('PENDING');
+        fetchSettlements();
+      } else {
+        const err = await res.json();
+        alert(err?.message || 'Failed to generate settlement.');
+      }
+    } catch (err) { alert('Network Error'); }
+    setGenerating(false);
   };
 
   const handleMarkAsPaid = async (id: string, name: string) => {
-    if (!confirm(`Confirm Bank Transfer to ${name}? \n\nThis will instantly dispatch an automated Email with a PDF breakdown of all sales and deductions to the partner.`)) return;
-    
+    const ref = prompt(`Enter payment reference (UPI TxID / Bank ref) for ${name}:`);
+    if (!ref) return;
     setLoading(true);
     try {
       const token = localStorage.getItem('admin_token');
       const res = await fetch(`${API_BASE}/settlement/shops/${id}/mark-paid`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ paymentReference: 'MANUAL_TRANSFER_UI' })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ paymentReference: ref })
       });
-
       if (res.ok) {
-        alert(`Payment Settled!\n\nThe PDF report has been automatically emailed to ${name}.`);
+        alert(`Settled! PDF invoice emailed automatically to ${name}.`);
         fetchSettlements();
       } else {
         alert('Failed to settle payment.');
       }
-    } catch (err) {
-      alert('Network Error');
-    }
+    } catch (err) { alert('Network Error'); }
     setLoading(false);
   };
 
@@ -63,22 +94,54 @@ export default function SettlementsPage() {
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Financial Settlements</h1>
           <p className="text-sm text-gray-500 mt-1">Manage weekly payouts for partners. Automated PDF invoices are dispatched on completion.</p>
         </div>
-        <div className="flex bg-slate-200 p-1 rounded-lg">
-          <button 
-            onClick={() => setActiveTab('PENDING')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition ${activeTab === 'PENDING' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+        <div className="flex gap-3 items-center">
+          <button
+            onClick={() => setShowGenerate(!showGenerate)}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-5 rounded-lg transition shadow-sm text-sm"
           >
-            Unsettled (Pending)
+            + Generate Settlement
           </button>
-          <button 
-            onClick={() => setActiveTab('COMPLETED')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition ${activeTab === 'COMPLETED' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Settled (Completed)
-          </button>
+          <div className="flex bg-slate-200 p-1 rounded-lg">
+            <button onClick={() => setActiveTab('PENDING')} className={`px-4 py-2 text-sm font-semibold rounded-md transition ${activeTab === 'PENDING' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Unsettled (Pending)
+            </button>
+            <button onClick={() => setActiveTab('COMPLETED')} className={`px-4 py-2 text-sm font-semibold rounded-md transition ${activeTab === 'COMPLETED' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Settled (Completed)
+            </button>
+          </div>
         </div>
       </div>
-      
+
+      {/* Generate Panel */}
+      {showGenerate && (
+        <div className="bg-white rounded-2xl border border-orange-200 p-6 mb-6 shadow-sm">
+          <h2 className="font-bold text-gray-900 mb-1">Shops with Unsettled Orders</h2>
+          <p className="text-sm text-gray-500 mb-4">These shops have delivered orders not yet included in any settlement. Click to generate this week's settlement.</p>
+          {unsettledShops.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4 text-center">All shops are fully settled. No pending orders found.</p>
+          ) : (
+            <div className="grid gap-3">
+              {unsettledShops.map((shop: any) => (
+                <div key={shop.shopId} className="flex items-center justify-between bg-slate-50 rounded-xl px-5 py-4 border border-slate-200">
+                  <div>
+                    <div className="font-bold text-gray-900">{shop.shopName}</div>
+                    <div className="text-sm text-gray-500">{shop.orderCount} unsettled orders · Gross ₹{shop.grossAmount?.toFixed(2)}</div>
+                    <div className="text-sm font-semibold text-green-700">Est. Net ₹{(shop.grossAmount * 0.95)?.toFixed(2)} (after 5% commission)</div>
+                  </div>
+                  <button
+                    onClick={() => handleGenerateSettlement(shop.shopId, shop.shopName)}
+                    disabled={generating}
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-5 rounded-lg text-sm disabled:opacity-50"
+                  >
+                    {generating ? 'Generating...' : 'Generate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 uppercase bg-slate-50 border-b border-slate-200">
@@ -92,33 +155,46 @@ export default function SettlementsPage() {
           </thead>
           <tbody>
             {settlements.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No {activeTab.toLowerCase()} settlements found.</td></tr>
+              <tr>
+                <td colSpan={5} className="px-6 py-16 text-center">
+                  <div className="text-gray-400 text-sm">No {activeTab.toLowerCase()} settlements found.</div>
+                  {activeTab === 'PENDING' && (
+                    <button
+                      onClick={() => setShowGenerate(true)}
+                      className="mt-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 px-6 rounded-lg"
+                    >
+                      + Generate Settlement for Shops
+                    </button>
+                  )}
+                </td>
+              </tr>
             ) : settlements.map((s) => (
               <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
                 <td className="px-6 py-4">
                   <div className="font-bold text-gray-900">{s.shop?.name || 'Unknown Shop'}</div>
-                  <div className="text-[10px] font-bold mt-1 inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                    SHOP
-                  </div>
+                  <div className="text-[10px] font-bold mt-1 inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-700">SHOP</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-gray-900 font-medium">{new Date(s.periodStart).toLocaleDateString()} - {new Date(s.periodEnd).toLocaleDateString()}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{s._count?.items || 0} total deliveries</div>
+                  <div className="text-gray-900 font-medium">{new Date(s.periodStart).toLocaleDateString('en-IN')} – {new Date(s.periodEnd).toLocaleDateString('en-IN')}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{s._count?.items || 0} orders</div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between text-gray-500"><span className="mr-8">Gross Sales:</span> <span>₹{s.totalOrderAmount}</span></div>
-                    <div className="flex justify-between text-red-500"><span className="mr-8">Commission:</span> <span>-₹{s.platformCommission}</span></div>
-                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t mt-1"><span className="mr-8">Net Payout:</span> <span>₹{s.netSettlementAmt}</span></div>
+                    <div className="flex justify-between text-gray-500"><span className="mr-8">Gross Sales:</span> <span>₹{Number(s.totalOrderAmount).toFixed(2)}</span></div>
+                    <div className="flex justify-between text-red-500"><span className="mr-8">Commission:</span> <span>-₹{Number(s.platformCommission).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t mt-1"><span className="mr-8">Net Payout:</span> <span>₹{Number(s.netSettlementAmt).toFixed(2)}</span></div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-mono text-gray-900 font-semibold">{s.shop?.upiId || 'No UPI ID Provided'}</div>
+                  <div className="text-sm font-mono text-gray-900 font-semibold">{s.shop?.upiId || 'No UPI ID'}</div>
                   {s.shop?.bankAccountNumber && <div className="text-xs text-gray-500 mt-1">{s.shop.bankAccountNumber}</div>}
+                  {s.status === 'COMPLETED' && s.paymentReference && (
+                    <div className="text-xs text-green-600 mt-1 font-semibold">Ref: {s.paymentReference}</div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right">
                   {s.status === 'PENDING' ? (
-                    <button 
+                    <button
                       onClick={() => handleMarkAsPaid(s.id, s.shop?.name || 'Shop')}
                       disabled={loading}
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow-sm"
