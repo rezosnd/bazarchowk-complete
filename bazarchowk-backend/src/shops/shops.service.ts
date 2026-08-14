@@ -24,6 +24,9 @@ export class ShopsService {
     const data: any = { ...createShopDto, ownerId };
     if (createShopDto.partnerType) {
       data.partnerType = createShopDto.partnerType as any;
+      if (['SALON', 'PLUMBER', 'ELECTRICIAN', 'HOME_CLEANING'].includes(createShopDto.partnerType)) {
+        data.hasServices = true;
+      }
     }
 
     const shop = await this.prisma.shop.create({
@@ -50,7 +53,17 @@ export class ShopsService {
 
     const whereClause: any = includeUnverified ? {} : { isVerified: true, isActive: true };
     if (partnerType) whereClause.partnerType = partnerType;
-    if (hasServices !== undefined) whereClause.hasServices = hasServices;
+    if (hasServices !== undefined) {
+      if (hasServices) {
+        whereClause.OR = [
+          { hasServices: true },
+          { partnerType: { in: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'HOME_CLEANING'] } }
+        ];
+      } else {
+        whereClause.hasServices = false;
+        whereClause.partnerType = { notIn: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'HOME_CLEANING'] };
+      }
+    }
     if (city && (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng))) {
       whereClause.city = { equals: city, mode: 'insensitive' };
     }

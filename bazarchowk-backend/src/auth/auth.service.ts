@@ -49,7 +49,12 @@ export class AuthService {
       await this.emailService.sendWelcomeEmail(user.email, user.firstName || 'User').catch(e => console.error('Email error:', e));
     }
 
-    return this.generateTokens(user.id);
+    const tokens = await this.generateTokens(user.id);
+    return {
+      ...tokens,
+      id: user.id, // For backward compatibility with the admin panel expectation
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, roleId: user.roleId },
+    };
   }
 
   async login(loginDto: LoginDto) {
