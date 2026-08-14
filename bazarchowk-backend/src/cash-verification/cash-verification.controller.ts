@@ -15,7 +15,7 @@ export class CashVerificationController {
   constructor(private readonly cashVerificationService: CashVerificationService) {}
 
   @Post('submit')
-  @Roles('DELIVERY_PARTNER')
+  @Roles('DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Rider submits physical cash at a hub' })
   submitCash(@CurrentUser() user: any, @Body() dto: SubmitCashDto) {
     return this.cashVerificationService.submitCash(user.id, dto);
@@ -33,7 +33,7 @@ export class CashVerificationController {
   }
 
   @Get('my-history')
-  @Roles('DELIVERY_PARTNER')
+  @Roles('DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Rider views their past cash submissions and receipts' })
   getMyHistory(@CurrentUser() user: any, @Query('page') page?: string, @Query('limit') limit?: string) {
     return this.cashVerificationService.getRiderHistory(user.id, Number(page || 1), Number(limit || 20));

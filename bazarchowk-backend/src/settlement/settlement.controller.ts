@@ -24,7 +24,7 @@ export class SettlementController {
 
   @Post('cash/record')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER')
+  @Roles('DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Rider: Record cash collected for a COD order after delivery' })
   recordCashCollection(@Body() dto: RecordCashCollectionDto, @CurrentUser() user: any) {
     return this.settlementService.recordCashCollection(user.id, dto);
@@ -32,7 +32,7 @@ export class SettlementController {
 
   @Get('cash/my-summary')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER')
+  @Roles('DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Rider: Get outstanding cash collections and total due' })
   getRiderCashSummary(@CurrentUser() user: any) {
     return this.settlementService.getRiderCashSummary(user.id);
@@ -40,7 +40,7 @@ export class SettlementController {
 
   @Post('deposits/submit')
   @UseGuards(RolesGuard)
-  @Roles('DELIVERY_PARTNER')
+  @Roles('DELIVERY_PARTNER', 'RIDER')
   @ApiOperation({ summary: 'Rider: Submit a batch of collected cash to market admin' })
   submitDeposit(@Body() dto: SubmitRiderDepositDto, @CurrentUser() user: any) {
     return this.settlementService.submitRiderDeposit(user.id, dto);

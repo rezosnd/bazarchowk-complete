@@ -120,28 +120,41 @@ export class AppointmentsService {
     }
 
     const virtualSlots = [];
-    const now = new Date();
     
-    // Generate slots for the next 7 days, 9 AM to 8 PM
+    // Use IST timezone offset (UTC+5:30) for BazarChowk
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+    const nowUTC = new Date();
+    // Get current time in IST
+    const nowIST = new Date(nowUTC.getTime() + IST_OFFSET_MS);
+    
+    // Generate slots for the next 7 days, 9 AM to 8 PM (IST)
     for (let day = 0; day < 7; day++) {
-      const date = new Date();
-      date.setDate(now.getDate() + day);
+      const dateIST = new Date(nowIST);
+      dateIST.setUTCDate(nowIST.getUTCDate() + day);
       
       for (let hour = 9; hour <= 20; hour++) {
-        const start = new Date(date);
-        start.setHours(hour, 0, 0, 0);
+        // Construct the time in IST, then convert back to UTC for database storage
+        // hour is 9 to 20 in IST
+        const startUTC = new Date(Date.UTC(
+          dateIST.getUTCFullYear(),
+          dateIST.getUTCMonth(),
+          dateIST.getUTCDate(),
+          hour, 0, 0, 0
+        ));
+        // Subtract IST offset to get actual UTC time
+        startUTC.setTime(startUTC.getTime() - IST_OFFSET_MS);
         
-        if (start > now) {
-          const end = new Date(start);
-          end.setHours(hour + 1, 0, 0, 0);
+        if (startUTC > nowUTC) {
+          const endUTC = new Date(startUTC);
+          endUTC.setUTCHours(endUTC.getUTCHours() + 1);
           
-          const key = start.toISOString();
+          const key = startUTC.toISOString();
           const existing = existingMap.get(key);
           
           virtualSlots.push({
             id: existing ? existing.id : `virtual_${key}`,
-            startTime: start,
-            endTime: end,
+            startTime: startUTC,
+            endTime: endUTC,
             maxCapacity: existing ? existing.maxCapacity : capacity,
             currentBookings: existing ? existing.currentBookings : 0,
             availableSpots: existing ? (existing.maxCapacity - existing.currentBookings) : capacity,

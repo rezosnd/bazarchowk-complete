@@ -334,9 +334,8 @@ export class ShopsService {
   async isShopOpenOnDate(shopId: string, date: Date): Promise<{ isOpen: boolean; reason?: string }> {
     const checkDate = new Date(date);
     checkDate.setHours(0, 0, 0, 0);
-    const checkDateStr = checkDate.toISOString().split('T')[0];
 
-    // 1. Check holidays
+    // 1. Check holidays (Shop owners can still set specific days off)
     const holiday = await this.prisma.shopHoliday.findFirst({
       where: {
         shopId,
@@ -350,17 +349,9 @@ export class ShopsService {
       return { isOpen: false, reason: holiday.reason ? `Holiday: ${holiday.reason}` : 'Shop is closed on this date' };
     }
 
-    // 2. Check weekly timing
-    const dayOfWeek = checkDate.getDay();
-    const timing = await this.prisma.shopTiming.findUnique({
-      where: { shopId_dayOfWeek: { shopId, dayOfWeek } },
-    });
-
-    if (!timing || timing.isClosed) {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      return { isOpen: false, reason: `Shop is closed on ${days[dayOfWeek]}s` };
-    }
-
+    // 2. We removed the legacy ShopTiming system in favor of a manual Open/Closed toggle.
+    // However, the manual toggle applies to *current* orders, not future appointments.
+    // Therefore, if it's not a holiday, we assume the shop is open for appointments.
     return { isOpen: true };
   }
 }

@@ -500,6 +500,7 @@ export class OrdersService {
     });
   }
 
+
   async getShopOrders(shopId: string, ownerId: string) {
     const shop = await this.prisma.shop.findUnique({ where: { id: shopId } });
     if (!shop || shop.ownerId !== ownerId) {

@@ -16,6 +16,7 @@ export default function ShopServicesScreen() {
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const { data: services, isLoading: loadingServices } = useQuery({
     queryKey: ['shop-services', shopId],
@@ -127,37 +128,57 @@ export default function ShopServicesScreen() {
           </>
         )}
 
-        {/* Step 3: Select Time Slot & Book */}
+        {/* Step 3: Select Date & Time & Book */}
         {selectedProviderId && (
           <>
-            <Text style={styles.stepTitle}>3. Select Time & Book</Text>
+            <Text style={styles.stepTitle}>3. Select Date & Time</Text>
             {loadingSlots ? (
                <Text style={styles.emptyText}>Loading schedule...</Text>
             ) : (
-              <View style={styles.slotsGrid}>
-                {timeSlots?.map((slot: any) => {
-                  const isFull = slot.isFull;
-                  return (
-                    <TouchableOpacity
-                      key={slot.id}
-                      disabled={isFull || bookMutation.isPending}
-                      onPress={() => bookMutation.mutate(slot.id)}
-                      style={[styles.slotCard, isFull && styles.slotCardFull]}
-                    >
-                      <Text style={[styles.slotText, isFull && styles.slotTextFull]}>
-                        {new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                      {slot.maxCapacity > 1 && (
-                        <Text style={styles.slotCapacityText}>
-                          {slot.availableSpots} left
+              <View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                  {Array.from(new Set(timeSlots?.map((s: any) => new Date(s.startTime).toLocaleDateString()))).map((dateStr: any, index) => {
+                    const isSelected = selectedDate === dateStr || (!selectedDate && index === 0);
+                    if (!selectedDate && index === 0) setTimeout(() => setSelectedDate(dateStr), 0);
+                    return (
+                      <TouchableOpacity 
+                        key={dateStr}
+                        onPress={() => setSelectedDate(dateStr)}
+                        style={[styles.dateChip, isSelected && styles.dateChipSelected]}
+                      >
+                        <Text style={[styles.dateChipText, isSelected && styles.dateChipTextSelected]}>
+                          {new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-                {(!timeSlots || timeSlots.length === 0) && (
-                  <Text style={styles.emptyText}>No time slots available for this professional.</Text>
-                )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                <View style={styles.slotsGrid}>
+                  {timeSlots?.filter((s: any) => new Date(s.startTime).toLocaleDateString() === (selectedDate || new Date(timeSlots[0]?.startTime).toLocaleDateString())).map((slot: any) => {
+                    const isFull = slot.isFull;
+                    return (
+                      <TouchableOpacity
+                        key={slot.id}
+                        disabled={isFull || bookMutation.isPending}
+                        onPress={() => bookMutation.mutate(slot.id)}
+                        style={[styles.slotCard, isFull && styles.slotCardFull]}
+                      >
+                        <Text style={[styles.slotText, isFull && styles.slotTextFull]}>
+                          {new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                        {slot.maxCapacity > 1 && (
+                          <Text style={styles.slotCapacityText}>
+                            {slot.availableSpots} left
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {(!timeSlots || timeSlots.length === 0) && (
+                    <Text style={styles.emptyText}>No time slots available for this professional.</Text>
+                  )}
+                </View>
               </View>
             )}
           </>
@@ -190,8 +211,13 @@ const styles = StyleSheet.create({
   providerName: { fontSize: 15, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
   providerSpecialty: { fontSize: 12, color: '#64748B', marginTop: 4, textAlign: 'center' },
   
+  dateChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 10, minWidth: 80, alignItems: 'center' },
+  dateChipSelected: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  dateChipText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  dateChipTextSelected: { color: '#FFF' },
+
   slotsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  slotCard: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#FFF', borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', minWidth: 100 },
+  slotCard: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#FFF', borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', minWidth: 90 },
   slotCardFull: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0', opacity: 0.6 },
   slotText: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
   slotTextFull: { color: '#94A3B8' },

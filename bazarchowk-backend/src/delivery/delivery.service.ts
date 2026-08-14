@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { DeliveryStatus, OrderStatus } from '@prisma/client';
+import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
 export class DeliveryService {
@@ -10,6 +11,7 @@ export class DeliveryService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly realtime: RealtimeGateway,
+    @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
   ) {}
 
   // Haversine formula to calculate distance in km
@@ -175,31 +177,9 @@ export class DeliveryService {
     if (status === DeliveryStatus.DELIVERED) orderStatus = OrderStatus.DELIVERED;
 
     if (orderStatus) {
-      await this.prisma.order.update({
-        where: { id: delivery.orderId },
-        data: { status: orderStatus }
-      });
+      // Delegate ALL order state changes, earnings, and cash collection to OrdersService
+      await this.ordersService.updateOrderStatus(delivery.orderId, partnerUserId, { status: orderStatus });
       
-      // If DELIVERED and COD, create CashCollection for Rider
-      if (orderStatus === OrderStatus.DELIVERED && delivery.order.paymentMethod === 'COD') {
-        const existingCollection = await this.prisma.cashCollection.findUnique({ where: { orderId: delivery.orderId } });
-        if (!existingCollection) {
-          await this.prisma.cashCollection.create({
-            data: {
-              orderId: delivery.orderId,
-              riderId: delivery.deliveryPartner.userId,
-              amountCollected: delivery.order.totalAmount,
-              status: 'COLLECTED'
-            }
-          });
-        }
-      }
-
-      this.realtime.sendToUser(delivery.order.customerId, 'order_status_update', {
-        orderId: delivery.orderId,
-        status: orderStatus
-      });
-
       await this.notifications.sendInAppNotification(
         delivery.order.customerId,
         'Delivery Update',
