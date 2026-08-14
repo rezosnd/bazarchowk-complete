@@ -12,10 +12,13 @@ export default function ShopInventoryScreen() {
   const [inventoryList, setInventoryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal state
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [newStock, setNewStock] = useState('');
   const [updating, setUpdating] = useState(false);
+
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterLowStock, setFilterLowStock] = useState(false);
 
   useEffect(() => {
     fetchInventory();
@@ -84,6 +87,21 @@ export default function ShopInventoryScreen() {
     );
   }
 
+  const filteredInventory = inventoryList.filter((item) => {
+    const isLowStock = item.quantity <= item.lowStockThreshold;
+    if (filterLowStock && !isLowStock) return false;
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const sku = item.productVariant?.sku?.toLowerCase() || '';
+      const name = item.productVariant?.product?.name?.toLowerCase() || '';
+      const varName = item.productVariant?.name?.toLowerCase() || '';
+      if (!sku.includes(q) && !name.includes(q) && !varName.includes(q)) return false;
+    }
+    
+    return true;
+  });
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -111,14 +129,39 @@ export default function ShopInventoryScreen() {
 
         <Text style={styles.sectionTitle}>Stock Management</Text>
 
-        {inventoryList.length === 0 ? (
+        {/* Search & Filter Bar */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={20} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by SKU or name..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#94A3B8"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color="#CBD5E1" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filterLowStock && styles.filterBtnActive]}
+            onPress={() => setFilterLowStock(!filterLowStock)}
+          >
+            <Ionicons name="warning" size={18} color={filterLowStock ? '#DC2626' : '#64748B'} />
+          </TouchableOpacity>
+        </View>
+
+        {filteredInventory.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="cube-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No inventory ledgers yet.</Text>
-            <Text style={styles.emptySub}>Ledgers auto-create when you add products.</Text>
+            <Text style={styles.emptyText}>No items found.</Text>
+            <Text style={styles.emptySub}>Try adjusting your search or filters.</Text>
           </View>
         ) : (
-          inventoryList.map((item) => {
+          filteredInventory.map((item) => {
             const isLowStock = item.quantity <= item.lowStockThreshold;
 
             return (
@@ -207,6 +250,13 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', marginTop: 40 },
   emptyText: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginTop: 12 },
   emptySub: { fontSize: 13, color: '#64748B', marginTop: 6 },
+  
+  searchRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 48 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 15, color: '#0F172A' },
+  filterBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  filterBtnActive: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+
   card: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#FFF', padding: 16, borderRadius: 16,

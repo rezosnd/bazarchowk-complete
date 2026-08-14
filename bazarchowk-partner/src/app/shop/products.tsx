@@ -123,7 +123,7 @@ export default function ShopProductsScreen() {
                 </View>
                 
                 <View style={{ gap: 12 }}>
-                  <TouchableOpacity onPress={() => alert('Editing products via Partner App is coming soon!')} style={{ padding: 8, backgroundColor: '#F1F5F9', borderRadius: 8 }}>
+                  <TouchableOpacity onPress={() => router.push(`/shop/addProduct?id=${product.id}`)} style={{ padding: 8, backgroundColor: '#F1F5F9', borderRadius: 8 }}>
                     <Ionicons name="pencil" size={20} color="#64748B" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleDelete(product.id)} style={{ padding: 8, backgroundColor: '#FEE2E2', borderRadius: 8 }}>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
@@ -12,6 +12,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete
 
 export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
+  const { id: editProductId } = useLocalSearchParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
 
@@ -33,7 +34,42 @@ export default function AddProductScreen() {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+    if (editProductId) {
+      fetchProductDetails(editProductId);
+    }
+  }, [editProductId]);
+
+  const fetchProductDetails = async (productId: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/products/${productId}`);
+      if (res.ok) {
+        const prod = await res.json();
+        setName(prod.name || '');
+        setDescription(prod.description || '');
+        setBasePrice(String(prod.basePrice || ''));
+        setCategoryId(prod.categoryId || '');
+        setSearchTerms(prod.searchTerms || '');
+        setIsPublished(prod.isPublished);
+
+        if (prod.images?.[0]?.imageUrl) {
+          setImageUri(prod.images[0].imageUrl);
+        }
+
+        if (prod.variants?.[0]) {
+          const v = prod.variants[0];
+          setSku(v.sku || '');
+          setVariantName(v.name || 'Default');
+          setVariantPrice(String(v.price || ''));
+          // Since stock is managed in inventory, we won't allow editing stock directly here during update
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch product details for edit');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -82,8 +118,8 @@ export default function AddProductScreen() {
         isPublished,
       };
 
-      const productRes = await fetch(`${API_BASE}/products`, {
-        method: 'POST',
+      const productRes = await fetch(editProductId ? `${API_BASE}/products/${editProductId}` : `${API_BASE}/products`, {
+        method: editProductId ? 'PATCH' : 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -93,7 +129,7 @@ export default function AddProductScreen() {
 
       if (!productRes.ok) {
         const errStr = await productRes.text();
-        throw new Error(`Failed to create product: ${errStr}`);
+        throw new Error(`Failed to save product: ${errStr}`);
       }
       const product = await productRes.json();
 
@@ -101,30 +137,46 @@ export default function AddProductScreen() {
         sku,
         name: variantName,
         price: parseFloat(variantPrice),
-        stock: parseInt(stock, 10),
+        ...(editProductId ? {} : { stock: parseInt(stock, 10) }) // Only pass stock on create
       };
 
-      const varRes = await fetch(`${API_BASE}/products/${product.id}/variants`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(variantPayload),
-      });
+      // For edit, we assume there is at least one variant and we update the first one
+      let varRes;
+      if (editProductId && product.variants?.[0]) {
+        varRes = await fetch(`${API_BASE}/products/${product.id}/variants/${product.variants[0].id}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(variantPayload),
+        });
+      } else {
+        varRes = await fetch(`${API_BASE}/products/${product.id}/variants`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(variantPayload),
+        });
+      }
+      
       if (!varRes.ok) {
         const errStr = await varRes.text();
-        throw new Error(`Failed to create variant: ${errStr}`);
+        throw new Error(`Failed to save variant: ${errStr}`);
       }
       const variant = await varRes.json();
 
-      // Initialize inventory ledger
-      await fetch(`${API_BASE}/inventory/init?productVariantId=${variant.id}&shopId=${shopId}&initialQuantity=${variant.stock}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Initialize inventory ledger only on creation
+      if (!editProductId) {
+        await fetch(`${API_BASE}/inventory/init?productVariantId=${variant.id}&shopId=${shopId}&initialQuantity=${variant.stock}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
 
-      // Upload Image if present
+      // Upload Image if present and changed (very basic check, usually would compare URLs or use a specific upload flag)
       if (imageUri) {
         try {
           const formData = new FormData();
@@ -179,7 +231,7 @@ export default function AddProductScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add New Product</Text>
+        <Text style={styles.headerTitle}>{editProductId ? 'Edit Product' : 'Add New Product'}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -262,11 +314,16 @@ export default function AddProductScreen() {
               <Text style={styles.label}>Price (₹) *</Text>
               <TextInput style={styles.input} placeholder="100" keyboardType="numeric" value={variantPrice} onChangeText={setVariantPrice} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Stock Quantity *</Text>
-              <TextInput style={styles.input} placeholder="10" keyboardType="numeric" value={stock} onChangeText={setStock} />
-            </View>
+            {!editProductId && (
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Initial Stock *</Text>
+                <TextInput style={styles.input} placeholder="10" keyboardType="numeric" value={stock} onChangeText={setStock} />
+              </View>
+            )}
           </View>
+          {editProductId && (
+            <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Note: To update stock quantities, please use the Inventory Ledger tab.</Text>
+          )}
         </View>
 
         <TouchableOpacity style={styles.btn} onPress={handleSave} disabled={loading}>

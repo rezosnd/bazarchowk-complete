@@ -63,6 +63,7 @@ export class SearchService {
               { description: { search: formattedQuery } },
               { searchTerms: { search: formattedQuery } },
               { name: { contains: query, mode: 'insensitive' } },
+              { name: { contains: query.length > 3 ? query.substring(0, 4) : query, mode: 'insensitive' } },
             ],
           },
           include: {

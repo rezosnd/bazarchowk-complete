@@ -13,6 +13,9 @@ export default function ShopOrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'LIVE' | 'PAST'>('LIVE');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
 
   useEffect(() => {
     fetchOrders();
@@ -178,7 +181,18 @@ export default function ShopOrdersScreen() {
     if (activeTab === 'LIVE') {
       return !pastStatuses.includes(o.status);
     } else {
-      return pastStatuses.includes(o.status);
+      if (!pastStatuses.includes(o.status)) return false;
+      
+      if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const orderNum = o.orderNumber?.toLowerCase() || '';
+        const name = [o.customer?.firstName, o.customer?.lastName].filter(Boolean).join(' ').toLowerCase();
+        if (!orderNum.includes(q) && !name.includes(q)) return false;
+      }
+      
+      return true;
     }
   });
 
@@ -201,6 +215,40 @@ export default function ShopOrdersScreen() {
             <Text style={[styles.tabText, activeTab === 'PAST' && styles.tabTextActive]}>Past Orders</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Past Orders Filters */}
+        {activeTab === 'PAST' && (
+          <View style={{ marginBottom: 16 }}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search" size={20} color="#94A3B8" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search order ID or customer name..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#94A3B8"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color="#CBD5E1" />
+                </TouchableOpacity>
+              )}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+              {['ALL', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'RETURNED_TO_SHOP'].map((status) => (
+                <TouchableOpacity
+                  key={status}
+                  style={[styles.statusChip, statusFilter === status && styles.statusChipActive]}
+                  onPress={() => setStatusFilter(status)}
+                >
+                  <Text style={[styles.statusChipText, statusFilter === status && styles.statusChipTextActive]}>
+                    {status.replace(/_/g, ' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {filteredOrders.length === 0 ? (
           <View style={styles.emptyState}>
@@ -316,4 +364,11 @@ const styles = StyleSheet.create({
   waitingText: { color: '#D97706', fontWeight: '700' },
   pickupBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F5F3FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: '#DDD6FE' },
   pickupBadgeText: { fontSize: 10, fontWeight: '800', color: '#7C3AED' },
+
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 48 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#0F172A' },
+  statusChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8 },
+  statusChipActive: { backgroundColor: '#0F172A', borderColor: '#0F172A' },
+  statusChipText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  statusChipTextActive: { color: '#FFF' },
 });
