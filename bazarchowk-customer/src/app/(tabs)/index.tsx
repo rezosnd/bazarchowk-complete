@@ -353,7 +353,7 @@ function ServicesCategoryGrid() {
           <TouchableOpacity 
              key={s.id} 
              style={styles.catItem} 
-             onPress={() => router.push(`/search?q=${s.type}`)}
+             onPress={() => router.push(`/service-category?type=${s.type}` as any)}
           >
              <View style={[styles.catIconWrap, { backgroundColor: s.bg }]}>
                 <Ionicons name={s.icon as any} size={26} color={s.color} />
