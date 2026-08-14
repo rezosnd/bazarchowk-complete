@@ -112,47 +112,60 @@ function AddStaffModal({ visible, onClose, onSuccess }: { visible: boolean; onCl
 
 // ---------- Add Slot Modal ----------
 function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: boolean; onClose: () => void; onSuccess: () => void; providerId: string | null }) {
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [capacity, setCapacity] = useState('1');
+  const [capacity, setCapacity] = useState('');
+  const [selectedHours, setSelectedHours] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Generate 1-hour time slots for today (8am to 9pm)
+  const timeSlots = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, 10 ... 21
+
+  const toggleHour = (hour: number) => {
+    setSelectedHours(prev =>
+      prev.includes(hour) ? prev.filter(h => h !== hour) : [...prev, hour]
+    );
+  };
+
+  const formatHour = (h: number) => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const display = h > 12 ? h - 12 : h;
+    return `${display}:00 ${ampm}`;
+  };
+
   const handleSave = async () => {
-    if (!startTime || !endTime || !capacity || !providerId) {
-      Alert.alert('Error', 'Please fill all fields.');
+    if (selectedHours.length === 0) {
+      Alert.alert('Error', 'Please select at least one time slot.');
+      return;
+    }
+    const cap = parseInt(capacity);
+    if (!cap || cap < 1 || cap > 50) {
+      Alert.alert('Error', 'Please enter a valid capacity between 1 and 50.');
+      return;
+    }
+    if (!providerId) {
+      Alert.alert('Error', 'No provider selected.');
       return;
     }
     setSaving(true);
     try {
-      // Basic time parsing assuming YYYY-MM-DDTHH:mm:ss format for simplicity
-      // For production ready, we would use a proper date picker.
-      // Assuming user inputs something like "2024-01-01T10:00:00" or we just use today + time
-      
       const today = new Date().toISOString().split('T')[0];
-      
-      const stDate = new Date(`${today}T${startTime.padStart(5, '0')}:00`);
-      const etDate = new Date(`${today}T${endTime.padStart(5, '0')}:00`);
-
-      if (isNaN(stDate.getTime()) || isNaN(etDate.getTime())) {
-        Alert.alert('Error', 'Invalid time format. Use HH:MM (e.g. 09:30 or 14:00)');
-        setSaving(false);
-        return;
-      }
-
-      let st = stDate.toISOString();
-      let et = etDate.toISOString();
-
-      await api.post('/appointments/slots/create', {
-        providerId,
-        startTime: st,
-        endTime: et,
-        maxCapacity: parseInt(capacity),
-      });
-      setStartTime(''); setEndTime(''); setCapacity('1');
+      await Promise.all(
+        selectedHours.map(hour => {
+          const stDate = new Date(`${today}T${String(hour).padStart(2, '0')}:00:00`);
+          const etDate = new Date(`${today}T${String(hour + 1).padStart(2, '0')}:00:00`);
+          return api.post('/appointments/slots/create', {
+            providerId,
+            startTime: stDate.toISOString(),
+            endTime: etDate.toISOString(),
+            maxCapacity: cap,
+          });
+        })
+      );
+      setCapacity(''); setSelectedHours([]);
+      Alert.alert('Success', `Created ${selectedHours.length} slot(s) with ${cap} customer(s) each!`);
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to add slot');
+      Alert.alert('Error', err.response?.data?.message || 'Failed to add slots');
     } finally {
       setSaving(false);
     }
@@ -161,20 +174,71 @@ function AddSlotModal({ visible, onClose, onSuccess, providerId }: { visible: bo
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { maxHeight: '85%' }]}>
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Add Time Slot (Today)</Text>
+            <Text style={styles.sheetTitle}>Set Today's Schedule</Text>
             <TouchableOpacity onPress={onClose}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
           </View>
-          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>Start Time (e.g. 10:00)</Text>
-          <TextInput style={styles.input} placeholder="10:00" placeholderTextColor="#94A3B8" value={startTime} onChangeText={setStartTime} />
-          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>End Time (e.g. 11:00)</Text>
-          <TextInput style={styles.input} placeholder="11:00" placeholderTextColor="#94A3B8" value={endTime} onChangeText={setEndTime} />
-          <Text style={{ marginBottom: 4, color: '#64748B', fontWeight: 'bold' }}>Max Customers Allowed</Text>
-          <TextInput style={styles.input} placeholder="e.g. 1 or 3" placeholderTextColor="#94A3B8" value={capacity} onChangeText={setCapacity} keyboardType="numeric" />
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Add Slot</Text>}
+
+          {/* Capacity input */}
+          <Text style={{ marginBottom: 8, color: '#64748B', fontWeight: '700', fontSize: 14 }}>
+            Customers per hour slot
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+            {['1','2','3','4','5','6'].map(n => (
+              <TouchableOpacity
+                key={n}
+                onPress={() => setCapacity(n)}
+                style={{
+                  width: 44, height: 44, borderRadius: 22,
+                  backgroundColor: capacity === n ? '#00B140' : '#F1F5F9',
+                  alignItems: 'center', justifyContent: 'center',
+                  borderWidth: 2, borderColor: capacity === n ? '#00B140' : '#E2E8F0',
+                }}
+              >
+                <Text style={{ fontWeight: '800', color: capacity === n ? '#FFF' : '#334155', fontSize: 16 }}>{n}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Time slot picker */}
+          <Text style={{ marginBottom: 8, color: '#64748B', fontWeight: '700', fontSize: 14 }}>
+            Select available hours (tap to toggle)
+          </Text>
+          <ScrollView style={{ maxHeight: 240 }} showsVerticalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 8 }}>
+              {timeSlots.map(hour => {
+                const isSelected = selectedHours.includes(hour);
+                return (
+                  <TouchableOpacity
+                    key={hour}
+                    onPress={() => toggleHour(hour)}
+                    style={{
+                      paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
+                      backgroundColor: isSelected ? '#00B140' : '#F8FAFC',
+                      borderWidth: 1.5, borderColor: isSelected ? '#00B140' : '#E2E8F0',
+                    }}
+                  >
+                    <Text style={{ fontWeight: '700', fontSize: 14, color: isSelected ? '#FFF' : '#334155' }}>
+                      {formatHour(hour)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {selectedHours.length > 0 && capacity ? (
+            <View style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: 12, marginTop: 12, marginBottom: 4 }}>
+              <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>
+                ✓ {selectedHours.length} slots × {capacity} customers = {selectedHours.length * parseInt(capacity)} total bookings possible today
+              </Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity style={[styles.saveBtn, { marginTop: 16 }]} onPress={handleSave} disabled={saving}>
+            {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Create {selectedHours.length > 0 ? selectedHours.length : ''} Slot{selectedHours.length !== 1 ? 's' : ''}</Text>}
           </TouchableOpacity>
         </View>
       </View>

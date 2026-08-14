@@ -45,7 +45,6 @@ export default function ShopServicesScreen() {
         serviceOfferingId: selectedServiceId,
         providerId: selectedProviderId,
         timeSlotId: slotId,
-        serviceAddressId: null, // Shop location is used
         notes: "Booked via BazarChowk App",
         paymentMethod: 'COD',
         paymentStatus: 'PENDING'

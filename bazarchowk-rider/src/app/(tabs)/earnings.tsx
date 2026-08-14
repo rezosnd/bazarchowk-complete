@@ -31,61 +31,64 @@ export default function RiderEarningsScreen() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Connect to the actual backend API
-      let url = `/deliveries/rider/earnings?filter=${filter}`;
-      if (filter === 'CUSTOM' && customStart && customEnd) {
-        url += `&startDate=${customStart}&endDate=${customEnd}`;
-      }
-      const response = await api.get(url);
-      
-      if (response.data) {
-        setData({
-          totalDeliveries: response.data.totalDeliveries || 0,
-          deliveriesCompleted: response.data.deliveriesCompleted || 0,
-          deliveriesReturned: response.data.deliveriesReturned || 0,
-          deliveryEarnings: response.data.deliveryEarnings || 0,
-          tips: response.data.tips || 0,
-          totalEarnings: response.data.totalEarnings || 0,
-          cashInHand: response.data.cashInHand || 0,
-          settlementStatus: response.data.settlementStatus || 'PENDING'
-        });
-      }
-
-      // Fetch deliveries for ledger history
+      // Get all delivered orders assigned to this rider
       const deliveriesRes = await api.get(`/deliveries/rider`);
-      if (deliveriesRes.data) {
-        const deliveries = Array.isArray(deliveriesRes.data) ? deliveriesRes.data : [];
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const weekStart = new Date();
-        weekStart.setDate(weekStart.getDate() - 7);
-        const monthStart = new Date();
-        monthStart.setDate(1);
+      const allDeliveries = Array.isArray(deliveriesRes.data) ? deliveriesRes.data : [];
 
-        const filtered = deliveries.filter((d: any) => {
-          const date = new Date(d.createdAt);
-          if (filter === 'TODAY') return date >= todayStart;
-          if (filter === 'WEEK') return date >= weekStart;
-          if (filter === 'MONTH') return date >= monthStart;
-          if (filter === 'CUSTOM' && customStart && customEnd) {
-            const start = new Date(customStart);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(customEnd);
-            end.setHours(23, 59, 59, 999);
-            return date >= start && date <= end;
-          }
-          return true;
-        });
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+      const monthStart = new Date(); monthStart.setDate(1);
 
-        setLedgerHistory(filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-      }
+      const inRange = (d: any) => {
+        const date = new Date(d.updatedAt || d.createdAt);
+        if (filter === 'TODAY') return date >= todayStart;
+        if (filter === 'WEEK') return date >= weekStart;
+        if (filter === 'MONTH') return date >= monthStart;
+        if (filter === 'CUSTOM' && customStart && customEnd) {
+          const s = new Date(customStart); s.setHours(0, 0, 0, 0);
+          const e = new Date(customEnd); e.setHours(23, 59, 59, 999);
+          return date >= s && date <= e;
+        }
+        return true;
+      };
+
+      const filtered = allDeliveries.filter(inRange);
+      const completed = filtered.filter((d: any) => d.status === 'DELIVERED');
+      const returned = filtered.filter((d: any) => d.status === 'RETURNED');
+
+      // COD cash in hand = all DELIVERED COD orders not yet deposited
+      const allCod = allDeliveries.filter((d: any) =>
+        d.status === 'DELIVERED' &&
+        d.order?.paymentMethod === 'COD' &&
+        !d.cashDeposited
+      );
+      const cashInHand = allCod.reduce((sum: number, d: any) => sum + (d.order?.totalAmount || 0), 0);
+
+      // Earnings: ₹25 per delivery (flat rate)
+      const deliveryEarnings = completed.length * 25;
+      const tips = completed.reduce((s: number, d: any) => s + (d.tip || 0), 0);
+
+      setData({
+        totalDeliveries: filtered.length,
+        deliveriesCompleted: completed.length,
+        deliveriesReturned: returned.length,
+        deliveryEarnings,
+        tips,
+        totalEarnings: deliveryEarnings + tips,
+        cashInHand,
+        settlementStatus: cashInHand > 0 ? 'PENDING' : 'SETTLED'
+      });
+
+      setLedgerHistory(
+        filtered.sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+      );
     } catch (e) {
-      console.warn('Failed to fetch real rider earnings');
+      console.warn('Failed to fetch rider earnings', e);
+      // Silently handle — show 0s
     } finally {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchData();
