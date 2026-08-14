@@ -447,7 +447,16 @@ export class OrdersService {
         order.customer.firstName || 'Customer',
         order.orderNumber,
         invoiceItems,
-        order.totalAmount
+        order.totalAmount,
+        {
+          shopName: order.shop?.name,
+          subtotal,
+          taxAmount,
+          deliveryFee: calculatedDeliveryFee,
+          walletAmountUsed,
+          paymentMethod: String(paymentMethod),
+          deliveryType: createDto.deliveryType || 'DELIVERY',
+        }
       ).catch(e => console.error('Order invoice email failed:', e.message));
     }
 

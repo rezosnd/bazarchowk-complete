@@ -28,9 +28,9 @@ export default function RiderProfileScreen() {
   const [savingMarket, setSavingMarket] = useState(false);
   const [currentMarketName, setCurrentMarketName] = useState<string>('');
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const [riderStatus, setRiderStatus] = useState<'approved' | 'pending' | 'no_market'>('pending');
+
+  useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
     try {
@@ -44,7 +44,7 @@ export default function RiderProfileScreen() {
         setEditPhone(data.phone || '');
       }
 
-      // Also fetch rider delivery partner info for marketId
+      // Fetch delivery partner profile for market info
       const riderRes = await fetch(`${API_BASE}/delivery/rider/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -52,7 +52,14 @@ export default function RiderProfileScreen() {
         const riderData = await riderRes.json();
         if (riderData?.market?.name) {
           setCurrentMarketName(riderData.market.name);
+          setRiderStatus('approved');
+        } else if (riderData?.marketId) {
+          setRiderStatus('pending'); // has market but maybe not approved
+        } else {
+          setRiderStatus('no_market'); // no market selected at all
         }
+      } else {
+        setRiderStatus('no_market');
       }
     } catch (error) {
       console.warn('Failed to fetch profile');
@@ -296,7 +303,7 @@ export default function RiderProfileScreen() {
           </View>
         </View>
 
-        {/* Current Market Banner */}
+        {/* Current Market Banner — always shown */}
         {currentMarketName ? (
           <View style={styles.marketBanner}>
             <Ionicons name="location" size={20} color="#00B140" />
@@ -308,7 +315,27 @@ export default function RiderProfileScreen() {
               <Text style={styles.changeBtnText}>Change</Text>
             </TouchableOpacity>
           </View>
-        ) : null}
+        ) : riderStatus === 'pending' ? (
+          <View style={[styles.marketBanner, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+            <Ionicons name="time" size={20} color="#D97706" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#B45309' }}>Awaiting Market Assignment</Text>
+              <Text style={{ fontSize: 12, color: '#D97706', marginTop: 2 }}>Admin will assign you to a market. You'll be notified once approved.</Text>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.marketBanner, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}
+            onPress={handleOpenMarketModal}
+          >
+            <Ionicons name="location-outline" size={20} color="#DC2626" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#DC2626' }}>No Market Selected</Text>
+              <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 2 }}>Tap to select your operating market to receive orders.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#DC2626" />
+          </TouchableOpacity>
+        )}
 
         {/* Menu Section */}
         <View style={styles.section}>

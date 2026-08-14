@@ -1,139 +1,145 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
+
+const { width } = Dimensions.get('window');
 
 export default function AIAssistant() {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  
-  const [messages, setMessages] = useState<{id: string, text: string, isUser: boolean}[]>([
-    { id: '1', text: 'Hello! I am your BazarChowk AI Assistant. How can I help you today? You can ask me to find products, book services, or check your orders.', isUser: false }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const pulse = useRef(new Animated.Value(1)).current;
+  const float = useRef(new Animated.Value(0)).current;
+  const glow = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.08, duration: 1800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 1800, useNativeDriver: true }),
+      ])
+    ).start();
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    
-    const userMsg = input.trim();
-    setMessages(prev => [...prev, { id: Date.now().toString(), text: userMsg, isUser: true }]);
-    setInput('');
-    setLoading(true);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(float, { toValue: -12, duration: 2200, useNativeDriver: true }),
+        Animated.timing(float, { toValue: 0, duration: 2200, useNativeDriver: true }),
+      ])
+    ).start();
 
-    // Simulate AI response
-    setTimeout(() => {
-      let aiResponse = "I'm still learning! But I can help you search for items. Try going to the search page.";
-      
-      const lower = userMsg.toLowerCase();
-      if (lower.includes('milk') || lower.includes('bread') || lower.includes('grocery')) {
-        aiResponse = "I found some fresh groceries for you! Would you like me to add Milk and Bread to your cart?";
-      } else if (lower.includes('plumb') || lower.includes('salon') || lower.includes('service')) {
-        aiResponse = "We have top-rated professionals nearby. Should I open the Services section for you?";
-      } else if (lower.includes('order') || lower.includes('track')) {
-        aiResponse = "You can track your live orders in the Orders tab. Would you like to go there now?";
-      }
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0, duration: 2000, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiResponse, isUser: false }]);
-      setLoading(false);
-    }, 1500);
-  };
+  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#00B140', '#00752A']} style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>AI Assistant</Text>
-          <View style={{ width: 24 }} />
-        </View>
-      </LinearGradient>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <LinearGradient colors={['#0A0A1A', '#0D1B2A', '#0A0F1E']} style={StyleSheet.absoluteFill} />
 
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={styles.chatScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map(msg => (
-            <View key={msg.id} style={[styles.messageBubble, msg.isUser ? styles.userBubble : styles.aiBubble]}>
-              {!msg.isUser && (
-                <View style={styles.aiAvatar}>
-                  <Ionicons name="sparkles" size={14} color="#FFF" />
-                </View>
-              )}
-              <View style={[styles.messageContent, msg.isUser ? styles.userContent : styles.aiContent]}>
-                <Text style={[styles.messageText, msg.isUser ? styles.userText : styles.aiText]}>
-                  {msg.text}
-                </Text>
+      {/* Stars */}
+      {[...Array(20)].map((_, i) => (
+        <View
+          key={i}
+          style={{
+            position: 'absolute',
+            width: Math.random() * 3 + 1,
+            height: Math.random() * 3 + 1,
+            borderRadius: 2,
+            backgroundColor: '#FFF',
+            opacity: Math.random() * 0.6 + 0.2,
+            top: `${Math.random() * 60}%`,
+            left: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+
+      {/* Back button */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.8)" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        {/* Glow ring */}
+        <Animated.View style={[styles.glowRing, { opacity: glowOpacity }]} />
+
+        {/* AI Orb */}
+        <Animated.View style={[styles.orbWrap, { transform: [{ scale: pulse }, { translateY: float }] }]}>
+          <LinearGradient
+            colors={['#7C3AED', '#4F46E5', '#2563EB']}
+            style={styles.orb}
+          >
+            <Ionicons name="sparkles" size={52} color="#FFF" />
+          </LinearGradient>
+        </Animated.View>
+
+        <Text style={styles.aiName}>BazarChowk AI</Text>
+        <Text style={styles.tagline}>Your Intelligent Shopping Assistant</Text>
+
+        {/* Coming Soon card */}
+        <View style={styles.card}>
+          <View style={styles.cardIcon}>
+            <Ionicons name="rocket" size={24} color="#7C3AED" />
+          </View>
+          <Text style={styles.cardTitle}>Coming Very Soon! 🚀</Text>
+          <Text style={styles.cardDesc}>
+            I'm being trained on thousands of local products, services, and market data to give you hyper-personalized recommendations in your language.
+          </Text>
+        </View>
+
+        {/* Features preview */}
+        <View style={styles.features}>
+          {[
+            { icon: 'search', label: 'Voice Search Products', color: '#F59E0B' },
+            { icon: 'calendar', label: 'Book Appointments', color: '#10B981' },
+            { icon: 'cart', label: 'Smart Cart Building', color: '#3B82F6' },
+            { icon: 'language', label: 'Multilingual Support', color: '#EC4899' },
+          ].map((f, i) => (
+            <View key={i} style={styles.featureItem}>
+              <View style={[styles.featureIcon, { backgroundColor: f.color + '22' }]}>
+                <Ionicons name={f.icon as any} size={18} color={f.color} />
               </View>
+              <Text style={styles.featureText}>{f.label}</Text>
+              <View style={styles.soonBadge}><Text style={styles.soonText}>Soon</Text></View>
             </View>
           ))}
-          {loading && (
-            <View style={[styles.messageBubble, styles.aiBubble]}>
-              <View style={styles.aiAvatar}>
-                <Ionicons name="sparkles" size={14} color="#FFF" />
-              </View>
-              <View style={[styles.messageContent, styles.aiContent]}>
-                <ActivityIndicator color="#00B140" size="small" />
-              </View>
-            </View>
-          )}
-        </ScrollView>
-
-        <View style={[styles.inputContainer, { paddingBottom: insets.bottom || 16 }]}>
-          <TextInput
-            style={styles.input}
-            placeholder="Ask me anything..."
-            placeholderTextColor="#9CA3AF"
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-          />
-          <TouchableOpacity 
-            style={[styles.sendBtn, !input.trim() && { opacity: 0.5 }]} 
-            onPress={handleSend}
-            disabled={!input.trim()}
-          >
-            <Ionicons name="send" size={18} color="#FFF" />
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <Text style={styles.footer}>Powered by Google Gemini · Built with ❤️ for BazarChowk</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3FAF5' },
-  header: { paddingBottom: 20, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: '800' },
-  chatScroll: { padding: 20, paddingBottom: 40, gap: 16 },
-  messageBubble: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12 },
-  userBubble: { justifyContent: 'flex-end' },
-  aiBubble: { justifyContent: 'flex-start' },
-  aiAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#00B140', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  messageContent: { maxWidth: '80%', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20 },
-  userContent: { backgroundColor: '#00B140', borderBottomRightRadius: 4 },
-  aiContent: { backgroundColor: '#FFFFFF', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#E5E7EB' },
-  messageText: { fontSize: 15, lineHeight: 22 },
-  userText: { color: '#FFFFFF' },
-  aiText: { color: '#111827' },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E5E7EB' },
-  input: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 24, paddingHorizontal: 20, paddingVertical: 12, fontSize: 16, color: '#111827', marginRight: 12 },
-  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#00B140', alignItems: 'center', justifyContent: 'center', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 56, left: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+
+  glowRing: { position: 'absolute', width: 220, height: 220, borderRadius: 110, borderWidth: 1, borderColor: '#7C3AED', top: '18%' },
+
+  orbWrap: { marginBottom: 24 },
+  orb: { width: 130, height: 130, borderRadius: 65, alignItems: 'center', justifyContent: 'center', shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 20 },
+
+  aiName: { fontSize: 32, fontWeight: '900', color: '#FFF', letterSpacing: 1, marginBottom: 8 },
+  tagline: { fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: '500', marginBottom: 32 },
+
+  card: { backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(124,58,237,0.4)', width: '100%', marginBottom: 20, alignItems: 'center' },
+  cardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(124,58,237,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  cardTitle: { fontSize: 20, fontWeight: '900', color: '#FFF', marginBottom: 10 },
+  cardDesc: { fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 22 },
+
+  features: { width: '100%', gap: 10, marginBottom: 28 },
+  featureItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 14, gap: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  featureIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  featureText: { flex: 1, fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+  soonBadge: { backgroundColor: 'rgba(124,58,237,0.3)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  soonText: { fontSize: 11, color: '#A78BFA', fontWeight: '700' },
+
+  footer: { fontSize: 12, color: 'rgba(255,255,255,0.3)', textAlign: 'center' },
 });

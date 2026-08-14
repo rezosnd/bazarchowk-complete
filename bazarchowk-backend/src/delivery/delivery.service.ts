@@ -25,13 +25,26 @@ export class DeliveryService {
     return R * c; // Distance in km
   }
 
-  async getAvailableDeliveries(lat?: number, lng?: number) {
+  async getAvailableDeliveries(lat?: number, lng?: number, userId?: string) {
+    let marketId = undefined;
+    if (userId) {
+      const partner = await this.prisma.deliveryPartner.findUnique({ where: { userId } });
+      if (partner?.marketId) {
+        marketId = partner.marketId;
+      }
+    }
+
+    const whereClause: any = { status: DeliveryStatus.UNASSIGNED };
+    if (marketId) {
+      whereClause.order = { shop: { marketId } };
+    }
+
     const deliveries = await this.prisma.delivery.findMany({
-      where: { status: DeliveryStatus.UNASSIGNED },
+      where: whereClause,
       include: { order: { include: { shop: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
     });
 
-    if (lat && lng) {
+    if (lat && lng && !marketId) {
       // Filter out deliveries that are > 25km away from the Rider's current location
       return deliveries.filter(d => {
         if (!d.order?.shop?.latitude || !d.order?.shop?.longitude) return false;
@@ -59,11 +72,12 @@ export class DeliveryService {
   }
 
   async assignDelivery(deliveryId: string, userId: string) {
-    const delivery = await this.prisma.delivery.findUnique({ where: { id: deliveryId }, include: { order: true } });
-    if (!delivery) throw new NotFoundException('Delivery not found');
-    if (delivery.status !== DeliveryStatus.UNASSIGNED) throw new BadRequestException('Delivery already assigned');
-
     const updatedDelivery = await this.prisma.$transaction(async (prisma) => {
+      // Check assignment inside transaction to prevent race conditions
+      const delivery = await prisma.delivery.findUnique({ where: { id: deliveryId }, include: { order: true } });
+      if (!delivery) throw new NotFoundException('Delivery not found');
+      if (delivery.status !== DeliveryStatus.UNASSIGNED) throw new BadRequestException('This delivery has already been assigned to another rider.');
+
       // Find the DeliveryPartner record for this user
       let partner = await prisma.deliveryPartner.findUnique({ where: { userId } });
       

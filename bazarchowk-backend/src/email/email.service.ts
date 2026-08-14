@@ -148,89 +148,167 @@ export class EmailService {
     });
   }
 
-  // Invoice email requires PDF attachments so it takes slightly different args
-  async sendInvoiceEmailHtml(to: string, name: string, invoiceNumber: string, pdfBuffer: Buffer) {
-    return this.sendTransactionalEmail({
-      to,
-      subject: `Your BazarChowk Invoice: ${invoiceNumber}`,
-      type: 'INVOICE',
-      title: 'Tax Invoice Generated',
-      customerName: name,
-      message: `Please find attached your official tax invoice ${invoiceNumber} from BazarChowk.`,
-      buttonText: 'View Order History',
-      buttonUrl: 'https://bazarchowk.com/orders',
-      attachments: [{ filename: `${invoiceNumber}.pdf`, content: pdfBuffer }]
-    });
-  }
+  // Complete Order Invoice — sends beautiful HTML email (no PDF needed for speed)
+  async sendOrderInvoice(
+    to: string,
+    name: string,
+    orderNumber: string,
+    items: { name: string; qty: number; price: number }[],
+    totalAmt: number,
+    options?: {
+      shopName?: string;
+      subtotal?: number;
+      taxAmount?: number;
+      deliveryFee?: number;
+      walletAmountUsed?: number;
+      paymentMethod?: string;
+      deliveryType?: string;
+    }
+  ) {
+    const shopName = options?.shopName || 'BazarChowk Partner';
+    const subtotal = options?.subtotal ?? items.reduce((s, i) => s + i.price, 0);
+    const taxAmount = options?.taxAmount ?? 0;
+    const deliveryFee = options?.deliveryFee ?? 0;
+    const walletUsed = options?.walletAmountUsed ?? 0;
+    const payMethod = options?.paymentMethod || 'COD';
+    const isSelfPickup = options?.deliveryType === 'SELF_PICKUP';
+    const payLabel = payMethod === 'RAZORPAY' ? 'Paid Online (UPI/Card)' : isSelfPickup ? 'Pay at Shop (Cash)' : 'Cash on Delivery';
 
-  // --- ORDER AUTOMATION --- //
-  private generateOrderPDF(orderNumber: string, customerName: string, items: any[], totalAmt: number): Promise<Buffer> {
-    return new Promise((resolve) => {
-      const doc = new PDFDocument({ margin: 50, size: 'A4' });
-      const buffers: any[] = [];
-      doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => resolve(Buffer.concat(buffers)));
+    const itemRows = items.map(item => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;color:#0F172A;font-size:14px;">${item.name}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;text-align:center;color:#64748B;font-size:14px;">×${item.qty}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;text-align:right;color:#0F172A;font-weight:700;font-size:14px;">₹${item.price.toFixed(2)}</td>
+      </tr>`).join('');
 
-      doc.fillColor('#FF8A00').fontSize(16).text('Customer Order Invoice', { align: 'center' });
-      doc.moveDown(2);
+    const walletRow = walletUsed > 0 ? `
+      <tr>
+        <td colspan="2" style="padding:6px 12px;color:#00B140;font-size:13px;">Wallet Applied</td>
+        <td style="padding:6px 12px;text-align:right;color:#00B140;font-weight:700;font-size:13px;">-₹${walletUsed.toFixed(2)}</td>
+      </tr>` : '';
 
-      const logoPath = path.join(__dirname, 'templates', 'logo.png');
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, (595.28 / 2) - 90, doc.y, { width: 180 });
-        doc.moveDown(6);
-      } else {
-        doc.fillColor('#FF8A00').fontSize(24).text('BAZARCHOWK', { align: 'center', characterSpacing: 2 });
-        doc.moveDown(2);
-      }
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:580px;margin:32px auto;background:#FFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#00B140,#007A2E);padding:32px 32px 24px;text-align:center;">
+      <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:12px 24px;margin-bottom:16px;">
+        <span style="color:#FFF;font-size:26px;font-weight:900;letter-spacing:1px;">🛒 BazarChowk</span>
+      </div>
+      <h1 style="color:#FFF;margin:0;font-size:22px;font-weight:800;">Order Confirmed!</h1>
+      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">Your receipt for Order <strong>#${orderNumber}</strong></p>
+    </div>
 
-      doc.fillColor('#111827').fontSize(14).text('BILLED TO:', { underline: true });
-      doc.fontSize(12).text(customerName);
-      doc.moveDown(2);
+    <!-- Customer Greeting -->
+    <div style="padding:24px 32px 16px;">
+      <p style="margin:0;color:#0F172A;font-size:16px;">Hi <strong>${name}</strong>,</p>
+      <p style="margin:8px 0 0;color:#64748B;font-size:14px;line-height:20px;">
+        Thank you for your order from <strong>${shopName}</strong>. Here is your detailed receipt.
+      </p>
+    </div>
 
-      doc.fontSize(14).text('ORDER DETAILS:', { underline: true });
-      doc.fontSize(12);
+    <!-- Order Info Bar -->
+    <div style="margin:0 32px;background:#F8FAFC;border-radius:12px;padding:14px 20px;border:1px solid #E2E8F0;display:flex;">
+      <div style="flex:1;">
+        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Order Number</p>
+        <p style="margin:4px 0 0;font-size:15px;font-weight:800;color:#00B140;">#${orderNumber}</p>
+      </div>
+      <div style="flex:1;text-align:center;">
+        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Date</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:#0F172A;">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
+      </div>
+      <div style="flex:1;text-align:right;">
+        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Fulfillment</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:${isSelfPickup?'#7C3AED':'#0F172A'};">${isSelfPickup ? '🏪 Pickup' : '🛵 Delivery'}</p>
+      </div>
+    </div>
 
-      const startY = doc.y;
-      doc.text('Order ID:', 50, startY);
-      doc.text(orderNumber, 200, startY);
-      doc.text('Date:', 50, startY + 20);
-      doc.text(new Date().toLocaleDateString(), 200, startY + 20);
+    <!-- Items Table -->
+    <div style="padding:24px 32px 16px;">
+      <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0F172A;">Order Items</h2>
+      <table style="width:100%;border-collapse:collapse;background:#F8FAFC;border-radius:12px;overflow:hidden;">
+        <thead>
+          <tr style="background:#F1F5F9;">
+            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Item</th>
+            <th style="padding:10px 12px;text-align:center;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Qty</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+    </div>
 
-      doc.moveDown(5);
+    <!-- Bill Breakdown -->
+    <div style="margin:0 32px;background:#F8FAFC;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Item Subtotal</td>
+          <td style="padding:10px 16px;text-align:right;color:#0F172A;font-size:13px;font-weight:600;">₹${subtotal.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Taxes & GST</td>
+          <td style="padding:10px 16px;text-align:right;color:#0F172A;font-size:13px;font-weight:600;">₹${taxAmount.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Delivery Fee</td>
+          <td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${isSelfPickup||deliveryFee===0?'#00B140':'#0F172A'};">${isSelfPickup||deliveryFee===0?'FREE 🎉':'₹'+deliveryFee.toFixed(2)}</td>
+        </tr>
+        ${walletRow}
+        <tr style="background:#00B140;">
+          <td colspan="2" style="padding:14px 16px;color:#FFF;font-size:16px;font-weight:800;">Total Paid</td>
+          <td style="padding:14px 16px;text-align:right;color:#FFF;font-size:18px;font-weight:900;">₹${totalAmt.toFixed(2)}</td>
+        </tr>
+      </table>
+    </div>
 
-      doc.rect(50, doc.y, 495, 25).fill('#fff3e0').stroke('#FF8A00');
-      doc.fillColor('#FF8A00').font('Helvetica-Bold');
-      doc.text('Item', 60, doc.y - 18);
-      doc.text('Qty', 300, doc.y - 18, { width: 50, align: 'center' });
-      doc.text('Price (INR)', 400, doc.y - 18, { width: 135, align: 'right' });
-      doc.moveDown(1);
+    <!-- Payment Method -->
+    <div style="margin:16px 32px;background:#F0FDF4;border-radius:12px;padding:14px 20px;border:1px solid #DCFCE7;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">${payMethod==='RAZORPAY'?'💳':payMethod==='WALLET'?'👛':'💵'}</span>
+      <div>
+        <p style="margin:0;font-size:12px;color:#64748B;font-weight:600;">Payment Method</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:800;color:#15803D;">${payLabel}</p>
+      </div>
+    </div>
 
-      doc.font('Helvetica').fillColor('#111827');
-      items.forEach(item => {
-        doc.text(item.name, 60, doc.y);
-        doc.text(item.qty.toString(), 300, doc.y, { width: 50, align: 'center' });
-        doc.text(item.price.toFixed(2), 400, doc.y, { width: 135, align: 'right' });
-        doc.moveDown(0.5);
+    <!-- Self Pickup Note -->
+    ${isSelfPickup ? `
+    <div style="margin:0 32px 16px;background:#F5F3FF;border-radius:12px;padding:14px 20px;border:1px solid #DDD6FE;">
+      <p style="margin:0;font-size:13px;font-weight:800;color:#5B21B6;">📍 Pickup Instructions</p>
+      <p style="margin:6px 0 0;font-size:13px;color:#6D28D9;line-height:20px;">Show this email at <strong>${shopName}</strong> and quote order <strong>#${orderNumber}</strong> to collect your items.</p>
+    </div>` : ''}
+
+    <!-- Footer -->
+    <div style="padding:24px 32px;text-align:center;border-top:1px solid #F1F5F9;margin-top:16px;">
+      <p style="margin:0;font-size:13px;color:#64748B;">Questions? Contact us at <a href="mailto:support@bazarchowk.com" style="color:#00B140;text-decoration:none;font-weight:700;">support@bazarchowk.com</a></p>
+      <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;">© ${new Date().getFullYear()} BazarChowk · Your Local Market, Delivered</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"BazarChowk" <${process.env.SMTP_USER}>`,
+        to,
+        subject: `🧾 Your Receipt for Order #${orderNumber} — BazarChowk`,
+        html,
       });
-
-      doc.moveDown(1);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#e5e7eb');
-      doc.moveDown(1);
-
-      doc.font('Helvetica-Bold').fillColor('#FF8A00').fontSize(16);
-      doc.text('TOTAL AMOUNT', 60, doc.y);
-      doc.text(totalAmt.toFixed(2), 400, doc.y, { width: 135, align: 'right' });
-
-      doc.moveDown(4);
-      doc.font('Helvetica').fillColor('#9ca3af').fontSize(10).text('Thank you for shopping with BazarChowk!', { align: 'center' });
-
-      doc.end();
-    });
-  }
-
-  async sendOrderInvoice(to: string, name: string, invoiceNumber: string, items: any[], totalAmt: number) {
-    const pdfBuffer = await this.generateOrderPDF(invoiceNumber, name, items, totalAmt);
-    return this.sendInvoiceEmailHtml(to, name, invoiceNumber, pdfBuffer);
+      await this.prisma.emailLog.create({
+        data: { toEmail: to, subject: `Receipt #${orderNumber}`, type: 'INVOICE', status: 'SENT' }
+      });
+      this.logger.log(`Invoice email sent to ${to} for order ${orderNumber}`);
+      return true;
+    } catch (error: any) {
+      this.logger.error(`Invoice email failed: ${error.message}`);
+      await this.prisma.emailLog.create({
+        data: { toEmail: to, subject: `Receipt #${orderNumber}`, type: 'INVOICE', status: 'FAILED', error: error.message }
+      }).catch(() => {});
+      return false;
+    }
   }
 
   // --- SETTLEMENT AUTOMATION --- //

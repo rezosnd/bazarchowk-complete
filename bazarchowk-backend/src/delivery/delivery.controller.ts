@@ -21,10 +21,12 @@ export class DeliveryController {
   getAvailableDeliveries(
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
+    @CurrentUser() user?: any
   ) {
     return this.deliveryService.getAvailableDeliveries(
       lat ? parseFloat(lat) : undefined,
-      lng ? parseFloat(lng) : undefined
+      lng ? parseFloat(lng) : undefined,
+      user?.id
     );
   }
 
