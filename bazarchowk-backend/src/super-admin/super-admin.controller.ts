@@ -130,6 +130,12 @@ export class SuperAdminController {
     return this.superAdminService.getDeliveryNetwork(Number(query.page || 1), Number(query.limit || 50), user);
   }
 
+  @Patch('delivery-partners/:id/verify')
+  @ApiOperation({ summary: 'Verify a delivery partner (KYC Approval)' })
+  verifyDeliveryPartner(@Param('id') id: string, @Req() req: any) {
+    return this.superAdminService.verifyDeliveryPartner(id, req.user?.userId);
+  }
+
   // --- FRAUD MANAGEMENT ---
 
   @Get('fraud-logs')

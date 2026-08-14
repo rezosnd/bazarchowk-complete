@@ -354,7 +354,7 @@ export class SuperAdminService {
       this.prisma.deliveryPartner.findMany({
         where, skip, take: limit,
         include: {
-          user: { select: { firstName: true, lastName: true, phone: true, email: true } },
+          user: { select: { firstName: true, lastName: true, phone: true, email: true, kycStatus: true } },
           _count: { select: { deliveries: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -362,6 +362,33 @@ export class SuperAdminService {
       this.prisma.deliveryPartner.count(),
     ]);
     return { data: partners, total, page, limit };
+  }
+
+  async verifyDeliveryPartner(partnerId: string, adminId?: string) {
+    const partner = await this.prisma.deliveryPartner.findUnique({
+      where: { id: partnerId },
+      include: { user: true }
+    });
+    
+    if (!partner) throw new NotFoundException('Delivery partner not found');
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: partner.userId },
+      data: { kycStatus: 'VERIFIED' }
+    });
+
+    if (adminId) {
+      await this.auditService.logAction({
+        actorId: adminId,
+        action: 'VERIFY_RIDER',
+        entity: 'User',
+        entityId: partner.userId,
+        newValue: JSON.stringify({ kycStatus: 'VERIFIED' }),
+        ipAddress: 'System',
+      });
+    }
+
+    return updatedUser;
   }
 
   // ==================== FRAUD MANAGEMENT ====================

@@ -3,7 +3,163 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
-export default function RidersCashVerificationPage() {
+export default function RidersAndCashPage() {
+  const [activeTab, setActiveTab] = useState<'MANAGEMENT' | 'CASH'>('MANAGEMENT');
+
+  return (
+    <div className="p-8 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">Riders & Cash</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage delivery partners and verify COD cash drops.</p>
+        </div>
+      </div>
+
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('MANAGEMENT')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
+            activeTab === 'MANAGEMENT' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          Rider Approvals & Management
+        </button>
+        <button
+          onClick={() => setActiveTab('CASH')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
+            activeTab === 'CASH' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          Hub Cash Verifications
+        </button>
+      </div>
+
+      {activeTab === 'MANAGEMENT' ? <RiderManagementTab /> : <CashVerificationTab />}
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// RIDER MANAGEMENT TAB
+// ----------------------------------------------------------------------
+function RiderManagementTab() {
+  const [riders, setRiders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchRiders();
+  }, []);
+
+  const fetchRiders = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/super-admin/delivery-partners?limit=100`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRiders(data.data || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch riders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async (partnerId: string) => {
+    if (!confirm('Approve this rider?')) return;
+    setProcessingId(partnerId);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/super-admin/delivery-partners/${partnerId}/verify`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert('Rider approved successfully!');
+        fetchRiders();
+      } else {
+        const error = await res.json();
+        alert('Failed: ' + error.message);
+      }
+    } catch (e) {
+      alert('Network error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-4">
+        <button onClick={fetchRiders} className="bg-white border border-slate-200 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-slate-50 transition flex items-center text-sm">
+          Refresh List
+        </button>
+      </div>
+      
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-gray-500 uppercase bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4 font-semibold">Rider</th>
+                <th className="px-6 py-4 font-semibold">Vehicle & License</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
+              ) : riders.length === 0 ? (
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No delivery partners found.</td></tr>
+              ) : (
+                riders.map((partner) => (
+                  <tr key={partner.id} className="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-gray-900">{partner.user?.firstName} {partner.user?.lastName}</div>
+                      <div className="text-xs text-gray-500">{partner.user?.phone}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium">{partner.vehicleType}</div>
+                      <div className="text-xs text-gray-400">License: {partner.drivingLicense || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {partner.user?.kycStatus === 'VERIFIED' ? (
+                        <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">Verified</span>
+                      ) : (
+                        <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">Pending</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {partner.user?.kycStatus !== 'VERIFIED' && (
+                        <button
+                          onClick={() => handleVerify(partner.id)}
+                          disabled={processingId === partner.id}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50"
+                        >
+                          {processingId === partner.id ? 'Approving...' : 'Approve Rider'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// CASH VERIFICATION TAB
+// ----------------------------------------------------------------------
+function CashVerificationTab() {
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [actualAmounts, setActualAmounts] = useState<{ [key: string]: number }>({});
@@ -18,14 +174,14 @@ export default function RidersCashVerificationPage() {
       setLoading(true);
       const token = localStorage.getItem('admin_token');
       const res = await fetch(`${API_BASE}/settlement/deposits/pending`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setPendingVerifications(data || []);
       }
     } catch (e) {
-      console.error('Failed to fetch pending cash verifications');
+      console.error('Failed to fetch cash verifications');
     } finally {
       setLoading(false);
     }
@@ -37,7 +193,6 @@ export default function RidersCashVerificationPage() {
       const actualAmount = actualAmounts[verificationId] ?? expectedAmount;
       const note = notes[verificationId] || '';
 
-      // Determine verification status based on entered amount
       let status = 'VERIFIED';
       if (actualAmount < expectedAmount) status = 'REJECTED';
 
@@ -45,7 +200,7 @@ export default function RidersCashVerificationPage() {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ 
           status,
@@ -62,7 +217,7 @@ export default function RidersCashVerificationPage() {
         } else {
           alert('Cash verified perfectly. Receipt generated.');
         }
-        fetchPendingVerifications(); // Refresh the list
+        fetchPendingVerifications();
       } else {
         const error = await res.json();
         alert('Failed: ' + error.message);
@@ -73,21 +228,13 @@ export default function RidersCashVerificationPage() {
   };
 
   return (
-    <div className="p-8 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Hub Cash Verification</h1>
-          <p className="text-sm text-gray-500 mt-1">Physically count and verify rider COD deposits at your market hub.</p>
-        </div>
-        <button 
-          onClick={fetchPendingVerifications}
-          className="bg-white border border-slate-200 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-slate-50 transition flex items-center"
-        >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+    <div>
+      <div className="flex justify-end mb-4">
+        <button onClick={fetchPendingVerifications} className="bg-white border border-slate-200 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-slate-50 transition flex items-center text-sm">
           Refresh List
         </button>
       </div>
-      
+
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
       ) : pendingVerifications.length === 0 ? (
