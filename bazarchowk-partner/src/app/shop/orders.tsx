@@ -77,6 +77,7 @@ export default function ShopOrdersScreen() {
   };
 
   const getActionButtons = (order: any) => {
+    const isSelfPickup = !order.deliveryAddress && !order.deliveryAddressId;
     if (order.status === 'PLACED') {
       return (
         <View style={styles.actionRow}>
@@ -110,6 +111,23 @@ export default function ShopOrdersScreen() {
       );
     }
     if (order.status === 'READY_FOR_PICKUP' || order.status === 'READY') {
+      if (isSelfPickup) {
+        // Self-pickup: customer comes to shop
+        return (
+          <View style={{ gap: 8 }}>
+            <View style={[styles.waitingRider, { backgroundColor: '#F5F3FF' }]}>
+              <Ionicons name="bag-handle" size={20} color="#7C3AED" />
+              <Text style={[styles.waitingText, { color: '#7C3AED' }]}>Waiting for Customer to Pickup</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.btn, { backgroundColor: '#7C3AED' }]} 
+              onPress={() => updateStatus(order.id, 'DELIVERED', 'Customer collected self-pickup order')}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>✓ Handed to Customer</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
       return (
         <View style={{ gap: 8 }}>
           <View style={styles.waitingRider}>
@@ -118,7 +136,7 @@ export default function ShopOrdersScreen() {
           </View>
           <TouchableOpacity 
             style={[styles.btn, { backgroundColor: '#0F172A' }]} 
-            onPress={() => updateStatus(order.id, 'CUSTOMER_PICKUP')}
+            onPress={() => updateStatus(order.id, 'DELIVERED', 'Customer collected in person')}
           >
             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Handed to Customer (Self-Pickup)</Text>
           </TouchableOpacity>
@@ -195,8 +213,16 @@ export default function ShopOrdersScreen() {
             <View key={order.id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={{ flex: 1, paddingRight: 12 }}>
-                  <Text style={styles.orderId}>{order.orderNumber}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Text style={styles.orderId}>{order.orderNumber}</Text>
+                    {!order.deliveryAddressId && (
+                      <View style={styles.pickupBadge}>
+                        <Ionicons name="bag-handle" size={11} color="#7C3AED" />
+                        <Text style={styles.pickupBadgeText}>SELF PICKUP</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.customerName}>
                         {[order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ') || 'Customer'}
@@ -287,5 +313,7 @@ const styles = StyleSheet.create({
   primaryText: { color: '#FFF', fontWeight: '700' },
   
   waitingRider: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12 },
-  waitingText: { color: '#D97706', fontWeight: '700' }
+  waitingText: { color: '#D97706', fontWeight: '700' },
+  pickupBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F5F3FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: '#DDD6FE' },
+  pickupBadgeText: { fontSize: 10, fontWeight: '800', color: '#7C3AED' },
 });

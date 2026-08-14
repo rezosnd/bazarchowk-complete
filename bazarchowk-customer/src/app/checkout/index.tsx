@@ -129,8 +129,8 @@ export default function CheckoutScreen() {
       }
 
       await useCartStore.getState().fetchCart();
-      // Navigate to receipt screen
-      router.replace(`/order/${orderId}` as any);
+      // Navigate to branded receipt
+      router.replace(`/receipt/${orderId}` as any);
     } catch (error: any) {
       Alert.alert('Error', error?.response?.data?.message || error?.message || 'Failed to place order');
     } finally { setPlacingOrder(false); }
