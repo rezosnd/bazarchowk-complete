@@ -197,9 +197,10 @@ export class DeliveryService {
     return updated;
   }
 
-  async getRiderEarnings(riderId: string, filter: 'TODAY' | 'WEEK' | 'MONTH') {
+  async getRiderEarnings(riderId: string, filter: string, customStartDate?: string, customEndDate?: string) {
     const today = new Date();
     let startDate = new Date();
+    let endDate = new Date();
     
     if (filter === 'TODAY') {
       startDate.setHours(0, 0, 0, 0);
@@ -207,13 +208,22 @@ export class DeliveryService {
       startDate.setDate(today.getDate() - 7);
     } else if (filter === 'MONTH') {
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    } else if (filter === 'CUSTOM' && customStartDate && customEndDate) {
+      startDate = new Date(customStartDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(customEndDate);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const whereClause: any = { riderId };
+    if (filter === 'CUSTOM') {
+      whereClause.createdAt = { gte: startDate, lte: endDate };
+    } else {
+      whereClause.createdAt = { gte: startDate };
     }
 
     const earnings = await this.prisma.riderEarning.findMany({
-      where: {
-        riderId,
-        createdAt: { gte: startDate }
-      }
+      where: whereClause
     });
 
     const deliveriesCompleted = earnings.filter(e => e.type === 'DELIVERY').length;

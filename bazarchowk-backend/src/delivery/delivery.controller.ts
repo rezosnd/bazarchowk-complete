@@ -62,10 +62,12 @@ export class DeliveryController {
   @Roles('RIDER', 'DELIVERY_PARTNER')
   @ApiOperation({ summary: 'Get rider earnings and cash in hand' })
   getRiderEarnings(
-    @Query('filter') filter: 'TODAY' | 'WEEK' | 'MONTH',
-    @CurrentUser() user: any
+    @Query('filter') filter: string,
+    @CurrentUser() user: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
   ) {
-    return this.deliveryService.getRiderEarnings(user.id, filter);
+    return this.deliveryService.getRiderEarnings(user.id, filter, startDate, endDate);
   }
 
   @Patch('rider/profile')
