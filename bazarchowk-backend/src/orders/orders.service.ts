@@ -694,6 +694,21 @@ export class OrdersService {
               }
             });
           }
+
+          // If it was a COD order and successfully DELIVERED, automatically record CashCollection
+          if (dto.status === OrderStatus.DELIVERED && order.paymentMethod === 'COD') {
+            const existingCollection = await this.prisma.cashCollection.findUnique({ where: { orderId } });
+            if (!existingCollection) {
+              await this.prisma.cashCollection.create({
+                data: {
+                  orderId,
+                  riderId: order.riderId,
+                  amountCollected: order.totalAmount,
+                  status: 'COLLECTED'
+                }
+              });
+            }
+          }
         }
       }
 
