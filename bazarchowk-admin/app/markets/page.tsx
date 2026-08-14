@@ -42,6 +42,7 @@ export default function MarketsPage() {
   // Market Admin Settings State
   const [gstPercentage, setGstPercentage] = useState('18');
   const [deliveryBase, setDeliveryBase] = useState('20');
+  const [customDeliveryBase, setCustomDeliveryBase] = useState('10');
   const [myMarket, setMyMarket] = useState<any>(null);
 
   React.useEffect(() => {
@@ -58,6 +59,9 @@ export default function MarketsPage() {
         setGstPercentage(market.gstPercentage?.toString() || '18');
         if (market.deliveryChargeConfig?.default) {
           setDeliveryBase(market.deliveryChargeConfig.default.toString());
+        }
+        if (market.deliveryChargeConfig?.customDeliveryBase) {
+          setCustomDeliveryBase(market.deliveryChargeConfig.customDeliveryBase.toString());
         }
       }
     }
@@ -298,7 +302,10 @@ export default function MarketsPage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
           gstPercentage: parseFloat(gstPercentage),
-          deliveryChargeConfig: { default: parseFloat(deliveryBase) },
+          deliveryChargeConfig: { 
+            default: parseFloat(deliveryBase),
+            customDeliveryBase: parseFloat(customDeliveryBase)
+          },
           imageUrl: myMarket.imageUrl
         }),
       });
@@ -339,6 +346,11 @@ export default function MarketsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Base Delivery Fee (₹)</label>
                   <input required type="number" step="any" value={deliveryBase} onChange={e=>setDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                   <p className="text-xs text-gray-400 mt-1">Default rider delivery charge.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Delivery Per KM (₹)</label>
+                  <input required type="number" step="any" value={customDeliveryBase} onChange={e=>setCustomDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                  <p className="text-xs text-gray-400 mt-1">Charge for custom package deliveries.</p>
                 </div>
               </div>
 
