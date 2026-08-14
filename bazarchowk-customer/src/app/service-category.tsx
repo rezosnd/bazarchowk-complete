@@ -38,7 +38,7 @@ export default function ServiceCategoryScreen() {
   const { data: shops, isLoading } = useQuery({
     queryKey: ['service-shops', type],
     queryFn: async () => {
-      const res = await api.get(`/shops?serviceType=${type}&hasServices=true`);
+      const res = await api.get(`/shops?partnerType=${type?.toUpperCase()}&hasServices=true`);
       return res.data?.data || res.data || [];
     },
   });
