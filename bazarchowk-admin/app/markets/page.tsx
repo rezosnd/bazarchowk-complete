@@ -42,8 +42,14 @@ export default function MarketsPage() {
   // Market Admin Settings State
   const [gstPercentage, setGstPercentage] = useState('18');
   const [deliveryBase, setDeliveryBase] = useState('20');
-  const [customDeliveryBase, setCustomDeliveryBase] = useState('10');
   const [myMarket, setMyMarket] = useState<any>(null);
+  // Tiered delivery fee: order value → delivery charge
+  const [deliveryTiers, setDeliveryTiers] = useState([
+    { minOrder: 0, maxOrder: 199, fee: 30 },
+    { minOrder: 200, maxOrder: 499, fee: 20 },
+    { minOrder: 500, maxOrder: 999, fee: 15 },
+    { minOrder: 1000, maxOrder: 9999, fee: 0 },
+  ]);
 
   React.useEffect(() => {
     fetchMarkets();
@@ -60,8 +66,8 @@ export default function MarketsPage() {
         if (market.deliveryChargeConfig?.default) {
           setDeliveryBase(market.deliveryChargeConfig.default.toString());
         }
-        if (market.deliveryChargeConfig?.customDeliveryBase) {
-          setCustomDeliveryBase(market.deliveryChargeConfig.customDeliveryBase.toString());
+        if (market.deliveryChargeConfig?.tiers?.length > 0) {
+          setDeliveryTiers(market.deliveryChargeConfig.tiers);
         }
       }
     }
@@ -304,7 +310,11 @@ export default function MarketsPage() {
           gstPercentage: parseFloat(gstPercentage),
           deliveryChargeConfig: { 
             default: parseFloat(deliveryBase),
-            customDeliveryBase: parseFloat(customDeliveryBase)
+            tiers: deliveryTiers.map(t => ({
+              minOrder: Number(t.minOrder),
+              maxOrder: Number(t.maxOrder),
+              fee: Number(t.fee)
+            }))
           },
           imageUrl: myMarket.imageUrl
         }),
@@ -312,19 +322,20 @@ export default function MarketsPage() {
       if (res.ok) {
         alert('Market configuration updated successfully!');
       } else {
-        alert('Failed to update market configuration.');
+        const errData = await res.json().catch(() => ({}));
+        alert('Failed to update: ' + (errData?.message || JSON.stringify(errData) || 'Unknown error'));
       }
     } catch (err) {
-      alert('Network Error');
+      alert('Network Error: ' + (err as any)?.message);
     }
     setLoading(false);
   };
 
-  if (role === 'MARKET_ADMIN') {
+    if (role === 'MARKET_ADMIN') {
     return (
       <div className="p-8 bg-slate-50 min-h-screen">
         <h1 className="text-2xl font-extrabold text-gray-900">Manage My Market</h1>
-        <p className="text-sm text-gray-500 mt-1">Configure global platform settings like GST and Delivery Charges for your local market.</p>
+        <p className="text-sm text-gray-500 mt-1">Configure GST, Delivery Charges, and Tiered Pricing for your local market.</p>
         
         <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-2xl">
           {!myMarket ? (
@@ -343,15 +354,54 @@ export default function MarketsPage() {
                   <p className="text-xs text-gray-400 mt-1">Standard tax applied to platform fees.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Delivery Fee (₹)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Default Delivery Fee (₹)</label>
                   <input required type="number" step="any" value={deliveryBase} onChange={e=>setDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-                  <p className="text-xs text-gray-400 mt-1">Default rider delivery charge.</p>
+                  <p className="text-xs text-gray-400 mt-1">Fallback fee if no tier matches.</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Delivery Per KM (₹)</label>
-                  <input required type="number" step="any" value={customDeliveryBase} onChange={e=>setCustomDeliveryBase(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-                  <p className="text-xs text-gray-400 mt-1">Charge for custom package deliveries.</p>
+              </div>
+
+              {/* Tiered Delivery Fee Table */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-800">Tiered Delivery Fee (Based on Order Value)</label>
+                    <p className="text-xs text-gray-400 mt-0.5">Set different delivery charges based on the customer's cart total.</p>
+                  </div>
+                  <button type="button" onClick={() => setDeliveryTiers([...deliveryTiers, { minOrder: 0, maxOrder: 999, fee: 20 }])} className="text-xs bg-indigo-50 text-indigo-600 font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-100">
+                    + Add Tier
+                  </button>
                 </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-gray-600 font-semibold">Min Order (₹)</th>
+                        <th className="px-4 py-3 text-left text-gray-600 font-semibold">Max Order (₹)</th>
+                        <th className="px-4 py-3 text-left text-gray-600 font-semibold">Delivery Fee (₹)</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deliveryTiers.map((tier, idx) => (
+                        <tr key={idx} className="border-t border-slate-100">
+                          <td className="px-4 py-2">
+                            <input type="number" value={tier.minOrder} onChange={e => { const t = [...deliveryTiers]; t[idx] = { ...t[idx], minOrder: Number(e.target.value) }; setDeliveryTiers(t); }} className="w-full px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-400" />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" value={tier.maxOrder} onChange={e => { const t = [...deliveryTiers]; t[idx] = { ...t[idx], maxOrder: Number(e.target.value) }; setDeliveryTiers(t); }} className="w-full px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-400" />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" value={tier.fee} onChange={e => { const t = [...deliveryTiers]; t[idx] = { ...t[idx], fee: Number(e.target.value) }; setDeliveryTiers(t); }} className="w-full px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-sm text-green-700 outline-none focus:ring-2 focus:ring-indigo-400" />
+                          </td>
+                          <td className="px-4 py-2">
+                            <button type="button" onClick={() => setDeliveryTiers(deliveryTiers.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600">✕</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-400 mt-2">Example: Order ₹0–199 → ₹30 delivery. Order ₹200–499 → ₹20. Order ≥₹1000 → FREE (₹0).</p>
               </div>
 
               <div>

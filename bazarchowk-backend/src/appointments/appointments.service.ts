@@ -25,6 +25,14 @@ export class AppointmentsService {
     });
   }
 
+  async createServiceOfferingByUser(userId: string, data: { name: string; description?: string; price: number; durationMin: number }) {
+    const shop = await this.prisma.shop.findFirst({ where: { ownerId: userId } });
+    if (!shop) throw new NotFoundException('No shop found for this user. Please create your shop first.');
+    return this.prisma.serviceOffering.create({
+      data: { shopId: shop.id, ...data }
+    });
+  }
+
   async getShopServices(shopId: string) {
     return this.prisma.serviceOffering.findMany({ where: { shopId, isActive: true } });
   }
@@ -34,6 +42,14 @@ export class AppointmentsService {
   async createProvider(shopId: string, data: { name: string; specialty?: string; userId?: string }) {
     return this.prisma.provider.create({
       data: { shopId, ...data }
+    });
+  }
+
+  async createProviderByUser(userId: string, data: { name: string; specialty?: string; userId?: string }) {
+    const shop = await this.prisma.shop.findFirst({ where: { ownerId: userId } });
+    if (!shop) throw new NotFoundException('No shop found for this user. Please create your shop first.');
+    return this.prisma.provider.create({
+      data: { shopId: shop.id, ...data }
     });
   }
 

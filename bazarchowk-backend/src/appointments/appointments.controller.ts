@@ -20,13 +20,11 @@ export class AppointmentsController {
   @UseGuards(RolesGuard)
   @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Partner: Create a new service offering' })
-  createService(
+  async createService(
     @Body() data: { name: string; description?: string; price: number; durationMin: number },
     @CurrentUser() user: any
   ) {
-    // Note: Assuming `user.shopId` is attached to token. 
-    // In real app, fetch shopId from user's shop
-    return this.appointmentsService.createServiceOffering(user.shopId || user.id, data);
+    return this.appointmentsService.createServiceOfferingByUser(user.id, data);
   }
 
   @Get('services/:shopId')
@@ -41,11 +39,11 @@ export class AppointmentsController {
   @UseGuards(RolesGuard)
   @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Partner: Add a new provider (staff member)' })
-  createProvider(
+  async createProvider(
     @Body() data: { name: string; specialty?: string; userId?: string },
     @CurrentUser() user: any
   ) {
-    return this.appointmentsService.createProvider(user.shopId || user.id, data);
+    return this.appointmentsService.createProviderByUser(user.id, data);
   }
 
   @Get('providers/:shopId')
