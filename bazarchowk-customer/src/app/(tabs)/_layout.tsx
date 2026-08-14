@@ -168,7 +168,7 @@ function AIButton({ label, aiActiveState }: { label: string, aiActiveState: Shar
 
   const handlePressOut = () => {
     pressScale.value = withSpring(1, { damping: 12, stiffness: 280, mass: 0.7 });
-    toggleListening();
+    router.push('/(tabs)/ai-assistant');
   };
 
   // Styles
@@ -332,14 +332,10 @@ export default function TabsLayout() {
               {...(props as any)} 
               activeOpacity={1} 
               style={{ flex: 1 }}
-              onPress={() => {}} // Block default nav
             >
               <AIButton label={t('tabs.aiAssistant')} aiActiveState={aiActiveState} />
             </TouchableOpacity>
           ),
-        }}
-        listeners={{
-          tabPress: (e) => e.preventDefault(),
         }}
       />
       <Tabs.Screen

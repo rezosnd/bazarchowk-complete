@@ -8,6 +8,7 @@ let RazorpayCheckout: any = null;
 try { RazorpayCheckout = require('react-native-razorpay').default; } catch (e) {}
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
 
 const PRIMARY = '#00B140';
 
@@ -17,6 +18,7 @@ type PaymentMethodType = 'COD' | 'RAZORPAY' | 'WALLET';
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { shopId } = useLocalSearchParams();
+  const user = useAuthStore(state => state.user);
 
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -115,7 +117,12 @@ export default function CheckoutScreen() {
             name: 'BazarChowk',
             description: 'Order Payment',
             order_id: razorpayOrderId,
-            theme: { color: PRIMARY }
+            theme: { color: PRIMARY },
+            prefill: {
+              name: user?.firstName || '',
+              email: user?.email || '',
+              contact: user?.phone || '',
+            }
           });
           await api.post('/payments/verify', {
             razorpayOrderId: data.razorpay_order_id,
