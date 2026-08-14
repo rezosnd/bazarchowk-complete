@@ -214,10 +214,38 @@ export class SettlementService {
         throw new BadRequestException('No unsettled delivered orders found for this period');
       }
 
-      const totalOrderAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-      const totalDeliveryFees = orders.reduce((sum, o) => sum + o.deliveryFee, 0);
-      const platformCommission = (totalOrderAmount * commissionPct) / 100;
-      const netSettlementAmt = totalOrderAmount - platformCommission - totalDeliveryFees;
+      let totalOrderAmount = 0;
+      let totalDeliveryFees = 0;
+      let platformCommission = 0;
+      let netSettlementAmt = 0;
+
+      const settlementItems = orders.map(order => {
+        const commission = (order.totalAmount * commissionPct) / 100;
+        const isSelfPickupCOD = order.paymentMethod === 'COD' && order.deliveryAddressId === null;
+        
+        let netAmount = 0;
+        if (isSelfPickupCOD) {
+            // Shop already collected the cash directly from customer
+            // They owe the platform the commission
+            netAmount = -commission;
+        } else {
+            // Platform collected the cash (or Rider collected and deposited to Admin)
+            netAmount = order.totalAmount - commission - order.deliveryFee;
+        }
+
+        totalOrderAmount += order.totalAmount;
+        totalDeliveryFees += order.deliveryFee;
+        platformCommission += commission;
+        netSettlementAmt += netAmount;
+
+        return {
+          orderId: order.id,
+          orderAmount: order.totalAmount,
+          commission,
+          deliveryFee: order.deliveryFee,
+          netAmount,
+        };
+      });
 
       // Create settlement with all line items atomically
       const newSettlement = await tx.shopSettlement.create({
@@ -232,13 +260,7 @@ export class SettlementService {
           periodEnd,
           status: 'PENDING',
           items: {
-            create: orders.map(order => ({
-              orderId: order.id,
-              orderAmount: order.totalAmount,
-              commission: (order.totalAmount * commissionPct) / 100,
-              deliveryFee: order.deliveryFee,
-              netAmount: order.totalAmount - (order.totalAmount * commissionPct) / 100 - order.deliveryFee,
-            })),
+            create: settlementItems,
           },
         },
         include: { items: true, shop: { select: { ownerId: true, name: true } } },
@@ -463,16 +485,30 @@ export class SettlementService {
           status: 'DELIVERED',
           settlementItem: null, // not yet in any settlement
         },
-        select: { id: true, totalAmount: true }
+        select: { id: true, totalAmount: true, paymentMethod: true, deliveryAddressId: true, deliveryFee: true }
       });
 
       if (orders.length > 0) {
-        const grossAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+        let grossAmount = 0;
+        let platformHolds = 0;
+        let deliveryFeeTotal = 0;
+        
+        for (const o of orders) {
+          grossAmount += o.totalAmount;
+          deliveryFeeTotal += o.deliveryFee;
+          const isSelfPickupCOD = o.paymentMethod === 'COD' && o.deliveryAddressId === null;
+          if (!isSelfPickupCOD) {
+            platformHolds += o.totalAmount;
+          }
+        }
+        
         result.push({
           shopId: shop.id,
           shopName: shop.name,
           orderCount: orders.length,
           grossAmount,
+          platformHolds,
+          deliveryFeeTotal
         });
       }
     }

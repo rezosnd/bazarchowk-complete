@@ -158,9 +158,11 @@ export default function RevenueDashboardScreen() {
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           
           {/* Net Earnings Hero Card */}
-          <View style={styles.heroCard}>
-            <Text style={styles.heroLabel}>Net Settlement Earnings</Text>
-            <Text style={styles.heroAmount}>₹{data.netEarnings.toLocaleString()}</Text>
+          <View style={[styles.heroCard, data.netEarnings < 0 && { backgroundColor: '#7F1D1D' }]}>
+            <Text style={styles.heroLabel}>{data.netEarnings < 0 ? 'Outstanding Platform Dues' : 'Net Settlement Earnings'}</Text>
+            <Text style={styles.heroAmount}>
+              {data.netEarnings < 0 ? `- ₹${Math.abs(data.netEarnings).toLocaleString()}` : `₹${data.netEarnings.toLocaleString()}`}
+            </Text>
             <View style={styles.heroBadgeRow}>
               <View style={styles.heroBadge}>
                 <Ionicons name="trending-up" size={16} color="#00B140" />
@@ -219,8 +221,12 @@ export default function RevenueDashboardScreen() {
             <View style={styles.dividerTotal} />
 
             <View style={styles.bdRow}>
-              <Text style={styles.bdTotalLabel}>Total Settlement Due</Text>
-              <Text style={styles.bdTotalValue}>₹{data.netEarnings.toLocaleString()}</Text>
+              <Text style={[styles.bdTotalLabel, data.netEarnings < 0 && { color: '#EF4444' }]}>
+                {data.netEarnings < 0 ? 'Total Owed to Platform' : 'Total Settlement Due'}
+              </Text>
+              <Text style={[styles.bdTotalValue, data.netEarnings < 0 && { color: '#EF4444' }]}>
+                {data.netEarnings < 0 ? `- ₹${Math.abs(data.netEarnings).toLocaleString()}` : `₹${data.netEarnings.toLocaleString()}`}
+              </Text>
             </View>
 
           </View>

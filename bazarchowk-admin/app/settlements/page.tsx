@@ -42,15 +42,22 @@ export default function SettlementsPage() {
     } catch (err) { console.error('Failed to fetch unsettled shops', err); }
   };
 
-  const handleGenerateSettlement = async (shopId: string, shopName: string, grossAmount: number) => {
+  const handleGenerateSettlement = async (shop: any) => {
     const today = new Date().toISOString().split('T')[0];
-    // Find earliest unset order date for this shop, or fall back to 30 days
     const weekAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const rate = parseFloat(commissionRate);
     const commission = isNaN(rate) ? 0 : Math.max(0, Math.min(100, rate));
-    const netEst = grossAmount * (1 - commission / 100);
+    
+    // Exact calculation matching backend:
+    // platformHolds = Total of all ONLINE orders + Delivery COD orders
+    // shop.grossAmount * (commission/100) = Total Platform Commission
+    // shop.deliveryFeeTotal = Total Delivery Fees
+    const totalCommission = shop.grossAmount * (commission / 100);
+    const netEst = shop.platformHolds - totalCommission - shop.deliveryFeeTotal;
 
-    if (!confirm(`Generate settlement for ${shopName}?\n\nGross: ₹${grossAmount.toFixed(2)}\nCommission: ${commission}%\nEst. Net Payout: ₹${netEst.toFixed(2)}\n\nThis will create a PENDING settlement. Mark as paid after transferring.`)) return;
+    const netStr = netEst >= 0 ? `₹${netEst.toFixed(2)}` : `-₹${Math.abs(netEst).toFixed(2)} (Shop owes Platform)`;
+
+    if (!confirm(`Generate settlement for ${shop.shopName}?\n\nGross Sales: ₹${shop.grossAmount.toFixed(2)}\nPlatform Holds: ₹${shop.platformHolds.toFixed(2)}\nDelivery Fees: ₹${shop.deliveryFeeTotal.toFixed(2)}\nCommission: ${commission}% (₹${totalCommission.toFixed(2)})\n\nEst. Net Payout: ${netStr}\n\nThis creates a PENDING settlement.`)) return;
 
     setGenerating(true);
     try {
@@ -58,10 +65,10 @@ export default function SettlementsPage() {
       const res = await fetch(`${API_BASE}/settlement/shops/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ shopId, periodStart: weekAgo, periodEnd: today, commissionPercent: commission })
+        body: JSON.stringify({ shopId: shop.shopId, periodStart: weekAgo, periodEnd: today, commissionPercent: commission })
       });
       if (res.ok) {
-        alert(`Settlement generated for ${shopName}! It will appear in the Pending tab.`);
+        alert(`Settlement generated for ${shop.shopName}! It will appear in the Pending tab.`);
         setShowGenerate(false);
         setActiveTab('PENDING');
         fetchSettlements();
@@ -73,8 +80,13 @@ export default function SettlementsPage() {
     setGenerating(false);
   };
 
-  const handleMarkAsPaid = async (id: string, name: string) => {
-    const ref = prompt(`Enter payment reference (UPI TxID / Bank ref) for ${name}:`);
+  const handleMarkAsPaid = async (id: string, name: string, netAmount: number) => {
+    const isReceiving = netAmount < 0;
+    const promptText = isReceiving 
+      ? `Enter payment reference for money RECEIVED from ${name} (Amount: ₹${Math.abs(netAmount).toFixed(2)}):`
+      : `Enter payment reference for money SENT to ${name} (Amount: ₹${netAmount.toFixed(2)}):`;
+      
+    const ref = prompt(promptText);
     if (!ref) return;
     setLoading(true);
     try {
@@ -150,12 +162,12 @@ export default function SettlementsPage() {
                     <div className="font-bold text-gray-900">{shop.shopName}</div>
                     <div className="text-sm text-gray-500">{shop.orderCount} unsettled orders · Gross ₹{shop.grossAmount?.toFixed(2)}</div>
                     <div className="text-sm font-semibold text-green-700">
-                      Est. Net ₹{(shop.grossAmount * (1 - (parseFloat(commissionRate) || 0) / 100))?.toFixed(2)}
+                      Est. Net ₹{(shop.platformHolds - (shop.grossAmount * (parseFloat(commissionRate) || 0) / 100) - shop.deliveryFeeTotal).toFixed(2)}
                       {(parseFloat(commissionRate) || 0) > 0 ? ` (after ${commissionRate}% commission)` : ' (no commission)'}
                     </div>
                   </div>
                   <button
-                    onClick={() => handleGenerateSettlement(shop.shopId, shop.shopName, shop.grossAmount)}
+                    onClick={() => handleGenerateSettlement(shop)}
                     disabled={generating}
                     className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-5 rounded-lg text-sm disabled:opacity-50"
                   >
@@ -208,7 +220,12 @@ export default function SettlementsPage() {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between text-gray-500"><span className="mr-8">Gross Sales:</span> <span>₹{Number(s.totalOrderAmount).toFixed(2)}</span></div>
                     <div className="flex justify-between text-red-500"><span className="mr-8">Commission:</span> <span>-₹{Number(s.platformCommission).toFixed(2)}</span></div>
-                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t mt-1"><span className="mr-8">Net Payout:</span> <span>₹{Number(s.netSettlementAmt).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t mt-1">
+                      <span className="mr-8">{Number(s.netSettlementAmt) < 0 ? 'Owed to Platform:' : 'Net Payout:'}</span> 
+                      <span className={Number(s.netSettlementAmt) < 0 ? 'text-red-600' : 'text-green-600'}>
+                        ₹{Math.abs(Number(s.netSettlementAmt)).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -221,11 +238,11 @@ export default function SettlementsPage() {
                 <td className="px-6 py-4 text-right">
                   {s.status === 'PENDING' ? (
                     <button
-                      onClick={() => handleMarkAsPaid(s.id, s.shop?.name || 'Shop')}
+                      onClick={() => handleMarkAsPaid(s.id, s.shop?.name || 'Shop', s.netSettlementAmt)}
                       disabled={loading}
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition shadow-sm"
+                      className={`${Number(s.netSettlementAmt) < 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold py-2 px-6 rounded-lg transition shadow-sm`}
                     >
-                      {loading ? 'Processing...' : 'Settle Payment'}
+                      {loading ? 'Processing...' : (Number(s.netSettlementAmt) < 0 ? 'Verify Received Payment' : 'Settle Payment')}
                     </button>
                   ) : (
                     <div className="inline-flex flex-col items-end">
