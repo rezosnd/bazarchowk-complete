@@ -191,13 +191,9 @@ export class SettlementService {
       include: { role: true }
     });
 
-    let commissionPct = 5; // Absolute baseline fallback
-    if (adminUser?.role?.name === 'SUPER_ADMIN' && dto.commissionPercent !== undefined) {
-      commissionPct = dto.commissionPercent; // Only SuperAdmin can negotiate/change commission
-    } else if (dto.commissionPercent !== undefined && dto.commissionPercent !== 5) {
-      this.logger.warn(`SECURITY ALERT: User ${adminId} (${adminUser?.role?.name}) attempted to alter commission to ${dto.commissionPercent}%. Blocked.`);
-      // Enforce 5% for all standard Market/District Admins regardless of DTO injection
-      commissionPct = 5;
+    let commissionPct = 0; // Default: FREE — no platform commission until admin sets it
+    if (dto.commissionPercent !== undefined && dto.commissionPercent >= 0 && dto.commissionPercent <= 100) {
+      commissionPct = dto.commissionPercent;
     }
     const periodStart = new Date(dto.periodStart);
     const periodEnd = new Date(dto.periodEnd);
@@ -253,13 +249,13 @@ export class SettlementService {
       isolationLevel: 'Serializable', // Ensures absolute consistency for financial records
     });
 
-    this.logger.log(`Settlement created for Shop ${dto.shopId}: ₹${settlement.netSettlementAmt.toFixed(2)} net (ID: ${settlement.id})`);
+    this.logger.log(`Settlement created for Shop ${dto.shopId}: ₹${settlement.netSettlementAmt.toFixed(2)} net, commission ${commissionPct}% (ID: ${settlement.id})`);
     
     // Notify Shop Owner
     await this.notificationsService.sendInAppNotification(
       settlement.shop.ownerId,
-      'New Settlement Generated',
-      `A settlement of ₹${settlement.netSettlementAmt.toFixed(2)} has been generated for ${settlement.shop.name}.`,
+      'Settlement Generated — Action Pending',
+      `A settlement of ₹${settlement.netSettlementAmt.toFixed(2)} has been generated for ${settlement.shop.name}. Awaiting payment transfer from admin.`,
       'SYSTEM'
     );
 
@@ -267,7 +263,10 @@ export class SettlementService {
   }
 
   async markSettlementPaid(settlementId: string, dto: MarkSettlementPaidDto) {
-    const settlement = await this.prisma.shopSettlement.findUnique({ where: { id: settlementId } });
+    const settlement = await this.prisma.shopSettlement.findUnique({
+      where: { id: settlementId },
+      include: { items: { include: { order: { select: { orderNumber: true, totalAmount: true, paymentMethod: true } } } } }
+    });
     if (!settlement) throw new NotFoundException('Settlement not found');
     if (settlement.status === 'COMPLETED') throw new BadRequestException('Settlement already paid');
 
@@ -277,35 +276,37 @@ export class SettlementService {
       include: { shop: { select: { ownerId: true, name: true, upiId: true, bankAccountNumber: true } } },
     });
 
-    // Notify Shop Owner via In-App Notification
+    const paymentMode = updatedSettlement.shop.upiId
+      ? `UPI (${updatedSettlement.shop.upiId})`
+      : updatedSettlement.shop.bankAccountNumber
+      ? `Bank Transfer`
+      : 'Manual Transfer';
+
+    // Rich In-App Notification with full details
     await this.notificationsService.sendInAppNotification(
       updatedSettlement.shop.ownerId,
-      'Settlement Paid',
-      `Your settlement of ₹${updatedSettlement.netSettlementAmt.toFixed(2)} has been paid via ${updatedSettlement.shop.upiId || 'Bank Transfer'}. Ref: ${dto.paymentReference}`,
+      `₹${updatedSettlement.netSettlementAmt.toFixed(2)} Settlement Paid!`,
+      `Your settlement has been transferred via ${paymentMode}. Gross: ₹${updatedSettlement.totalOrderAmount.toFixed(2)}, Commission: ₹${updatedSettlement.platformCommission.toFixed(2)}, Net Paid: ₹${updatedSettlement.netSettlementAmt.toFixed(2)}. Ref: ${dto.paymentReference || 'N/A'}`,
       'SYSTEM'
     );
 
-    // Automate Email Confirmation with PDF Attachment
+    // Send detailed settlement email with PDF
     const owner = await this.prisma.user.findUnique({ where: { id: updatedSettlement.shop.ownerId } });
     if (owner && owner.email) {
-      const totalOrders = await this.prisma.order.count({
-        where: { shopId: updatedSettlement.shopId, status: 'DELIVERED', createdAt: { gte: updatedSettlement.periodStart, lte: updatedSettlement.periodEnd } }
-      });
-
+      const totalOrders = settlement.items.length;
       await this.emailService.sendSettlementEmail(owner.email, {
         shopName: updatedSettlement.shop.name,
         periodStart: updatedSettlement.periodStart,
         periodEnd: updatedSettlement.periodEnd,
         settlementId: updatedSettlement.id,
         paymentRef: dto.paymentReference || 'N/A',
-        paymentMode: updatedSettlement.shop.upiId ? `UPI (${updatedSettlement.shop.upiId})` : 'Bank Transfer',
-        totalOrders: totalOrders,
+        paymentMode,
+        totalOrders,
         grossSales: updatedSettlement.totalOrderAmount,
         commission: updatedSettlement.platformCommission,
         netPayout: updatedSettlement.netSettlementAmt
       });
-      
-      this.logger.log(`Live Settlement PDF Email sent to ${owner.email} for Shop ${updatedSettlement.shop.name}`);
+      this.logger.log(`Settlement PDF Email sent to ${owner.email} for Shop ${updatedSettlement.shop.name}`);
     }
 
     return updatedSettlement;
@@ -323,7 +324,7 @@ export class SettlementService {
       this.prisma.shopSettlement.findMany({
         where, skip, take: limit,
         include: {
-          shop: { select: { id: true, name: true, city: true } },
+          shop: { select: { id: true, name: true, city: true, upiId: true, bankAccountNumber: true } },
           settledBy: { select: { firstName: true, email: true } },
           _count: { select: { items: true } },
         },
@@ -418,30 +419,30 @@ export class SettlementService {
         codCollected: orders7DaysCOD._sum.totalAmount || 0,
         onlinePaid: orders7DaysOnline._sum.totalAmount || 0,
         totalDeliveries: orders7Days._count.id || 0,
-        netSettled: settlements7Days._sum.netSettlementAmt || estimateNet(orders7Days._sum.totalAmount || 0),
+        netSettled: settlements7Days._sum.netSettlementAmt || (orders7Days._sum.totalAmount || 0),
       },
       thisMonth: {
         grossSales: ordersThisMonth._sum.totalAmount || 0,
         codCollected: ordersThisMonthCOD._sum.totalAmount || 0,
         onlinePaid: ordersThisMonthOnline._sum.totalAmount || 0,
         totalDeliveries: ordersThisMonth._count.id || 0,
-        netSettled: settlementsThisMonth._sum.netSettlementAmt || estimateNet(ordersThisMonth._sum.totalAmount || 0),
+        netSettled: settlementsThisMonth._sum.netSettlementAmt || (ordersThisMonth._sum.totalAmount || 0),
       },
       today: {
         grossSales: ordersToday._sum.totalAmount || 0,
         codCollected: ordersTodayCOD._sum.totalAmount || 0,
         onlinePaid: ordersTodayOnline._sum.totalAmount || 0,
         totalDeliveries: ordersToday._count.id || 0,
-        netSettled: settlementsToday._sum.netSettlementAmt || estimateNet(ordersToday._sum.totalAmount || 0),
+        netSettled: settlementsToday._sum.netSettlementAmt || (ordersToday._sum.totalAmount || 0),
       },
       custom: {
         grossSales: ordersCustom._sum.totalAmount || 0,
         codCollected: ordersCustomCOD._sum.totalAmount || 0,
         onlinePaid: ordersCustomOnline._sum.totalAmount || 0,
         totalDeliveries: ordersCustom._count.id || 0,
-        netSettled: settlementsCustom._sum.netSettlementAmt || estimateNet(ordersCustom._sum.totalAmount || 0),
+        netSettled: settlementsCustom._sum.netSettlementAmt || (ordersCustom._sum.totalAmount || 0),
       },
-      pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || estimateNet(ordersThisMonth._sum.totalAmount || 0),
+      pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || 0,
     };
   }
   async getUnsettledShopsSummary(user?: any) {

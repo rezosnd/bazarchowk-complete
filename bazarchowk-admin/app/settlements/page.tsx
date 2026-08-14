@@ -10,6 +10,7 @@ export default function SettlementsPage() {
   const [settlements, setSettlements] = useState<any[]>([]);
   const [unsettledShops, setUnsettledShops] = useState<any[]>([]);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [commissionRate, setCommissionRate] = useState('0');
 
   useEffect(() => { fetchSettlements(); }, [activeTab]);
   useEffect(() => { if (showGenerate) fetchUnsettledShops(); }, [showGenerate]);
@@ -41,9 +42,15 @@ export default function SettlementsPage() {
     } catch (err) { console.error('Failed to fetch unsettled shops', err); }
   };
 
-  const handleGenerateSettlement = async (shopId: string, shopName: string) => {
+  const handleGenerateSettlement = async (shopId: string, shopName: string, grossAmount: number) => {
     const today = new Date().toISOString().split('T')[0];
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Find earliest unset order date for this shop, or fall back to 30 days
+    const weekAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const rate = parseFloat(commissionRate);
+    const commission = isNaN(rate) ? 0 : Math.max(0, Math.min(100, rate));
+    const netEst = grossAmount * (1 - commission / 100);
+
+    if (!confirm(`Generate settlement for ${shopName}?\n\nGross: ₹${grossAmount.toFixed(2)}\nCommission: ${commission}%\nEst. Net Payout: ₹${netEst.toFixed(2)}\n\nThis will create a PENDING settlement. Mark as paid after transferring.`)) return;
 
     setGenerating(true);
     try {
@@ -51,7 +58,7 @@ export default function SettlementsPage() {
       const res = await fetch(`${API_BASE}/settlement/shops/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ shopId, periodStart: weekAgo, periodEnd: today })
+        body: JSON.stringify({ shopId, periodStart: weekAgo, periodEnd: today, commissionPercent: commission })
       });
       if (res.ok) {
         alert(`Settlement generated for ${shopName}! It will appear in the Pending tab.`);
@@ -115,8 +122,24 @@ export default function SettlementsPage() {
       {/* Generate Panel */}
       {showGenerate && (
         <div className="bg-white rounded-2xl border border-orange-200 p-6 mb-6 shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-1">Shops with Unsettled Orders</h2>
-          <p className="text-sm text-gray-500 mb-4">These shops have delivered orders not yet included in any settlement. Click to generate this week's settlement.</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-bold text-gray-900">Shops with Unsettled Orders</h2>
+              <p className="text-sm text-gray-500 mt-0.5">These shops have delivered orders not yet included in any settlement.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-700">Commission %:</label>
+              <input
+                type="number"
+                min="0" max="100" step="0.5"
+                value={commissionRate}
+                onChange={(e) => setCommissionRate(e.target.value)}
+                className="w-20 border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-orange-400"
+                placeholder="0"
+              />
+              <span className="text-sm text-gray-500">(0 = no fee)</span>
+            </div>
+          </div>
           {unsettledShops.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">All shops are fully settled. No pending orders found.</p>
           ) : (
@@ -126,10 +149,13 @@ export default function SettlementsPage() {
                   <div>
                     <div className="font-bold text-gray-900">{shop.shopName}</div>
                     <div className="text-sm text-gray-500">{shop.orderCount} unsettled orders · Gross ₹{shop.grossAmount?.toFixed(2)}</div>
-                    <div className="text-sm font-semibold text-green-700">Est. Net ₹{(shop.grossAmount * 0.95)?.toFixed(2)} (after 5% commission)</div>
+                    <div className="text-sm font-semibold text-green-700">
+                      Est. Net ₹{(shop.grossAmount * (1 - (parseFloat(commissionRate) || 0) / 100))?.toFixed(2)}
+                      {(parseFloat(commissionRate) || 0) > 0 ? ` (after ${commissionRate}% commission)` : ' (no commission)'}
+                    </div>
                   </div>
                   <button
-                    onClick={() => handleGenerateSettlement(shop.shopId, shop.shopName)}
+                    onClick={() => handleGenerateSettlement(shop.shopId, shop.shopName, shop.grossAmount)}
                     disabled={generating}
                     className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-5 rounded-lg text-sm disabled:opacity-50"
                   >

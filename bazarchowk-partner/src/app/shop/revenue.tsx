@@ -46,9 +46,9 @@ export default function RevenueDashboardScreen() {
         setData({
           grossSales: currentPeriodData?.grossSales || 0,
           onlinePaid: currentPeriodData?.onlinePaid || 0,
-          codCollected: currentPeriodData?.codCollected || 0, 
-          platformFees: ((currentPeriodData?.grossSales || 0) * 0.1) || 0,
-          netEarnings: currentPeriodData?.netSettled || 0,
+          codCollected: currentPeriodData?.codCollected || 0,
+          platformFees: 0, // Set by admin at settlement time — default 0
+          netEarnings: currentPeriodData?.netSettled || currentPeriodData?.grossSales || 0,
           pendingSettlement: response.data.pendingSettlement || 0
         });
       }
@@ -202,10 +202,19 @@ export default function RevenueDashboardScreen() {
 
             <View style={styles.divider} />
 
-            <View style={styles.bdRow}>
-              <Text style={styles.bdLabelRed}>BazarChowk Platform Fee (-10%)</Text>
-              <Text style={styles.bdValueRed}>- ₹{data.platformFees.toLocaleString()}</Text>
-            </View>
+            {data.platformFees > 0 && (
+              <View style={styles.bdRow}>
+                <Text style={styles.bdLabelRed}>Platform Commission</Text>
+                <Text style={styles.bdValueRed}>- ₹{data.platformFees.toLocaleString()}</Text>
+              </View>
+            )}
+
+            {data.platformFees === 0 && (
+              <View style={[styles.bdRow, { paddingVertical: 6 }]}>
+                <Text style={[styles.bdLabelNested, { marginLeft: 0 }]}>Platform Commission</Text>
+                <Text style={{ fontSize: 13, color: '#00B140', fontWeight: '700' }}>No fee (set by admin)</Text>
+              </View>
+            )}
 
             <View style={styles.dividerTotal} />
 
@@ -238,7 +247,7 @@ export default function RevenueDashboardScreen() {
                   <View style={styles.ledgerRow}>
                     <View>
                       <Text style={styles.ledgerMethod}>{item.paymentMethod || 'ONLINE'}</Text>
-                      <Text style={styles.ledgerStatus}>Net: ₹{((item.totalAmount || 0) * 0.9).toFixed(2)}</Text>
+                      <Text style={styles.ledgerStatus}>Gross Order Amount</Text>
                     </View>
                     <Text style={styles.ledgerAmount}>+ ₹{item.totalAmount || 0}</Text>
                   </View>
