@@ -447,7 +447,7 @@ export class OrdersService {
     });
   }
 
-  async getAllOrders() {
+  async getAllOrders(user?: any) {
     return this.prisma.order.findMany({
       include: { shop: true, customer: true, items: { include: { productVariant: { include: { product: true } } } } },
       orderBy: { createdAt: 'desc' },
@@ -616,6 +616,7 @@ export class OrdersService {
                 status: 'PENDING'
               }
             });
+          }
         }
       }
 
@@ -685,9 +686,7 @@ export class OrdersService {
         }
       }
 
-          }
-        }
-        
+      if (dto.status === OrderStatus.RETURNED_TO_SHOP || dto.status === OrderStatus.INVENTORY_RESTORED) {
         // Notify shop owner that it was returned/damaged
         await this.notifications.sendInAppNotification(
           order.shop.ownerId,
