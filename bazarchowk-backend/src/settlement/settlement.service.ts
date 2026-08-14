@@ -359,7 +359,7 @@ export class SettlementService {
 
   // =============== PARTNER FINANCIAL DASHBOARD ===============
 
-  async getShopFinancialDashboard(userId: string) {
+  async getShopFinancialDashboard(userId: string, customStartDate?: string, customEndDate?: string) {
     const shop = await this.prisma.shop.findFirst({ where: { ownerId: userId } });
     if (!shop) throw new NotFoundException('Shop not found');
 
@@ -371,6 +371,15 @@ export class SettlementService {
     sevenDaysAgo.setDate(now.getDate() - 7);
 
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    let customStart = today;
+    let customEnd = now;
+    if (customStartDate && customEndDate) {
+      customStart = new Date(customStartDate);
+      customStart.setHours(0, 0, 0, 0);
+      customEnd = new Date(customEndDate);
+      customEnd.setHours(23, 59, 59, 999);
+    }
 
     const [
       orders7Days,
@@ -385,7 +394,12 @@ export class SettlementService {
       settlements7Days,
       settlementsThisMonth,
       settlementsToday,
-      pendingSettlementAmt
+      pendingSettlementAmt,
+      // Custom Range
+      ordersCustom,
+      ordersCustomCOD,
+      ordersCustomOnline,
+      settlementsCustom
     ] = await Promise.all([
       // Gross sales last 7 days (Delivered)
       this.prisma.order.aggregate({
@@ -454,6 +468,24 @@ export class SettlementService {
       this.prisma.shopSettlement.aggregate({
         _sum: { netSettlementAmt: true },
         where: { shopId: shop.id, status: 'PENDING' }
+      }),
+      // CUSTOM Range
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { id: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: customStart, lte: customEnd } }
+      }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: customStart, lte: customEnd }, paymentMethod: 'COD' }
+      }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { shopId: shop.id, status: 'DELIVERED', createdAt: { gte: customStart, lte: customEnd }, paymentMethod: { not: 'COD' } }
+      }),
+      this.prisma.shopSettlement.aggregate({
+        _sum: { netSettlementAmt: true },
+        where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: customStart, lte: customEnd } }
       })
     ]);
 
@@ -478,6 +510,13 @@ export class SettlementService {
         onlinePaid: ordersTodayOnline._sum.totalAmount || 0,
         totalDeliveries: ordersToday._count.id || 0,
         netSettled: settlementsToday._sum.netSettlementAmt || 0,
+      },
+      custom: {
+        grossSales: ordersCustom._sum.totalAmount || 0,
+        codCollected: ordersCustomCOD._sum.totalAmount || 0,
+        onlinePaid: ordersCustomOnline._sum.totalAmount || 0,
+        totalDeliveries: ordersCustom._count.id || 0,
+        netSettled: settlementsCustom._sum.netSettlementAmt || 0,
       },
       pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || 0
     };

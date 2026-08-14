@@ -70,8 +70,12 @@ export class SettlementController {
   @UseGuards(RolesGuard)
   @Roles('SHOP_OWNER', 'ADMIN')
   @ApiOperation({ summary: 'Partner: Get Shop Financial Dashboard (Gross sales, net settlement)' })
-  getShopFinancialDashboard(@CurrentUser() user: any) {
-    return this.settlementService.getShopFinancialDashboard(user.id);
+  getShopFinancialDashboard(
+    @CurrentUser() user: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.settlementService.getShopFinancialDashboard(user.id, startDate, endDate);
   }
 
   @Post('shops/create')
