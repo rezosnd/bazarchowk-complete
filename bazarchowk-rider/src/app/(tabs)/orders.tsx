@@ -65,6 +65,12 @@ export default function RiderOrdersScreen() {
       if (profileRes.ok) {
         const profile = await profileRes.json();
         setIsVerified(profile.kycStatus === 'VERIFIED');
+        
+        // Auto-redirect to profile to select market if missing
+        if (profile.deliveryProfile && !profile.deliveryProfile.marketId) {
+          router.replace({ pathname: '/(tabs)/profile', params: { autoOpenMarket: 'true' } });
+          return;
+        }
       }
 
       if (res.ok) {

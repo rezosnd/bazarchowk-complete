@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, TextInput, Image, Modal, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
@@ -11,6 +11,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://bazarchowk-complete
 
 export default function RiderProfileScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -22,7 +23,7 @@ export default function RiderProfileScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   // Market selection modal state
-  const [showMarketModal, setShowMarketModal] = useState(false);
+  const [showMarketModal, setShowMarketModal] = useState(params.autoOpenMarket === 'true');
   const [markets, setMarkets] = useState<any[]>([]);
   const [loadingMarkets, setLoadingMarkets] = useState(false);
   const [savingMarket, setSavingMarket] = useState(false);
