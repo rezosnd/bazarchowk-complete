@@ -17,7 +17,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Market & Location Management')
 @Controller('markets')
 export class MarketsController {
-  constructor(private readonly marketsService: MarketsService) {}
+  constructor(private readonly marketsService: MarketsService) { }
 
   // --- COUNTRIES --- //
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -140,18 +140,5 @@ export class MarketsController {
   @ApiOperation({ summary: 'Get full market details' })
   getMarketDetails(@Param('id') id: string) {
     return this.marketsService.getMarketDetails(id);
-  }
-
-  @Patch('market-nodes/:id/config')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'MARKET_ADMIN')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update market configuration (delivery charges, GST)' })
-  updateMarketConfig(
-    @Param('id') id: string,
-    @Body() configDto: any,
-    @CurrentUser() user: any
-  ) {
-    return this.marketsService.updateMarketConfig(id, configDto, user);
   }
 }

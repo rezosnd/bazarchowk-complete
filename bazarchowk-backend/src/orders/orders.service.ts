@@ -21,7 +21,7 @@ export class OrdersService {
     private readonly emailService: EmailService,
     private readonly stateMachine: OrderStateMachineService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   // Generate a random unique order number
   private generateOrderNumber(): string {
@@ -62,8 +62,8 @@ export class OrdersService {
       const R = 6371;
       const dLat = (shop.latitude - deliveryAddress.latitude) * (Math.PI / 180);
       const dLon = (shop.longitude - deliveryAddress.longitude) * (Math.PI / 180);
-      const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(deliveryAddress.latitude*Math.PI/180)*Math.cos(shop.latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deliveryAddress.latitude * Math.PI / 180) * Math.cos(shop.latitude * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       distanceKm = R * c;
 
       const maxRadius = shop.deliveryRadius || 5.0;
@@ -76,32 +76,54 @@ export class OrdersService {
       }
     }
 
-    const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
-
-    // Default to city's configured base fee, or ₹0 hardcoded fallback
-    let deliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
-
-    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-      // Apply distance-tier pricing only when we have a real distance
-      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-      for (const tier of tiers) {
-        if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
-      }
-    }
-    // If city is unconfigured, delivery fee remains ₹0.
-
+    let deliveryFee = 0;
     let taxAmount = 0;
-    if (cityConfig && cityConfig.taxPercent) {
-      taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+
+    if (shop.marketId) {
+      const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
+      if (market) {
+        taxAmount = (itemTotal * (market.gstPercentage || 18)) / 100;
+        let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
+        if (market.deliveryChargeConfig) {
+          try {
+            config = typeof market.deliveryChargeConfig === 'string' 
+              ? JSON.parse(market.deliveryChargeConfig) 
+              : market.deliveryChargeConfig;
+          } catch(e) {}
+        }
+        
+        if (config['freeAbove'] && itemTotal >= config['freeAbove']) {
+          deliveryFee = 0;
+        } else if (config['<100'] && itemTotal < 100) {
+          deliveryFee = config['<100'];
+        } else if (config['<200'] && itemTotal < 200) {
+          deliveryFee = config['<200'];
+        } else {
+          deliveryFee = config['default'] || 20;
+        }
+      }
     } else {
-      taxAmount = (itemTotal * 5) / 100;
+      const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
+      deliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+
+      if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+        for (const tier of tiers) {
+          if (distanceKm <= tier.uptoKm) { deliveryFee = tier.fee; break; }
+        }
+      }
+      if (cityConfig && cityConfig.taxPercent) {
+        taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+      } else {
+        taxAmount = (itemTotal * 5) / 100;
+      }
     }
 
     const totalAmount = itemTotal + taxAmount + deliveryFee;
 
     let walletBalance = 0;
     let walletAmountUsed = 0;
-    
+
     const userWallet = await this.prisma.wallet.findUnique({ where: { userId: customerId } });
     if (userWallet) walletBalance = userWallet.balance;
 
@@ -164,7 +186,7 @@ export class OrdersService {
         throw new BadRequestException(`Insufficient stock for ${item.productVariant.name}`);
       }
       totalAmount += (item.productVariant.price * item.quantity);
-      
+
       orderItemsData.push({
         productVariantId: item.productVariant.id,
         quantity: item.quantity,
@@ -206,52 +228,29 @@ export class OrdersService {
       }
     }
 
-    // 4. Resolve Dynamic Delivery Fee from Market Config (configured by Admin)
-    let calculatedDeliveryFee = 0;
+    // 4. Resolve Dynamic Delivery Fee from City Config (configured by Admin)
+    const cityConfig = await this.prisma.cityConfig.findFirst({
+      where: { name: { equals: shop.city, mode: 'insensitive' } }
+    });
+
+    let calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+
+    if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+      // Tiers should be sorted by uptoKm, but let's sort them just to be safe
+      const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+      for (const tier of tiers) {
+        if (distanceKm <= tier.uptoKm) {
+          calculatedDeliveryFee = tier.fee;
+          break;
+        }
+      }
+    }
+
     let taxAmount = 0;
-    
-    if (shop.marketId) {
-      const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
-      if (market) {
-        // GST Calculation
-        taxAmount = (totalAmount * (market.gstPercentage || 18)) / 100;
-        
-        // Delivery Charge Calculation based on Cart Value
-        let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
-        if (market.deliveryChargeConfig) {
-          try {
-            config = typeof market.deliveryChargeConfig === 'string' 
-              ? JSON.parse(market.deliveryChargeConfig) 
-              : market.deliveryChargeConfig;
-          } catch(e) {}
-        }
-        
-        if (config['freeAbove'] && totalAmount >= config['freeAbove']) {
-          calculatedDeliveryFee = 0;
-        } else if (config['<100'] && totalAmount < 100) {
-          calculatedDeliveryFee = config['<100'];
-        } else if (config['<200'] && totalAmount < 200) {
-          calculatedDeliveryFee = config['<200'];
-        } else {
-          calculatedDeliveryFee = config['default'] || 20;
-        }
-      }
+    if (cityConfig && cityConfig.taxPercent) {
+      taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
     } else {
-      // Fallback to CityConfig
-      const cityConfig = await this.prisma.cityConfig.findFirst({
-        where: { name: { equals: shop.city, mode: 'insensitive' } }
-      });
-      calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
-      if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-        const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-        for (const tier of tiers) {
-          if (distanceKm <= tier.uptoKm) {
-            calculatedDeliveryFee = tier.fee;
-            break;
-          }
-        }
-      }
-      taxAmount = cityConfig?.taxPercent ? (totalAmount * cityConfig.taxPercent) / 100 : (totalAmount * 5) / 100;
+      taxAmount = (totalAmount * 5) / 100; // 5% default
     }
 
     const subtotal = totalAmount;
@@ -290,12 +289,12 @@ export class OrdersService {
       if (paymentMethod === 'WALLET' && walletAmountUsed > 0) {
         const wallet = await prisma.wallet.findUnique({ where: { userId: customerId } });
         if (!wallet || wallet.balance < walletAmountUsed) throw new BadRequestException('Insufficient wallet balance during transaction.');
-        
+
         await prisma.wallet.update({
           where: { userId: customerId },
           data: { balance: { decrement: walletAmountUsed } }
         });
-        
+
         await prisma.walletTransaction.create({
           data: {
             walletId: wallet.id,
@@ -367,7 +366,7 @@ export class OrdersService {
           where: { id: item.productVariantId },
           data: { stock: { decrement: item.quantity } }
         });
-        
+
         // Log inventory
         const inventory = await prisma.inventory.findUnique({ where: { productVariantId: item.productVariantId } });
         if (inventory) {
@@ -481,9 +480,9 @@ export class OrdersService {
   async getOrderById(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { 
-        shop: true, 
-        customer: true, 
+      include: {
+        shop: true,
+        customer: true,
         deliveryAddress: true,
         delivery: true,
         rider: { select: { id: true, firstName: true, lastName: true, phone: true, deliveryPartner: { select: { vehicleType: true } } } },
@@ -558,7 +557,7 @@ export class OrdersService {
           const newDel = await this.prisma.delivery.create({
             data: { orderId } // status defaults to UNASSIGNED
           });
-          
+
           // Alert nearby riders (within 8km)
           const onlineRiders = await this.prisma.deliveryPartner.findMany({
             where: { isOnline: true, currentLatitude: { not: null }, currentLongitude: { not: null } }
@@ -575,8 +574,8 @@ export class OrdersService {
             const dLat = (rider.currentLatitude - shopLat) * (Math.PI / 180);
             const dLon = (rider.currentLongitude - shopLng) * (Math.PI / 180);
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(shopLat * (Math.PI / 180)) * Math.cos(rider.currentLatitude * (Math.PI / 180)) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              Math.cos(shopLat * (Math.PI / 180)) * Math.cos(rider.currentLatitude * (Math.PI / 180)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             const distance = R * c;
 
@@ -610,18 +609,18 @@ export class OrdersService {
         if (order.riderId) {
           const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
           const existingEarning = await this.prisma.riderEarning.findFirst({ where: { deliveryId: existingDelivery?.id } });
-          
+
           if (existingDelivery && !existingEarning) {
             // Calculate base earning, distance bonus, etc.
             const distance = existingDelivery.distanceKm || 0;
             const baseAmount = 30; // 30 Rs base
             const distanceBonus = distance > 5 ? (distance - 5) * 5 : 0; // 5 Rs per extra km
-            
+
             let returnCompensation = 0;
             let type = 'DELIVERY';
             if (dto.status === OrderStatus.CUSTOMER_REFUSED) {
-               returnCompensation = 15; // 15 Rs compensation for refused
-               type = 'RETURN';
+              returnCompensation = 15; // 15 Rs compensation for refused
+              type = 'RETURN';
             }
 
             const totalAmount = baseAmount + distanceBonus + returnCompensation;
@@ -648,13 +647,13 @@ export class OrdersService {
         // If not explicitly marked as DAMAGED, automatically restore inventory
         if (!dto.notes || !dto.notes.toLowerCase().includes('damaged')) {
           const items = await this.prisma.orderItem.findMany({ where: { orderId } });
-          
+
           for (const item of items) {
             await this.prisma.productVariant.update({
               where: { id: item.productVariantId },
               data: { stock: { increment: item.quantity } }
             });
-            
+
             const inventory = await this.prisma.inventory.findUnique({ where: { productVariantId: item.productVariantId } });
             if (inventory) {
               await this.prisma.inventory.update({
@@ -676,17 +675,17 @@ export class OrdersService {
 
           // Move to INVENTORY_RESTORED
           await this.prisma.order.update({
-             where: { id: orderId },
-             data: { status: OrderStatus.INVENTORY_RESTORED }
+            where: { id: orderId },
+            data: { status: OrderStatus.INVENTORY_RESTORED }
           });
-          
+
           await this.prisma.orderStatusHistory.create({
-             data: {
-                orderId,
-                status: OrderStatus.INVENTORY_RESTORED,
-                notes: 'System auto-restored inventory to stock',
-                createdBy: 'SYSTEM'
-             }
+            data: {
+              orderId,
+              status: OrderStatus.INVENTORY_RESTORED,
+              notes: 'System auto-restored inventory to stock',
+              createdBy: 'SYSTEM'
+            }
           });
         } else {
           // It is damaged. We log a DAMAGE transaction but don't increase stock.
