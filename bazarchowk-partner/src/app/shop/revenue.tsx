@@ -222,7 +222,7 @@ export default function RevenueDashboardScreen() {
 
             <View style={styles.bdRow}>
               <Text style={[styles.bdTotalLabel, data.netEarnings < 0 && { color: '#EF4444' }]}>
-                {data.netEarnings < 0 ? 'Total Owed to Platform' : 'Total Settlement Due'}
+                {data.netEarnings < 0 ? 'Total Owed to Platform' : (data.pendingSettlement > 0 ? 'Total Settlement Due' : 'Total Settled Earnings')}
               </Text>
               <Text style={[styles.bdTotalValue, data.netEarnings < 0 && { color: '#EF4444' }]}>
                 {data.netEarnings < 0 ? `- ₹${Math.abs(data.netEarnings).toLocaleString()}` : `₹${data.netEarnings.toLocaleString()}`}
@@ -231,9 +231,12 @@ export default function RevenueDashboardScreen() {
 
           </View>
           
-          <TouchableOpacity style={styles.downloadBtn}>
-            <Ionicons name="download-outline" size={20} color="#0F172A" />
-            <Text style={styles.downloadText}>Download Tax Invoice</Text>
+          <TouchableOpacity 
+            style={styles.downloadBtn}
+            onPress={() => Alert.alert('Invoice Sent to Email', 'Detailed PDF tax invoices are automatically generated and sent to your registered email address every time a settlement is completed by the admin.')}
+          >
+            <Ionicons name="mail-outline" size={20} color="#0F172A" />
+            <Text style={styles.downloadText}>Email Tax Invoice</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: 32 }}>
