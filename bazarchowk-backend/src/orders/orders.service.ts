@@ -554,9 +554,14 @@ export class OrdersService {
     const isAdmin = userObj.role?.name === 'ADMIN';
     const isOwner = order.shop.ownerId === userId;
     const isAssignedRider = order.riderId === userId;
+    const isCustomer = order.customerId === userId;
 
-    if (!isAdmin && !isOwner && !isAssignedRider) {
+    if (!isAdmin && !isOwner && !isAssignedRider && !isCustomer) {
       throw new ForbiddenException('Not authorized to update this order');
+    }
+
+    if (isCustomer && dto.status !== 'CANCELLED') {
+      throw new ForbiddenException('Customers can only cancel their orders');
     }
 
     // Role name for the state machine checks (fallback to RIDER if it's the assigned rider but role name is missing)
