@@ -94,44 +94,79 @@ export default function ShopDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Services Booking Banner (if shop offers services) */}
+        {shop.hasServices && (
+          <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+            <TouchableOpacity 
+              style={{
+                backgroundColor: '#2563EB',
+                padding: 16,
+                borderRadius: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                shadowColor: '#2563EB',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 4
+              }}
+              onPress={() => router.push(`/services/${shop.id}` as any)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Ionicons name="calendar" size={24} color="#FFF" />
+                </View>
+                <View>
+                  <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Book Appointment</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>View services & timeslots</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Products Grid */}
-        <View style={styles.productsContainer}>
-          <Text style={styles.sectionTitle}>Products</Text>
-          
-          {products.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="cube-outline" size={48} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No products available yet.</Text>
-            </View>
-          ) : (
-            <View style={styles.grid}>
-              {products.map((product) => {
-                const primaryImage = product.images?.find((img: any) => img.isPrimary)?.imageUrl 
-                  || product.images?.[0]?.imageUrl;
-                
-                return (
-                  <TouchableOpacity 
-                    key={product.id} 
-                    style={styles.productCard}
-                    onPress={() => router.push(`/product/${product.id}`)}
-                  >
-                    <View style={styles.productImgContainer}>
-                      {primaryImage ? (
-                        <Image source={{ uri: primaryImage }} style={styles.productImg} contentFit="cover" />
-                      ) : (
-                        <Ionicons name="image-outline" size={32} color="#CBD5E1" />
-                      )}
-                    </View>
-                    <View style={styles.productInfo}>
-                      <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                      <Text style={styles.productPrice}>₹{product.basePrice}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </View>
+        {(shop.hasProducts || products.length > 0) && (
+          <View style={styles.productsContainer}>
+            <Text style={styles.sectionTitle}>Products</Text>
+            
+            {products.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Ionicons name="cube-outline" size={48} color="#CBD5E1" />
+                <Text style={styles.emptyText}>No products available yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.grid}>
+                {products.map((product) => {
+                  const primaryImage = product.images?.find((img: any) => img.isPrimary)?.imageUrl 
+                    || product.images?.[0]?.imageUrl;
+                  
+                  return (
+                    <TouchableOpacity 
+                      key={product.id} 
+                      style={styles.productCard}
+                      onPress={() => router.push(`/product/${product.id}`)}
+                    >
+                      <View style={styles.productImgContainer}>
+                        {primaryImage ? (
+                          <Image source={{ uri: primaryImage }} style={styles.productImg} contentFit="cover" />
+                        ) : (
+                          <Ionicons name="image-outline" size={32} color="#CBD5E1" />
+                        )}
+                      </View>
+                      <View style={styles.productInfo}>
+                        <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                        <Text style={styles.productPrice}>₹{product.basePrice}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
