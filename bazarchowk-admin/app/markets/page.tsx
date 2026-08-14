@@ -1,5 +1,6 @@
+"use client";
+import React, { useState, useEffect } from 'react';
 import { AdminContext } from '../auth-guard';
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://bazarchowk-complete.vercel.app';
 
 export default function MarketsPage() {
