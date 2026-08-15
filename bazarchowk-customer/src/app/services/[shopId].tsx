@@ -34,6 +34,21 @@ export default function ShopServicesScreen() {
     enabled: !!selectedProviderId,
   });
 
+  const { data: shop } = useQuery({
+    queryKey: ['shop', shopId],
+    queryFn: async () => (await api.get(`/shops/${shopId}`)).data,
+    enabled: !!shopId,
+  });
+
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => (await api.get('/addresses')).data,
+    enabled: isAuthenticated,
+  });
+
+  const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+  const isHomeService = shop?.partnerType && shop.partnerType !== 'SALON';
+
   const bookMutation = useMutation({
     mutationFn: async (slotId: string) => {
       if (!isAuthenticated) {
@@ -42,13 +57,22 @@ export default function ShopServicesScreen() {
         ]);
         return Promise.reject(new Error('Login Required'));
       }
+      if (isHomeService && !defaultAddress) {
+        Alert.alert('Address Required', 'Please add a home address for this service.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Address', onPress: () => router.push('/addresses' as any) }
+        ]);
+        return Promise.reject(new Error('Address Required'));
+      }
+
       return api.post('/appointments', {
         serviceOfferingId: selectedServiceId,
         providerId: selectedProviderId,
         timeSlotId: slotId,
         notes: "Booked via BazarChowk App",
         paymentMethod: 'COD',
-        paymentStatus: 'PENDING'
+        paymentStatus: 'PENDING',
+        serviceAddressId: isHomeService ? defaultAddress.id : undefined,
       });
     },
     onSuccess: () => {
