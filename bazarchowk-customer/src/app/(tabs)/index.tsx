@@ -689,6 +689,18 @@ export default function HomeScreen() {
   const scale = useSharedValue(1);
   const overlayOpacity = useSharedValue(0);
 
+  const { data: markets = [], isLoading: isLoadingMarkets } = useQuery({ 
+    queryKey: ['markets', location?.lat, location?.lng], 
+    queryFn: () => HomeService.getMarkets(location?.lat, location?.lng),
+    enabled: !!location?.lat 
+  });
+
+  useEffect(() => {
+    if (!isLoadingMarkets && location?.lat && markets.length === 0) {
+      router.push('/unserviceable' as any);
+    }
+  }, [isLoadingMarkets, markets.length, location?.lat]);
+
   useEffect(() => {
     if (isListening) {
       scale.value = withTiming(0.98, { duration: 300 });

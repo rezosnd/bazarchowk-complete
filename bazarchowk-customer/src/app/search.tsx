@@ -266,7 +266,7 @@ export default function SearchScreen() {
           <Text style={{ fontSize: 56 }}>🔍</Text>
           <Text style={styles.noResultsTitle}>No results for "{query}"</Text>
           <Text style={styles.noResultsSub}>Try different keywords or check spelling</Text>
-          <View style={styles.tagsWrap} style={{ marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', paddingHorizontal: 20 }}>
+          <View style={[styles.tagsWrap, { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', paddingHorizontal: 20 }]}>
             {TRENDING.slice(0, 4).map(tag => (
               <TouchableOpacity key={tag} style={styles.trendTag} onPress={() => handleTrending(tag)}>
                 <Text style={styles.trendTagText}>{tag}</Text>

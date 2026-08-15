@@ -82,29 +82,44 @@ export default function ShopServicesScreen() {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         {/* Step 1: Select Service */}
-        <Text style={styles.stepTitle}>1. Select Service</Text>
-        <View style={styles.sectionContainer}>
-          {services?.map((s: any) => {
-            const isSelected = selectedServiceId === s.id;
-            return (
-              <TouchableOpacity
-                key={s.id}
-                onPress={() => setSelectedServiceId(s.id)}
-                style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.serviceName, isSelected && { color: PRIMARY }]}>{s.name}</Text>
-                  <Text style={styles.serviceDuration}>{s.durationMin} mins</Text>
-                </View>
-                <Text style={styles.servicePrice}>₹{s.price}</Text>
-              </TouchableOpacity>
-            );
-          })}
-          {(!services || services.length === 0) && <Text style={styles.emptyText}>No services available</Text>}
-        </View>
+        {!selectedServiceId ? (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.stepTitle}>1. Select Service</Text>
+            {services?.map((s: any) => {
+              const isSelected = selectedServiceId === s.id;
+              return (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => {
+                    setSelectedServiceId(s.id);
+                    setSelectedProviderId(null);
+                  }}
+                  style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
+                >
+                  <View>
+                    <Text style={styles.serviceName}>{s.name}</Text>
+                    <Text style={styles.serviceDuration}>{s.durationMin} mins</Text>
+                  </View>
+                  <Text style={styles.servicePrice}>₹{s.price}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            {(!services || services.length === 0) && <Text style={styles.emptyText}>No services available</Text>}
+          </View>
+        ) : (
+          <View style={styles.collapsedCard}>
+            <View>
+              <Text style={styles.collapsedLabel}>Selected Service</Text>
+              <Text style={styles.collapsedValue}>{services?.find((s:any) => s.id === selectedServiceId)?.name}</Text>
+            </View>
+            <TouchableOpacity onPress={() => { setSelectedServiceId(null); setSelectedProviderId(null); }}>
+              <Text style={styles.changeBtn}>Change</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Step 2: Select Provider */}
-        {selectedServiceId && (
+        {selectedServiceId && !selectedProviderId && (
           <>
             <Text style={styles.stepTitle}>2. Select Professional</Text>
             <View style={styles.providerGrid}>
@@ -126,6 +141,18 @@ export default function ShopServicesScreen() {
               })}
             </View>
           </>
+        )}
+        
+        {selectedProviderId && (
+          <View style={styles.collapsedCard}>
+            <View>
+              <Text style={styles.collapsedLabel}>Selected Professional</Text>
+              <Text style={styles.collapsedValue}>{providers?.find((p:any) => p.id === selectedProviderId)?.name}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setSelectedProviderId(null)}>
+              <Text style={styles.changeBtn}>Change</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Step 3: Select Date & Time & Book */}
@@ -228,4 +255,9 @@ const styles = StyleSheet.create({
   slotCapacityText: { fontSize: 10, color: '#64748B', marginTop: 4 },
   
   emptyText: { color: '#64748B', textAlign: 'center', paddingVertical: 16 },
+
+  collapsedCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
+  collapsedLabel: { fontSize: 12, color: '#64748B', marginBottom: 4 },
+  collapsedValue: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  changeBtn: { color: PRIMARY, fontWeight: 'bold', fontSize: 14 },
 });

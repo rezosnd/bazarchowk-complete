@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -44,33 +45,38 @@ export default function ProfileScreen() {
       </View>
 
       {/* User Info Card */}
-      <Card style={styles.userCard} shadow="md">
-        {isAuthenticated && user ? (
-          <View style={styles.userInfo}>
-            <View style={[styles.avatar, { backgroundColor: theme.primarySurface }]}>
-              <Text style={styles.avatarText}>
-                {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
-              </Text>
+      <View style={[styles.userCardWrapper, { shadowColor: theme.primary }]}>
+        <LinearGradient colors={['#00B140', '#059669']} style={styles.userCardGradient}>
+          {isAuthenticated && user ? (
+            <View style={styles.userInfo}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.userName}>
+                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
+                  </Text>
+                  <Ionicons name="checkmark-circle" size={16} color="#DCFCE7" />
+                </View>
+                {user?.phone && <Text style={styles.userPhone}>{user.phone}</Text>}
+                {user?.email && (
+                  <Text style={styles.userEmail}>{user.email}</Text>
+                )}
+                <TouchableOpacity onPress={() => {
+                  setEditFirstName(user?.firstName || '');
+                  setEditLastName(user?.lastName || '');
+                  setEditPhone(user?.phone || '');
+                  setIsEditModalVisible(true);
+                }} style={styles.editBtn}>
+                  <Text style={styles.editBtnText}>Edit Profile</Text>
+                  <Ionicons name="pencil" size={12} color="#FFF" />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.userName, { color: theme.text }]}>
-                {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
-              </Text>
-              {user?.phone && <Text style={[styles.userPhone, { color: theme.textSecondary }]}>{user.phone}</Text>}
-              {user?.email && (
-                <Text style={[styles.userEmail, { color: theme.textTertiary }]}>{user.email}</Text>
-              )}
-              <TouchableOpacity onPress={() => {
-                setEditFirstName(user?.firstName || '');
-                setEditLastName(user?.lastName || '');
-                setEditPhone(user?.phone || '');
-                setIsEditModalVisible(true);
-              }} style={{ marginTop: 8 }}>
-                <Text style={{ color: theme.primary, fontWeight: 'bold' }}>Edit Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
+          ) : (
           <View style={styles.guestInfo}>
             <Image
               source={require('@/assets/images/APP-ICON.png')}
@@ -90,7 +96,8 @@ export default function ProfileScreen() {
             />
           </View>
         )}
-      </Card>
+        </LinearGradient>
+      </View>
 
       {/* Menu Items */}
       <Card style={styles.menuCard}>
@@ -188,18 +195,45 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.bold },
   userCard: { margin: Spacing.base, padding: Spacing.lg },
+  userCardWrapper: {
+    margin: Spacing.base,
+    borderRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  userCardGradient: {
+    padding: Spacing.lg,
+  },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FFF',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#DCFCE7',
   },
-  avatarText: { fontSize: FontSize['2xl'], fontWeight: FontWeight.bold, color: '#00B140' },
-  userName: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
-  userPhone: { fontSize: FontSize.sm, marginTop: 2 },
-  userEmail: { fontSize: FontSize.xs, marginTop: 2 },
+  avatarText: { fontSize: FontSize['3xl'], fontWeight: '900', color: '#00B140' },
+  userName: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  userPhone: { fontSize: FontSize.sm, marginTop: 4, color: 'rgba(255,255,255,0.9)' },
+  userEmail: { fontSize: FontSize.xs, marginTop: 2, color: 'rgba(255,255,255,0.7)' },
+  editBtn: {
+    marginTop: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  editBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
   guestInfo: { alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
   guestLogo: { width: 72, height: 72, borderRadius: BorderRadius.xl },
   guestTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
