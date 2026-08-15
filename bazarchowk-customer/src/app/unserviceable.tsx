@@ -7,8 +7,6 @@ import { Image } from 'expo-image';
 import { useTheme } from '@/hooks';
 
 const LOGO_SRC = require('../../assets/images/logo.png');
-// You can replace this with the actual illustration provided by the user
-const ILLUSTRATION_SRC = require('../../assets/images/coming-soon-illustration.png');
 
 const PRIMARY = '#00B140';
 
