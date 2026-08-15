@@ -122,7 +122,7 @@ export class SettlementService {
     const marketId = await this.getAdminMarketId(user);
     const where: any = { status: 'PENDING' };
     if (marketId) {
-      where.rider = { deliveryPartner: { marketId } };
+      // where.rider = { deliveryPartner: { marketId } };
     }
     
     return this.prisma.riderDeposit.findMany({

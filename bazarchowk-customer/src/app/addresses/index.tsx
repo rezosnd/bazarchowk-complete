@@ -51,14 +51,34 @@ export default function AddressesScreen() {
           </View>
         ) : (
           addresses?.map((address) => (
-            <View key={address.id} style={[styles.addressCard, { backgroundColor: theme.background, borderColor: address.isDefault ? theme.primary : theme.border }]}>
+            <TouchableOpacity
+              key={address.id}
+              activeOpacity={0.8}
+              onPress={() => {
+                if (!address.isDefault) {
+                  setDefaultMutation.mutate(address.id, {
+                    onSuccess: () => router.back()
+                  });
+                } else {
+                  router.back();
+                }
+              }}
+              style={[
+                styles.addressCard,
+                {
+                  backgroundColor: address.isDefault ? '#F0FDF4' : theme.background,
+                  borderColor: address.isDefault ? theme.primary : theme.border,
+                  borderWidth: address.isDefault ? 2 : 1
+                }
+              ]}
+            >
               <View style={styles.addressHeader}>
                 <View style={styles.titleRow}>
-                  <Ionicons name="home" size={20} color={theme.textSecondary} />
-                  <Text style={[styles.addressTitle, { color: theme.text }]}>{address.title}</Text>
+                  <Ionicons name={address.isDefault ? "checkmark-circle" : "home-outline"} size={20} color={address.isDefault ? theme.primary : theme.textSecondary} />
+                  <Text style={[styles.addressTitle, { color: address.isDefault ? theme.primary : theme.text }]}>{address.title}</Text>
                   {address.isDefault && (
                     <View style={[styles.defaultBadge, { backgroundColor: theme.primarySurface }]}>
-                      <Text style={[styles.defaultText, { color: theme.primary }]}>Default</Text>
+                      <Text style={[styles.defaultText, { color: theme.primary }]}>Delivery Location</Text>
                     </View>
                   )}
                 </View>
@@ -72,24 +92,19 @@ export default function AddressesScreen() {
                 {address.city}, {address.state} {address.pincode}
               </Text>
 
-              <View style={[styles.actionsRow, { borderTopColor: theme.divider }]}>
-                {!address.isDefault && (
-                  <TouchableOpacity
-                    onPress={() => setDefaultMutation.mutate(address.id)}
-                    style={styles.actionBtn}
-                  >
-                    <Text style={[styles.actionText, { color: theme.primary }]}>Set Default</Text>
-                  </TouchableOpacity>
-                )}
+              <View style={styles.actionsRow}>
                 <View style={{ flex: 1 }} />
                 <TouchableOpacity
-                  onPress={() => deleteMutation.mutate(address.id)}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    deleteMutation.mutate(address.id);
+                  }}
                   style={styles.actionBtn}
                 >
                   <Ionicons name="trash-outline" size={20} color="#EF4444" />
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>

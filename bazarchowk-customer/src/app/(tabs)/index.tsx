@@ -210,6 +210,24 @@ function AIHero() {
     };
   });
 
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const comingSoonOpacity = useSharedValue(0);
+
+  const handlePress = () => {
+    setShowComingSoon(true);
+    comingSoonOpacity.value = withSequence(
+      withTiming(1, { duration: 300 }),
+      withTiming(1, { duration: 2000 }),
+      withTiming(0, { duration: 500 })
+    );
+    setTimeout(() => setShowComingSoon(false), 2800);
+  };
+
+  const comingSoonStyle = useAnimatedStyle(() => ({
+    opacity: comingSoonOpacity.value,
+    transform: [{ translateY: interpolate(comingSoonOpacity.value, [0, 1], [10, 0]) }]
+  }));
+
   return (
     <Animated.View style={[styles.aiHeroWrapper, borderStyle]}>
       <LinearGradient colors={['#00B140', '#00752A']} style={styles.aiHero}>
@@ -235,14 +253,18 @@ function AIHero() {
           <TouchableOpacity 
             style={styles.aiMicBtnLarge} 
             activeOpacity={0.8}
-            onPress={() => useAIStore.getState().startListening()}
+            onPress={handlePress}
           >
             <Ionicons name="mic" size={32} color="#FFF" />
           </TouchableOpacity>
+
+          {showComingSoon && (
+            <Animated.View style={[{ position: 'absolute', bottom: -40, width: 140, backgroundColor: 'rgba(0,0,0,0.8)', padding: 8, borderRadius: 12, alignItems: 'center' }, comingSoonStyle]}>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold', textAlign: 'center' }}>✨ AI is in progress... We will be back!</Text>
+            </Animated.View>
+          )}
         </View>
       </View>
-
-
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.aiPillScroll}>
         {[

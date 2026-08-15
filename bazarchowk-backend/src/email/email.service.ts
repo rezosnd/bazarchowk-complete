@@ -302,108 +302,106 @@ export class EmailService {
 
     const walletRow = walletUsed > 0 ? `
       <tr>
-        <td colspan="2" style="padding:6px 12px;color:#FF8A00;font-size:13px;">Wallet Applied</td>
-        <td style="padding:6px 12px;text-align:right;color:#FF8A00;font-weight:700;font-size:13px;">-₹${walletUsed.toFixed(2)}</td>
+        <td colspan="2" style="padding:8px 15px;color:#ea580c;font-size:14px;">Wallet Applied</td>
+        <td style="padding:8px 15px;text-align:right;color:#ea580c;font-weight:600;font-size:14px;">-₹${walletUsed.toFixed(2)}</td>
       </tr>` : '';
 
     const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:580px;margin:32px auto;background:#FFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<body style="margin:0;padding:0;background-color:#ffffff;font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;-webkit-font-smoothing:antialiased;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px;">
     
-    <!-- Header -->
-    <div style="background:#FF8A00;padding:28px 32px 20px;text-align:center;">
-      <img src="https://bazarchowk.com/logo.png" alt="BazarChowk" height="48" style="display:inline-block;margin-bottom:12px;filter:brightness(0) invert(1);" onerror="this.style.display='none'" />
-      <div style="display:block;color:#FFF;font-size:26px;font-weight:900;letter-spacing:1px;margin-bottom:8px;">BazarChowk</div>
-      <h1 style="color:#FFF;margin:0;font-size:20px;font-weight:700;">Order Confirmed!</h1>
-      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">Your receipt for Order <strong>#${orderNumber}</strong></p>
+    <!-- Logo Header (VeritasCo X BazarChowk) -->
+    <div style="padding-bottom: 30px; border-bottom: 1px solid #e5e7eb; margin-bottom: 40px; text-align: center;">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>
+                <td style="vertical-align: middle;">
+                    <img src="https://recheck.veritasco.tech/veritasco.png" alt="Veritasco" style="max-height: 35px; display: block;">
+                </td>
+                <td style="vertical-align: middle; font-size: 18px; font-weight: 300; color: #d1d5db; padding: 0 20px;">&times;</td>
+                <td style="vertical-align: middle;">
+                    <img src="https://bazarchowk.com/logo.png" alt="BazarChowk" style="max-height: 40px; display: block;">
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Customer Greeting -->
-    <div style="padding:24px 32px 16px;">
-      <p style="margin:0;color:#0F172A;font-size:16px;">Hi <strong>${name}</strong>,</p>
-      <p style="margin:8px 0 0;color:#64748B;font-size:14px;line-height:20px;">
-        Thank you for your order from <strong>${shopName}</strong>. Here is your detailed receipt.
+    <!-- Content -->
+    <div>
+      <h1 style="color: #111827; font-size: 28px; margin-top: 0; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 30px;">
+        Order <strong>#${orderNumber}</strong> Confirmed.
+      </h1>
+
+      <p style="line-height: 1.8; color: #4b5563; font-size: 16px; margin-top: 0; margin-bottom: 24px;">Hi ${name},</p>
+      <p style="line-height: 1.8; color: #4b5563; font-size: 16px; margin-top: 0; margin-bottom: 30px;">
+        Thank you for your order from <strong>${shopName}</strong>. Your official receipt is attached to this email as a PDF. Below is a summary of your purchase.
       </p>
-    </div>
 
-    <!-- Order Info Bar -->
-    <div style="margin:0 32px;background:#F8FAFC;border-radius:12px;padding:14px 20px;border:1px solid #E2E8F0;display:flex;">
-      <div style="flex:1;">
-        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Order Number</p>
-        <p style="margin:4px 0 0;font-size:15px;font-weight:800;color:#FF8A00;">#${orderNumber}</p>
-      </div>
-      <div style="flex:1;text-align:center;">
-        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Date</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:#0F172A;">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
-      </div>
-      <div style="flex:1;text-align:right;">
-        <p style="margin:0;font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:600;">Fulfillment</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:${isSelfPickup?'#FF8A00':'#0F172A'};">${isSelfPickup ? '🏪 Pickup' : '🛵 Delivery'}</p>
-      </div>
-    </div>
+      <!-- Info Boxes -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 35px;">
+        <tr>
+          <td width="48%" style="background: #ffffff; border: 1px solid #e5e7eb; border-top: 3px solid #111827; padding: 20px; border-radius: 4px;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;letter-spacing:1px;">Date</p>
+            <p style="margin:6px 0 0;font-size:16px;font-weight:700;color:#111827;">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
+          </td>
+          <td width="4%"></td>
+          <td width="48%" style="background: #ffffff; border: 1px solid #e5e7eb; border-top: 3px solid #111827; padding: 20px; border-radius: 4px;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;letter-spacing:1px;">Fulfillment</p>
+            <p style="margin:6px 0 0;font-size:16px;font-weight:700;color:#111827;">${isSelfPickup ? 'Self Pickup' : 'Delivery'}</p>
+          </td>
+        </tr>
+      </table>
 
-    <!-- Items Table -->
-    <div style="padding:24px 32px 16px;">
-      <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0F172A;">Order Items</h2>
-      <table style="width:100%;border-collapse:collapse;background:#F8FAFC;border-radius:12px;overflow:hidden;">
-        <thead>
-          <tr style="background:#F1F5F9;">
-            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Item</th>
-            <th style="padding:10px 12px;text-align:center;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Qty</th>
-            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;">Amount</th>
+      <!-- Items -->
+      <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 35px;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr style="background-color: #f9fafb;">
+            <th style="padding:12px 15px;text-align:left;font-size:12px;color:#6b7280;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Item</th>
+            <th style="padding:12px 15px;text-align:center;font-size:12px;color:#6b7280;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Qty</th>
+            <th style="padding:12px 15px;text-align:right;font-size:12px;color:#6b7280;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Price</th>
           </tr>
-        </thead>
-        <tbody>${itemRows}</tbody>
-      </table>
-    </div>
+          ${itemRows.replace(/#F1F5F9/g, '#e5e7eb').replace(/#0F172A/g, '#111827').replace(/#64748B/g, '#6b7280')}
+          
+          <!-- Totals -->
+          <tr>
+            <td colspan="2" style="padding:12px 15px;color:#4b5563;font-size:14px;border-top:1px solid #e5e7eb;">Subtotal</td>
+            <td style="padding:12px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;border-top:1px solid #e5e7eb;">₹${subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">Taxes</td>
+            <td style="padding:8px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;">₹${taxAmount.toFixed(2)}</td>
+          </tr>
+          ${!isSelfPickup ? `
+          <tr>
+            <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">Delivery Fee</td>
+            <td style="padding:8px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;">₹${deliveryFee.toFixed(2)}</td>
+          </tr>` : ''}
+          ${walletRow}
+          <tr style="background-color: #f9fafb;">
+            <td colspan="2" style="padding:15px;color:#111827;font-size:16px;font-weight:700;border-top:2px solid #e5e7eb;">Total Paid</td>
+            <td style="padding:15px;text-align:right;color:#111827;font-size:18px;font-weight:800;border-top:2px solid #e5e7eb;">₹${totalAmt.toFixed(2)}</td>
+          </tr>
+        </table>
+      </div>
 
-    <!-- Bill Breakdown -->
-    <div style="margin:0 32px;background:#F8FAFC;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;">
-      <table style="width:100%;border-collapse:collapse;">
-        <tr>
-          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Item Subtotal</td>
-          <td style="padding:10px 16px;text-align:right;color:#0F172A;font-size:13px;font-weight:600;">₹${subtotal.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Taxes & GST</td>
-          <td style="padding:10px 16px;text-align:right;color:#0F172A;font-size:13px;font-weight:600;">₹${taxAmount.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:10px 16px;color:#64748B;font-size:13px;">Delivery Fee</td>
-          <td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${isSelfPickup||deliveryFee===0?'#FF8A00':'#0F172A'};">${isSelfPickup||deliveryFee===0?'FREE 🎉':'₹'+deliveryFee.toFixed(2)}</td>
-        </tr>
-        ${walletRow}
-        <tr style="background:#FF8A00;">
-          <td colspan="2" style="padding:14px 16px;color:#FFF;font-size:16px;font-weight:800;">Total Paid</td>
-          <td style="padding:14px 16px;text-align:right;color:#FFF;font-size:18px;font-weight:900;">₹${totalAmt.toFixed(2)}</td>
-        </tr>
-      </table>
-    </div>
+      <!-- Payment Method -->
+      <div style="background-color: #f9fafb; border-radius: 6px; padding: 15px; border: 1px solid #e5e7eb; text-align: center;">
+        <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Payment Method</p>
+        <p style="margin: 5px 0 0; font-size: 15px; color: #111827; font-weight: 700;">${payLabel}</p>
+      </div>
 
-    <!-- Payment Method -->
-    <div style="margin:16px 32px;background:#FFF7ED;border-radius:12px;padding:14px 20px;border:1px solid #FFEDD5;display:flex;align-items:center;gap:12px;">
-      <span style="font-size:22px;">${payMethod==='RAZORPAY'?'💳':payMethod==='WALLET'?'👛':'💵'}</span>
-      <div>
-        <p style="margin:0;font-size:12px;color:#64748B;font-weight:600;">Payment Method</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:800;color:#C2410C;">${payLabel}</p>
+      <!-- Button -->
+      <div style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+          <a href="https://bazarchowk.com/orders" style="background: #111827; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 4px; font-weight: 600; font-size: 15px; display: inline-block; letter-spacing: 0.5px;">Track Order Status</a>
+      </div>
+
+      <!-- Footer -->
+      <div style="margin-top: 60px; padding-top: 30px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; line-height: 1.6; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
+        &copy; ${new Date().getFullYear()} Veritasco x BazarChowk Operations.<br>
+        This is an automatically generated receipt.
       </div>
     </div>
-
-    <!-- Self Pickup Note -->
-    ${isSelfPickup ? `
-    <div style="margin:0 32px 16px;background:#F8FAFC;border-radius:12px;padding:14px 20px;border:1px solid #E2E8F0;">
-      <p style="margin:0;font-size:13px;font-weight:800;color:#0F172A;">📍 Pickup Instructions</p>
-      <p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:20px;">Show this email at <strong>${shopName}</strong> and quote order <strong>#${orderNumber}</strong> to collect your items.</p>
-    </div>` : ''}
-
-    <!-- Footer -->
-    <div style="padding:24px 32px;text-align:center;border-top:1px solid #F1F5F9;margin-top:16px;">
-      <p style="margin:0;font-size:13px;color:#64748B;">Questions? Contact us at <a href="mailto:support@bazarchowk.com" style="color:#FF8A00;text-decoration:none;font-weight:700;">support@bazarchowk.com</a></p>
-      <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;">© ${new Date().getFullYear()} BazarChowk · Your Local Market, Delivered</p>
-    </div>
-
   </div>
 </body>
 </html>`;

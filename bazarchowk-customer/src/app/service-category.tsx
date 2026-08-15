@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '@/services/api';
 import { useAuthStore } from '@/store';
+import { useCurrentLocation } from '@/hooks/useCurrentLocation';
 
 const CATEGORY_META: Record<string, { color: string; gradient: [string, string]; icon: string; emoji: string }> = {
   Salon: { color: '#EC4899', gradient: ['#FCE7F3', '#FDF2F8'], icon: 'cut', emoji: '✂️' },
@@ -34,11 +35,17 @@ export default function ServiceCategoryScreen() {
   const [showBookModal, setShowBookModal] = useState(false);
   const [bookingStep, setBookingStep] = useState<'service' | 'provider' | 'slot'>('service');
 
+  const location = useCurrentLocation();
+
   // Fetch all shops of this service type
   const { data: shops, isLoading } = useQuery({
-    queryKey: ['service-shops', type],
+    queryKey: ['service-shops', type, location?.lat, location?.lng],
     queryFn: async () => {
-      const res = await api.get(`/shops?partnerType=${type?.toUpperCase()}&hasServices=true`);
+      let url = `/shops?partnerType=${type?.toUpperCase()}&hasServices=true&all=true`;
+      if (location?.lat && location?.lng) {
+        url += `&lat=${location.lat}&lng=${location.lng}`;
+      }
+      const res = await api.get(url);
       return res.data?.data || res.data || [];
     },
   });

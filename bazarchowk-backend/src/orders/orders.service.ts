@@ -695,26 +695,14 @@ export class OrdersService {
               }
             });
           }
-
-          // If it was a COD order and successfully DELIVERED, automatically record CashCollection
-          if (dto.status === OrderStatus.DELIVERED && order.paymentMethod === 'COD') {
-            const existingCollection = await this.prisma.cashCollection.findUnique({ where: { orderId } });
-            if (!existingCollection) {
-              await this.prisma.cashCollection.create({
-                data: {
-                  orderId,
-                  riderId: order.riderId,
-                  amountCollected: order.totalAmount,
-                  status: 'COLLECTED'
-                }
-              });
-            }
-          }
+          // Rider Earning Creation logic
+          // (Already handled in the block above for DELIVERED)
         }
       }
 
       // Inventory Restoration logic for Cancellations
       if (dto.status === OrderStatus.CANCELLED) {
+
         const items = await this.prisma.orderItem.findMany({ where: { orderId } });
         for (const item of items) {
           await this.prisma.productVariant.update({
@@ -842,6 +830,34 @@ export class OrdersService {
         orderId: order.id,
         status: dto.status
       });
+    }
+
+    if (dto.deliveryNotes) {
+      const delivery = await this.prisma.delivery.findUnique({ where: { orderId } });
+      if (delivery) {
+        await this.prisma.delivery.update({
+          where: { id: delivery.id },
+          data: { deliveryNotes: dto.deliveryNotes }
+        });
+      }
+    }
+
+    // --- CASH COLLECTION FAILSAFE ---
+    // If the order is now DELIVERED and is COD, ensure the cash collection record exists.
+    // This runs completely independently of the state transitions above.
+    const finalOrderState = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (finalOrderState && finalOrderState.status === OrderStatus.DELIVERED && finalOrderState.paymentMethod === 'COD' && finalOrderState.riderId) {
+      const existingCollection = await this.prisma.cashCollection.findUnique({ where: { orderId } });
+      if (!existingCollection) {
+        await this.prisma.cashCollection.create({
+          data: {
+            orderId,
+            riderId: finalOrderState.riderId,
+            amountCollected: finalOrderState.totalAmount,
+            status: 'COLLECTED'
+          }
+        });
+      }
     }
 
     return updated;

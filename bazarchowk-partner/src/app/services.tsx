@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '@/services/api';
 import { socketService } from '@/services/socket';
 import * as SecureStore from 'expo-secure-store';
+import QRCode from 'react-native-qrcode-svg';
 
 const PRIMARY = '#00B140';
 
@@ -181,6 +182,30 @@ export default function PartnerServicesScreen() {
 
   const TABS = ['BOOKINGS', 'SERVICES', 'STAFF'];
 
+  const [filter, setFilter] = useState<'ALL' | 'TODAY' | 'TOMORROW' | 'HISTORY'>('TODAY');
+  const [qrBooking, setQrBooking] = useState<any>(null);
+
+  const filteredBookings = bookings?.filter((b: any) => {
+    const isHistory = b.status === 'COMPLETED' || b.status === 'CANCELLED';
+    if (filter === 'HISTORY') return isHistory;
+    
+    // For active tabs, hide history items
+    if (isHistory) return false;
+
+    if (filter === 'ALL') return true;
+    
+    const bDateStr = b.timeSlot?.startTime ? new Date(b.timeSlot.startTime).toISOString().split('T')[0] : '';
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    if (filter === 'TODAY') return bDateStr === todayStr;
+    if (filter === 'TOMORROW') return bDateStr === tomorrowStr;
+    return true;
+  });
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -209,27 +234,45 @@ export default function PartnerServicesScreen() {
         {/* ---- BOOKINGS ---- */}
         {activeTab === 'BOOKINGS' && (
           <>
-            <Text style={styles.sectionTitle}>Live Appointments</Text>
-            {!bookings || bookings.length === 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{filter === 'HISTORY' ? 'History' : 'Live Bookings'}</Text>
+              
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 20, padding: 4 }}>
+                <TouchableOpacity onPress={() => setFilter('ALL')} style={[styles.filterChip, filter === 'ALL' && styles.filterChipActive]}>
+                  <Text style={[styles.filterText, filter === 'ALL' && styles.filterTextActive]}>All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFilter('TODAY')} style={[styles.filterChip, filter === 'TODAY' && styles.filterChipActive]}>
+                  <Text style={[styles.filterText, filter === 'TODAY' && styles.filterTextActive]}>Today</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFilter('TOMORROW')} style={[styles.filterChip, filter === 'TOMORROW' && styles.filterChipActive]}>
+                  <Text style={[styles.filterText, filter === 'TOMORROW' && styles.filterTextActive]}>Tmw</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFilter('HISTORY')} style={[styles.filterChip, filter === 'HISTORY' && styles.filterChipActive]}>
+                  <Text style={[styles.filterText, filter === 'HISTORY' && styles.filterTextActive]}>History</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+            
+            {!filteredBookings || filteredBookings.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Text style={{ fontSize: 40 }}>📅</Text>
-                <Text style={styles.emptyTitle}>No appointments yet</Text>
+                <Text style={styles.emptyTitle}>No appointments {filter === 'ALL' ? 'yet' : filter.toLowerCase()}</Text>
                 <Text style={styles.emptySub}>When customers book, they'll appear here.</Text>
               </View>
-            ) : bookings.map((b: any) => {
+            ) : filteredBookings.map((b: any) => {
               const sc = getStatusColor(b.status);
               return (
                 <View key={b.id} style={styles.bookingCard}>
                   <View style={styles.bookingTop}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.bookingService}>{b.serviceOffering?.name}</Text>
-                      <Text style={styles.bookingCustomer}>👤 {b.customer?.firstName} {b.customer?.lastName}</Text>
+                      <Text style={styles.bookingCustomer}>👤 {b.customer?.firstName ? `${b.customer.firstName} ${b.customer.lastName || ''}` : 'Guest Customer'}</Text>
                       {b.customer?.phone && <Text style={styles.bookingMeta}>📞 {b.customer.phone}</Text>}
                       <Text style={styles.bookingMeta}>👷 {b.provider?.name}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-                        <Text style={[styles.statusText, { color: sc.text }]}>{b.status}</Text>
+                         <Text style={[styles.statusText, { color: sc.text }]}>{b.status === 'COMPLETED' ? 'DONE ✓' : b.status}</Text>
                       </View>
                       <Text style={styles.bookingPrice}>₹{b.totalAmount || b.serviceOffering?.price}</Text>
                       <Text style={[styles.payBadge, { color: b.paymentStatus === 'PAID' ? '#16A34A' : '#D97706' }]}>
@@ -264,6 +307,25 @@ export default function PartnerServicesScreen() {
                         <Text style={styles.rejectText}>Decline</Text>
                       </TouchableOpacity>
                     </View>
+                  )}
+                  
+                  {b.status === 'CONFIRMED' && (
+                    <TouchableOpacity
+                      style={[styles.confirmBtn, { marginTop: 8 }]}
+                      onPress={() => {
+                        statusMutation.mutate({ id: b.id, status: 'COMPLETED' }, {
+                          onSuccess: () => {
+                            if (b.paymentStatus !== 'PAID') {
+                              setQrBooking(b);
+                            }
+                          }
+                        });
+                      }}
+                      disabled={statusMutation.isPending}
+                    >
+                      <Ionicons name="checkmark-done" size={18} color="#FFF" />
+                      <Text style={styles.confirmText}>Mark as Service Done</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               );
@@ -342,6 +404,39 @@ export default function PartnerServicesScreen() {
           Alert.alert('✅ Staff Added', 'Staff member is now visible to customers!');
         }}
       />
+
+      <Modal visible={!!qrBooking} animationType="slide" transparent onRequestClose={() => setQrBooking(null)}>
+        <View style={styles.overlay}>
+          <View style={[styles.sheet, { alignItems: 'center', paddingBottom: 40 }]}>
+            <View style={styles.sheetHandle} />
+            <View style={[styles.sheetHeader, { width: '100%' }]}>
+              <Text style={styles.sheetTitle}>Collect Payment</Text>
+              <TouchableOpacity onPress={() => setQrBooking(null)}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: 16, color: '#64748B', marginBottom: 20, textAlign: 'center' }}>
+              Service completed! Ask {qrBooking?.customer?.firstName || 'the customer'} to scan and pay.
+            </Text>
+            {qrBooking?.shopUpiId ? (
+              <View style={{ padding: 16, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
+                <QRCode
+                  value={`upi://pay?pa=${qrBooking.shopUpiId}&pn=${qrBooking.shopName || 'BazarChowk Shop'}&am=${qrBooking.totalAmount || qrBooking.serviceOffering?.price}&cu=INR`}
+                  size={200}
+                />
+              </View>
+            ) : (
+              <View style={{ padding: 20, backgroundColor: '#FEE2E2', borderRadius: 12 }}>
+                <Text style={{ color: '#DC2626', textAlign: 'center' }}>You have not set up your UPI ID in your Profile. Please go to Profile to add it.</Text>
+              </View>
+            )}
+            <Text style={{ fontSize: 24, fontWeight: '900', color: PRIMARY, marginTop: 20 }}>
+              ₹{qrBooking?.totalAmount || qrBooking?.serviceOffering?.price}
+            </Text>
+            <TouchableOpacity style={[styles.saveBtn, { width: '100%', marginTop: 24 }]} onPress={() => setQrBooking(null)}>
+              <Text style={styles.saveBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -360,6 +455,11 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', paddingVertical: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginTop: 12 },
   emptySub: { fontSize: 14, color: '#64748B', textAlign: 'center', marginTop: 4, paddingHorizontal: 24, lineHeight: 20 },
+  
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16 },
+  filterChipActive: { backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  filterText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  filterTextActive: { color: '#0F172A', fontWeight: '800' },
 
   bookingCard: { backgroundColor: '#FFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
   bookingTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },

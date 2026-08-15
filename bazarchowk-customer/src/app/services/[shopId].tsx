@@ -137,9 +137,13 @@ export default function ShopServicesScreen() {
             ) : (
               <View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                  {Array.from(new Set(timeSlots?.map((s: any) => new Date(s.startTime).toLocaleDateString()))).map((dateStr: any, index) => {
+                  {Array.from(new Set(timeSlots?.map((s: any) => new Date(s.startTime).toISOString().split('T')[0]))).map((dateStr: any, index) => {
                     const isSelected = selectedDate === dateStr || (!selectedDate && index === 0);
                     if (!selectedDate && index === 0) setTimeout(() => setSelectedDate(dateStr), 0);
+                    
+                    // Format for display: e.g. "Sat, Aug 15"
+                    const displayDate = new Date(dateStr + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
                     return (
                       <TouchableOpacity 
                         key={dateStr}
@@ -147,7 +151,7 @@ export default function ShopServicesScreen() {
                         style={[styles.dateChip, isSelected && styles.dateChipSelected]}
                       >
                         <Text style={[styles.dateChipText, isSelected && styles.dateChipTextSelected]}>
-                          {new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          {displayDate}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -155,7 +159,7 @@ export default function ShopServicesScreen() {
                 </ScrollView>
 
                 <View style={styles.slotsGrid}>
-                  {timeSlots?.filter((s: any) => new Date(s.startTime).toLocaleDateString() === (selectedDate || new Date(timeSlots[0]?.startTime).toLocaleDateString())).map((slot: any) => {
+                  {timeSlots?.filter((s: any) => new Date(s.startTime).toISOString().split('T')[0] === (selectedDate || new Date(timeSlots[0]?.startTime).toISOString().split('T')[0])).map((slot: any) => {
                     const isFull = slot.isFull;
                     return (
                       <TouchableOpacity

@@ -144,7 +144,7 @@ export default function PartnerDashboard() {
     // Common settings for all
     items.push(
       { title: 'Promote Ads', icon: 'megaphone-outline', route: '/shop/ads', color: '#00B140', bgColor: '#DCFCE7' },
-      { title: 'Revenue', icon: 'cash-outline', route: '/shop/revenue', color: '#10B981', bgColor: '#D1FAE5' },
+      { title: 'Revenue', icon: 'cash-outline', route: '/revenue', color: '#10B981', bgColor: '#D1FAE5' },
       { title: 'Profile', icon: 'storefront-outline', route: '/shop/profile', color: '#F59E0B', bgColor: '#FEF3C7' },
       { title: 'Documents', icon: 'document-text-outline', route: '/shop/documents', color: '#6366F1', bgColor: '#E0E7FF' },
       { title: 'Reviews', icon: 'star-outline', route: '/shop/reviews', color: '#EAB308', bgColor: '#FEF08A' }

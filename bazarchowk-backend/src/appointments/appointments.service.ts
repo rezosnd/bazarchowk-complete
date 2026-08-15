@@ -215,14 +215,7 @@ export class AppointmentsService {
       if (!timeSlot) throw new NotFoundException('Time slot not found');
       if (timeSlot.providerId !== dto.providerId) throw new BadRequestException('Time slot does not belong to provider');
 
-      // ✅ SHOP OPEN/HOLIDAY CHECK: Block booking if shop is closed on that date
-      const slotDate = new Date(timeSlot.startTime);
-      const shopOpenStatus = await this.shopsService.isShopOpenOnDate(timeSlot.provider.shopId, slotDate);
-      if (!shopOpenStatus.isOpen) {
-        throw new BadRequestException(
-          shopOpenStatus.reason || 'Shop is closed on this date. No appointments can be made.'
-        );
-      }
+      // Removed SHOP OPEN/HOLIDAY CHECK as per user request to allow bookings
 
       // ✅ CAPACITY CHECK: Slot full when currentBookings >= maxCapacity
       if (timeSlot.currentBookings >= timeSlot.maxCapacity) {
@@ -292,6 +285,20 @@ export class AppointmentsService {
         'SYSTEM'
       );
 
+      const ownerUser = await this.prisma.user.findUnique({ where: { id: appointment.provider.shop.ownerId } });
+      if (ownerUser?.email) {
+        await this.emailService.sendTransactionalEmail({
+          to: ownerUser.email,
+          subject: `New Appointment: ${serviceOffering.name}`,
+          type: 'APPOINTMENT',
+          title: 'New Booking Alert',
+          customerName: ownerUser.firstName || 'Partner',
+          message: `You have a new appointment booking for <b>${serviceOffering.name}</b> by ${appointment.customer?.firstName || 'Customer'}.<br>Provider: ${appointment.provider.name}<br>Time: <b>${new Date(timeSlot.startTime).toLocaleString()}</b>.<br><br>Total Price: ₹${serviceOffering.price}`,
+          buttonText: 'View Dashboard',
+          buttonUrl: 'https://bazarchowk.com/partner/appointments',
+        }).catch(err => this.logger.error(`Failed to send partner email: ${err.message}`));
+      }
+
       // Notify Provider if they have a user account
       if (appointment.provider.userId) {
         await this.notifications.sendInAppNotification(
@@ -300,6 +307,19 @@ export class AppointmentsService {
           `You have a new appointment for ${serviceOffering.name} at ${timeSlot.startTime.toLocaleTimeString()}.`,
           'SYSTEM'
         );
+        const providerUser = await this.prisma.user.findUnique({ where: { id: appointment.provider.userId } });
+        if (providerUser?.email && providerUser.email !== ownerUser?.email) {
+          await this.emailService.sendTransactionalEmail({
+            to: providerUser.email,
+            subject: `New Appointment: ${serviceOffering.name}`,
+            type: 'APPOINTMENT',
+            title: 'New Appointment Assigned',
+            customerName: providerUser.firstName || appointment.provider.name,
+            message: `You have been assigned a new appointment for <b>${serviceOffering.name}</b> with ${appointment.customer?.firstName || 'Customer'}.<br>Time: <b>${new Date(timeSlot.startTime).toLocaleString()}</b>.`,
+            buttonText: 'View Schedule',
+            buttonUrl: 'https://bazarchowk.com',
+          }).catch(err => this.logger.error(`Failed to send provider email: ${err.message}`));
+        }
       }
 
       this.realtime.sendToShop(appointment.provider.shopId, 'new_appointment', {
@@ -385,8 +405,7 @@ export class AppointmentsService {
   async getShopAppointmentsByOwner(ownerId: string) {
     const shop = await this.prisma.shop.findFirst({ where: { ownerId } });
     if (!shop) throw new NotFoundException('Shop not found for this user');
-
-    return this.prisma.appointment.findMany({
+    const appointments = await this.prisma.appointment.findMany({
       where: { provider: { shopId: shop.id } },
       include: {
         customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
@@ -397,6 +416,7 @@ export class AppointmentsService {
       },
       orderBy: { createdAt: 'desc' }
     });
+    return appointments.map(a => ({ ...a, shopUpiId: shop.upiId, shopName: shop.name }));
   }
 
   async getShopAppointments(shopId: string) {

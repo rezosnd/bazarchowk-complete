@@ -20,6 +20,7 @@ export default function ShopProfileScreen() {
   const [description, setDescription] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [upiId, setUpiId] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -40,6 +41,7 @@ export default function ShopProfileScreen() {
         setDescription(data.description || '');
         setLogoUrl(data.logoUrl || '');
         setBannerUrl(data.bannerUrl || '');
+        setUpiId(data.upiId || '');
       } else {
         alert('Failed to load shop profile');
       }
@@ -107,7 +109,7 @@ export default function ShopProfileScreen() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name, description, logoUrl, bannerUrl }),
+        body: JSON.stringify({ name, description, logoUrl, bannerUrl, upiId }),
       });
 
       if (res.ok) {
@@ -175,6 +177,9 @@ export default function ShopProfileScreen() {
           
           <Text style={styles.label}>Shop Name *</Text>
           <TextInput style={styles.input} placeholder="Shop Name" value={name} onChangeText={setName} />
+
+          <Text style={styles.label}>Shop UPI ID (for QR payments)</Text>
+          <TextInput style={styles.input} placeholder="e.g. 9876543210@paytm" value={upiId} onChangeText={setUpiId} autoCapitalize="none" />
 
           <Text style={styles.label}>Description</Text>
           <TextInput 
