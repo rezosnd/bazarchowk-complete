@@ -385,33 +385,41 @@ export default function ActiveDeliveryScreen() {
         </View>
 
         {/* Order Amount & Payment */}
-        <View style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Payment Status</Text>
+        <View style={[styles.amountCard, { backgroundColor: order.paymentMethod !== 'COD' ? '#F0FDF4' : '#FFF' }]}>
+          <Text style={styles.amountLabel}>Payment Method</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: 12 }}>
             <Ionicons 
-              name={order.paymentStatus === 'PAID' ? 'checkmark-circle' : 'time'} 
+              name={order.paymentMethod === 'COD' ? 'cash' : 'card'} 
               size={24} 
-              color={order.paymentStatus === 'PAID' ? '#00B140' : '#F59E0B'} 
+              color={order.paymentMethod === 'COD' ? '#F59E0B' : '#00B140'} 
             />
-            <Text style={[styles.amountValue, { color: order.paymentStatus === 'PAID' ? '#00B140' : '#F59E0B' }]}>
-              {order.paymentStatus === 'PAID' ? 'PAID' : 'PENDING'}
+            <Text style={[styles.amountValue, { color: order.paymentMethod === 'COD' ? '#F59E0B' : '#00B140' }]}>
+              {order.paymentMethod === 'COD' ? 'Cash on Delivery (COD)' : 'Online Payment'}
             </Text>
           </View>
           
-          <Text style={styles.amountLabel}>Amount to Collect / Paid</Text>
-          <Text style={[styles.amountValue, { color: '#0F172A', marginBottom: 16 }]}>
-            ₹{order.totalAmount}
-          </Text>
-          
-          {order.paymentStatus !== 'PAID' && deliveryStatus === 'IN_TRANSIT' && !showQR && (
-            <TouchableOpacity 
-              style={styles.qrBtn} 
-              onPress={handleGeneratePayment}
-              disabled={updating}
-            >
-              <Ionicons name="qr-code" size={20} color="#FFF" />
-              <Text style={styles.qrBtnText}>Show QR to Customer</Text>
-            </TouchableOpacity>
+          {order.paymentMethod !== 'COD' || order.paymentStatus === 'PAID' ? (
+            <View style={{ backgroundColor: '#DCFCE7', padding: 12, borderRadius: 8, marginTop: 8 }}>
+              <Text style={{ color: '#166534', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>ALREADY PAID - DO NOT COLLECT CASH</Text>
+            </View>
+          ) : (
+            <>
+              <Text style={[styles.amountLabel, { color: '#DC2626', fontWeight: 'bold' }]}>AMOUNT TO COLLECT FROM CUSTOMER</Text>
+              <Text style={[styles.amountValue, { color: '#DC2626', marginBottom: 16 }]}>
+                ₹{order.totalAmount}
+              </Text>
+              
+              {deliveryStatus === 'IN_TRANSIT' && !showQR && (
+                <TouchableOpacity 
+                  style={styles.qrBtn} 
+                  onPress={handleGeneratePayment}
+                  disabled={updating}
+                >
+                  <Ionicons name="qr-code" size={20} color="#FFF" />
+                  <Text style={styles.qrBtnText}>Show QR to Customer</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
 
           {showQR && (
