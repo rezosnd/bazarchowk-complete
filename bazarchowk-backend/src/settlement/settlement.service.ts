@@ -585,5 +585,63 @@ export class SettlementService {
 
     return result;
   }
+
+  // =============== ADMIN: RIDER SETTLEMENTS (PAYOUTS) ===============
+  async getUnsettledRidersSummary(user?: any) {
+    const marketId = await this.getAdminMarketId(user);
+    
+    // Find riders
+    const riders = await this.prisma.deliveryPartner.findMany({
+      where: marketId ? { marketId } : {},
+      include: { user: { select: { firstName: true, lastName: true, phone: true } } }
+    });
+
+    const result = [];
+    for (const rider of riders) {
+      const earnings = await this.prisma.riderEarning.findMany({
+        where: { riderId: rider.userId, status: 'PENDING' }
+      });
+
+      if (earnings.length > 0) {
+        let totalAmount = 0;
+        earnings.forEach(e => totalAmount += e.totalAmount);
+        
+        result.push({
+          riderId: rider.userId,
+          name: `${rider.user.firstName} ${rider.user.lastName || ''}`,
+          phone: rider.user.phone,
+          completedDeliveries: earnings.length,
+          totalEarning: totalAmount
+        });
+      }
+    }
+    return result;
+  }
+
+  async payoutRiderEarnings(adminId: string, riderId: string) {
+    const earnings = await this.prisma.riderEarning.findMany({
+      where: { riderId, status: 'PENDING' }
+    });
+    if (earnings.length === 0) throw new BadRequestException('No pending earnings found for this rider');
+
+    let totalAmount = 0;
+    earnings.forEach(e => totalAmount += e.totalAmount);
+
+    await this.prisma.riderEarning.updateMany({
+      where: { riderId, status: 'PENDING' },
+      data: { status: 'PAID' }
+    });
+
+    // Notify Rider
+    await this.notificationsService.sendInAppNotification(
+      riderId,
+      'Earnings Paid Out',
+      `Your earnings of ₹${totalAmount.toFixed(2)} have been settled and transferred by the admin.`,
+      'SYSTEM'
+    );
+    
+    this.logger.log(`Admin ${adminId} paid out ₹${totalAmount} to Rider ${riderId}`);
+    return { success: true, amountPaid: totalAmount, totalDeliveries: earnings.length };
+  }
 }
 

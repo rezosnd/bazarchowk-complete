@@ -136,4 +136,20 @@ export class SettlementController {
   getReport(@Query('startDate') startDate: string, @Query('endDate') endDate: string) {
     return this.settlementService.getSettlementReport(new Date(startDate), new Date(endDate));
   }
+
+  @Get('riders/unsettled')
+  @UseGuards(RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN')
+  @ApiOperation({ summary: 'Admin: Get riders with unsettled (pending) earnings' })
+  getUnsettledRiders(@CurrentUser() user?: any) {
+    return this.settlementService.getUnsettledRidersSummary(user);
+  }
+
+  @Post('riders/:riderId/payout')
+  @UseGuards(RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'FINANCE_ADMIN')
+  @ApiOperation({ summary: 'Admin: Settle/Payout all pending earnings for a rider' })
+  payoutRiderEarnings(@Param('riderId') riderId: string, @CurrentUser() user?: any) {
+    return this.settlementService.payoutRiderEarnings(user.id || user.userId, riderId);
+  }
 }
