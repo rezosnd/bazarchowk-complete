@@ -44,6 +44,7 @@ export default function ProductDetailScreen() {
   };
 
   const [addingToCart, setAddingToCart] = useState(false);
+  const [addedSuccess, setAddedSuccess] = useState(false);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -56,8 +57,11 @@ export default function ProductDetailScreen() {
     setAddingToCart(true);
     try {
       await addToCart(selectedVariant.id, quantity);
-      Alert.alert('Success', `Added ${quantity}x ${selectedVariant.name} to cart!`);
-      router.back();
+      setAddedSuccess(true);
+      setTimeout(() => {
+        setAddedSuccess(false);
+        router.back();
+      }, 800);
     } catch (e: any) {
       const msg = e?.response?.data?.message;
       const errorMsg = Array.isArray(msg) ? msg.join(', ') : (msg || e?.message || 'Failed to add to cart. Check stock limits.');
@@ -231,12 +235,20 @@ export default function ProductDetailScreen() {
         </View>
 
         <TouchableOpacity 
-          style={[styles.addToCartBtn, (!selectedVariant || selectedVariant?.stock < 1 || addingToCart) && { backgroundColor: '#F1F5F9', shadowOpacity: 0 }]}
-          disabled={!selectedVariant || selectedVariant?.stock < 1 || addingToCart}
+          style={[
+            styles.addToCartBtn, 
+            (!selectedVariant || selectedVariant?.stock < 1 || addingToCart || addedSuccess) && { backgroundColor: addedSuccess ? '#16A34A' : '#F1F5F9', shadowOpacity: addedSuccess ? 0.3 : 0 }
+          ]}
+          disabled={!selectedVariant || selectedVariant?.stock < 1 || addingToCart || addedSuccess}
           onPress={handleAddToCart}
           activeOpacity={0.8}
         >
-          {addingToCart ? (
+          {addedSuccess ? (
+            <View style={{flexDirection: 'row', alignItems:'center', gap: 6}}>
+               <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+               <Text style={styles.addToCartText}>Added to Cart</Text>
+            </View>
+          ) : addingToCart ? (
             <ActivityIndicator color="#0F172A" />
           ) : !selectedVariant || selectedVariant?.stock < 1 ? (
             <Text style={[styles.addToCartText, { color: '#94A3B8' }]}>Out of Stock</Text>

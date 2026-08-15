@@ -251,15 +251,14 @@ export default function AddAddressScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           
           <View style={styles.searchContainer}>
-            <View style={styles.searchBox}>
-              <Ionicons name="search" size={20} color="#00B140" />
-              <Input 
-                placeholder="Search for your area..."
-                value={mapSearchQuery}
-                onChangeText={fetchMapSuggestions}
-                style={styles.searchInput}
-              />
-            </View>
+            <Input 
+              placeholder="Search for your area..."
+              value={mapSearchQuery}
+              onChangeText={fetchMapSuggestions}
+              containerStyle={styles.searchBoxContainer}
+              leftIcon={<Ionicons name="search" size={20} color="#00B140" />}
+              style={styles.searchInput}
+            />
             
             {mapSuggestions.length > 0 && (
               <View style={styles.suggestionsList}>
@@ -359,18 +358,16 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 0, paddingBottom: 40 },
   
   searchContainer: { marginBottom: 24, zIndex: 30 },
-  searchBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
-    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1,
+  searchBoxContainer: {
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3,
   },
-  searchInput: { flex: 1, marginBottom: 0, borderWidth: 0, backgroundColor: 'transparent', height: 52, fontSize: 15, fontWeight: '500', color: '#0F172A' },
+  searchInput: { fontSize: 15, fontWeight: '500', color: '#0F172A' },
   suggestionsList: {
-    backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9',
+    backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0',
     marginTop: 8, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 6,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 6,
   },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   suggestionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2 },
   suggestionSub: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '500' },
 
