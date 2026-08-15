@@ -169,7 +169,10 @@ export default function ShopServicesScreen() {
                     if (!selectedDate && index === 0) setTimeout(() => setSelectedDate(dateStr), 0);
                     
                     // Format for display: e.g. "Sat, Aug 15"
-                    const displayDate = new Date(dateStr + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    const sampleSlot = timeSlots.find((s: any) => new Date(s.startTime).toISOString().split('T')[0] === dateStr);
+                    const displayDate = sampleSlot 
+                      ? new Date(sampleSlot.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                      : dateStr;
                     
                     return (
                       <TouchableOpacity 
