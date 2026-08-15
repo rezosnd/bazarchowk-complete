@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet,
-  Modal, TextInput, ActivityIndicator, FlatList
+  Modal, TextInput, ActivityIndicator, FlatList, Linking, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -128,6 +128,16 @@ export default function PartnerServicesScreen() {
   const [activeTab, setActiveTab] = useState<'BOOKINGS' | 'SERVICES' | 'STAFF'>('BOOKINGS');
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
+
+  const openMap = (lat: number, lng: number, label: string) => {
+    const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+    const latLng = `${lat},${lng}`;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`
+    });
+    if (url) Linking.openURL(url);
+  };
 
   const getShopId = async () => {
     const shopId = await SecureStore.getItemAsync('bazar_shop_id');
@@ -288,6 +298,22 @@ export default function PartnerServicesScreen() {
                       <Text style={styles.bookingCustomer}>👤 {b.customer?.firstName ? `${b.customer.firstName} ${b.customer.lastName || ''}` : 'Guest Customer'}</Text>
                       {b.customer?.phone && <Text style={styles.bookingMeta}>📞 {b.customer.phone}</Text>}
                       <Text style={styles.bookingMeta}>👷 {b.provider?.name}</Text>
+                      
+                      {b.serviceAddress && (
+                        <View style={{ marginTop: 8, backgroundColor: '#F0FDF4', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#BBF7D0' }}>
+                          <Text style={{ fontSize: 12, fontWeight: '800', color: '#16A34A', marginBottom: 2 }}>📍 HOME SERVICE LOCATION</Text>
+                          <Text style={{ fontSize: 13, color: '#0F172A', fontWeight: '500' }}>{b.serviceAddress.houseFlat}, {b.serviceAddress.city}</Text>
+                          {b.serviceAddress.landmark && <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Landmark: {b.serviceAddress.landmark}</Text>}
+                          
+                          <TouchableOpacity 
+                            style={{ marginTop: 8, backgroundColor: '#16A34A', paddingVertical: 8, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+                            onPress={() => openMap(b.serviceAddress.latitude, b.serviceAddress.longitude, 'Customer Home')}
+                          >
+                            <Ionicons name="navigate" size={16} color="#FFF" />
+                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>Navigate to Customer Home</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>

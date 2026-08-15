@@ -665,6 +665,17 @@ export class OrdersService {
         }
       }
 
+      // Mark associated Delivery as FAILED if cancelled or refused
+      if (dto.status === OrderStatus.CUSTOMER_REFUSED || dto.status === OrderStatus.CANCELLED) {
+        const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
+        if (existingDelivery && existingDelivery.status !== DeliveryStatus.FAILED) {
+          await this.prisma.delivery.update({
+            where: { id: existingDelivery.id },
+            data: { status: DeliveryStatus.FAILED }
+          });
+        }
+      }
+
       // Rider Earning Creation logic
       if (dto.status === OrderStatus.DELIVERED || dto.status === OrderStatus.CUSTOMER_REFUSED) {
         if (order.riderId) {

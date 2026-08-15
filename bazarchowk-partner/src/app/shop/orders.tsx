@@ -146,7 +146,7 @@ export default function ShopOrdersScreen() {
         </View>
       );
     }
-    if (order.status === 'RETURNING_TO_SHOP') {
+    if (order.status === 'RETURNING_TO_SHOP' || order.status === 'CUSTOMER_REFUSED') {
       return (
         <View style={{ gap: 8 }}>
           <Text style={{ color: '#DC2626', fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>
@@ -177,13 +177,19 @@ export default function ShopOrdersScreen() {
   }
 
   const filteredOrders = orders.filter(o => {
-    const pastStatuses = ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'CUSTOMER_PICKUP', 'RETURNED_TO_SHOP', 'INVENTORY_RESTORED'];
+    const pastStatuses = ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'CUSTOMER_PICKUP', 'RETURNED_TO_SHOP', 'RETURNING_TO_SHOP', 'CUSTOMER_REFUSED', 'INVENTORY_RESTORED'];
     if (activeTab === 'LIVE') {
       return !pastStatuses.includes(o.status);
     } else {
       if (!pastStatuses.includes(o.status)) return false;
       
-      if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+      if (statusFilter !== 'ALL') {
+        if (statusFilter === 'RETURNED_TO_SHOP' && ['RETURNING_TO_SHOP', 'RETURNED_TO_SHOP', 'CUSTOMER_REFUSED', 'INVENTORY_RESTORED'].includes(o.status)) {
+          // match
+        } else if (o.status !== statusFilter) {
+          return false;
+        }
+      }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
