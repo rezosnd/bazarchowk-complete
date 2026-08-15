@@ -1,31 +1,20 @@
-const { PrismaClient } = require('@prisma/client');
-
-// Extract the raw URL from the .env file (ignoring accelerate)
+const { Client } = require('pg');
 const dbUrl = "postgresql://neondb_owner:npg_hoflQtkED5G7@ep-shiny-tree-aiqbxk4a.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl,
-    },
-  },
-});
+const client = new Client({ connectionString: dbUrl });
 
 async function main() {
-  const collections = await prisma.cashCollection.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
+  await client.connect();
+  const res = await client.query('SELECT * FROM "CashCollection" ORDER BY "createdAt" DESC LIMIT 5');
   console.log("=== LATEST CASH COLLECTIONS ===");
-  console.log(JSON.stringify(collections, null, 2));
+  console.log(res.rows);
 
-  const orders = await prisma.order.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-    select: { id: true, orderNumber: true, paymentMethod: true, paymentStatus: true, status: true }
-  });
-  console.log("=== LATEST ORDERS ===");
-  console.log(JSON.stringify(orders, null, 2));
+
+
+  const ordRes = await client.query('SELECT "riderId" FROM "Order" WHERE id = \'70f4e79b-0ec5-4d63-afd4-82a3848d4f8c\'');
+  console.log("=== ORDER RIDER ===");
+  console.log(ordRes.rows);
+
+  await client.end();
 }
-
-main().catch(console.error).finally(() => prisma.$disconnect());
+main().catch(console.error);

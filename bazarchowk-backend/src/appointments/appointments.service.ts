@@ -6,6 +6,8 @@ import { ShopsService } from '../shops/shops.service';
 import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
+import { EmailService } from '../email/email.service';
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -15,6 +17,7 @@ export class AppointmentsService {
     private readonly notifications: NotificationsService,
     private readonly shopsService: ShopsService,
     private readonly realtime: RealtimeGateway,
+    private readonly emailService: EmailService,
   ) {}
 
   // ==================== PARTNER: SERVICE OFFERINGS ====================
@@ -269,6 +272,7 @@ export class AppointmentsService {
           totalAmount: serviceOffering.price || 0,
         },
         include: {
+          customer: { select: { firstName: true, email: true } },
           provider: { include: { shop: true } },
           serviceOffering: true,
           timeSlot: true,
@@ -304,6 +308,20 @@ export class AppointmentsService {
         providerName: appointment.provider.name,
         time: timeSlot.startTime
       });
+
+      // Send Email to Customer
+      if (appointment.customer?.email) {
+        await this.emailService.sendTransactionalEmail({
+          to: appointment.customer.email,
+          subject: `Appointment Confirmed: ${serviceOffering.name}`,
+          type: 'APPOINTMENT',
+          title: 'Appointment Confirmed',
+          customerName: appointment.customer.firstName || 'Customer',
+          message: `Your appointment for <b>${serviceOffering.name}</b> with ${appointment.provider.name} at ${appointment.provider.shop.name} is confirmed for <b>${new Date(timeSlot.startTime).toLocaleString()}</b>.<br><br>Total Price: ₹${serviceOffering.price}`,
+          buttonText: 'View Appointments',
+          buttonUrl: 'https://bazarchowk.com/appointments',
+        }).catch(err => this.logger.error(`Failed to send appointment email: ${err.message}`));
+      }
 
       return {
         ...appointment,
@@ -361,6 +379,23 @@ export class AppointmentsService {
       });
 
       return updated;
+    });
+  }
+
+  async getShopAppointmentsByOwner(ownerId: string) {
+    const shop = await this.prisma.shop.findFirst({ where: { ownerId } });
+    if (!shop) throw new NotFoundException('Shop not found for this user');
+
+    return this.prisma.appointment.findMany({
+      where: { provider: { shopId: shop.id } },
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        provider: true,
+        serviceOffering: true,
+        timeSlot: true,
+        serviceAddress: true,
+      },
+      orderBy: { createdAt: 'desc' }
     });
   }
 

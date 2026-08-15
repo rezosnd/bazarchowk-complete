@@ -119,7 +119,7 @@ export class AppointmentsController {
   @Roles('SHOP_OWNER', 'ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Partner: Get all appointments for shop' })
   getShopAppointments(@CurrentUser() user: any) {
-    return this.appointmentsService.getShopAppointments(user.shopId || user.id);
+    return this.appointmentsService.getShopAppointmentsByOwner(user.id);
   }
 
   // ==================== ADMIN: PLATFORM APPOINTMENTS ====================

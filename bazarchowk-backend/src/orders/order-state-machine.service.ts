@@ -11,7 +11,7 @@ export class OrderStateMachineService {
     READY_FOR_PICKUP: [OrderStatus.ASSIGNED_TO_RIDER, OrderStatus.CUSTOMER_PICKUP, OrderStatus.PICKED_UP, OrderStatus.DELIVERED],
     READY: [OrderStatus.ASSIGNED_TO_RIDER, OrderStatus.CUSTOMER_PICKUP, OrderStatus.READY_FOR_PICKUP, OrderStatus.PICKED_UP, OrderStatus.DELIVERED],
     ASSIGNED_TO_RIDER: [OrderStatus.PICKED_UP, OrderStatus.READY_FOR_PICKUP],
-    PICKED_UP: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CUSTOMER_REFUSED],
+    PICKED_UP: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED, OrderStatus.CUSTOMER_REFUSED],
     OUT_FOR_DELIVERY: [OrderStatus.DELIVERED, OrderStatus.CUSTOMER_REFUSED],
     DELIVERED: [],
     CUSTOMER_REFUSED: [OrderStatus.RETURNING_TO_SHOP, OrderStatus.RETURNED_TO_SHOP],
