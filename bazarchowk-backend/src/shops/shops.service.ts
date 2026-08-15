@@ -57,11 +57,11 @@ export class ShopsService {
       if (hasServices) {
         whereClause.OR = [
           { hasServices: true },
-          { partnerType: { in: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'HOME_CLEANING'] } }
+          { partnerType: { in: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'CLEANING', 'CARPENTER', 'AC_REPAIR', 'TUTOR', 'MECHANIC', 'PANDIT'] } }
         ];
       } else {
         whereClause.hasServices = false;
-        whereClause.partnerType = { notIn: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'HOME_CLEANING'] };
+        whereClause.partnerType = { notIn: ['SALON', 'PLUMBER', 'ELECTRICIAN', 'CLEANING', 'CARPENTER', 'AC_REPAIR', 'TUTOR', 'MECHANIC', 'PANDIT'] };
       }
     }
     if (city && (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng))) {
