@@ -44,6 +44,11 @@ export default function MarketsPage() {
   const [platformFee, setPlatformFee] = useState('0');
   const [deliveryBase, setDeliveryBase] = useState('20');
   const [myMarket, setMyMarket] = useState<any>(null);
+  // Rider earning config
+  const [riderBase, setRiderBase] = useState('30');
+  const [riderBonusPerKm, setRiderBonusPerKm] = useState('5');
+  const [riderBonusAfterKm, setRiderBonusAfterKm] = useState('5');
+  const [riderConfigMarketId, setRiderConfigMarketId] = useState('');
   // Tiered delivery fee: order value → delivery charge
   const [deliveryTiers, setDeliveryTiers] = useState([
     { minOrder: 0, maxOrder: 199, fee: 30 },
@@ -65,6 +70,9 @@ export default function MarketsPage() {
         setMyMarket(market);
         setGstPercentage(market.gstPercentage?.toString() || '18');
         setPlatformFee(market.platformFee?.toString() || '0');
+        setRiderBase(market.riderBaseEarning?.toString() || '30');
+        setRiderBonusPerKm(market.riderDistanceBonusPerKm?.toString() || '5');
+        setRiderBonusAfterKm(market.riderBonusAfterKm?.toString() || '5');
         if (market.deliveryChargeConfig?.default) {
           setDeliveryBase(market.deliveryChargeConfig.default.toString());
         }
@@ -334,6 +342,30 @@ export default function MarketsPage() {
     setLoading(false);
   };
 
+  const handleUpdateRiderConfig = async (marketId: string, baseOverride?: string, bonusPerKmOverride?: string, bonusAfterKmOverride?: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/markets/market-nodes/${marketId}/rider-config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          riderBaseEarning:        parseFloat(baseOverride       ?? riderBase),
+          riderDistanceBonusPerKm: parseFloat(bonusPerKmOverride  ?? riderBonusPerKm),
+          riderBonusAfterKm:       parseFloat(bonusAfterKmOverride ?? riderBonusAfterKm),
+        }),
+      });
+      if (res.ok) {
+        alert('Rider earning config saved successfully!');
+        fetchMarkets();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert('Failed: ' + (errData?.message || 'Unknown error'));
+      }
+    } catch (err) { alert('Network Error'); }
+    setLoading(false);
+  };
+
     if (role === 'MARKET_ADMIN') {
     return (
       <div className="p-8 bg-slate-50 min-h-screen">
@@ -430,6 +462,41 @@ export default function MarketsPage() {
             </form>
           )}
         </div>
+
+        {/* Rider Earning Config Card */}
+        {myMarket && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm border border-green-200 p-8 max-w-2xl">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">🏍️ Rider Earning Configuration</h2>
+            <p className="text-sm text-gray-500 mb-6">Set how much your riders earn per delivery in this market. These rates apply to all future deliveries.</p>
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Base Pay per Delivery (₹)</label>
+                <input type="number" step="any" value={riderBase} onChange={e => setRiderBase(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-bold text-green-700" />
+                <p className="text-xs text-gray-400 mt-1">Fixed amount per completed delivery.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Distance Bonus (₹/km)</label>
+                <input type="number" step="any" value={riderBonusPerKm} onChange={e => setRiderBonusPerKm(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-bold" />
+                <p className="text-xs text-gray-400 mt-1">Extra pay per km beyond the threshold.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bonus Starts After (km)</label>
+                <input type="number" step="any" value={riderBonusAfterKm} onChange={e => setRiderBonusAfterKm(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-bold" />
+                <p className="text-xs text-gray-400 mt-1">Distance bonus kicks in after this km.</p>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-50 rounded-lg text-sm text-green-800 font-medium">
+              Example: Rider completes a {Number(riderBonusAfterKm)+3}km delivery → Base ₹{riderBase} + (3km × ₹{riderBonusPerKm}) = ₹{(Number(riderBase) + 3 * Number(riderBonusPerKm)).toFixed(0)} total earning
+            </div>
+            <button onClick={() => handleUpdateRiderConfig(myMarket.id)} disabled={loading}
+              className="mt-4 w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
+              {loading ? 'Saving...' : 'Save Rider Pay Rates'}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -560,6 +627,65 @@ export default function MarketsPage() {
           </form>
         </div>
       </div>
+
+      {/* Super Admin: Per-Market Rider Pay Rates */}
+      <div className="mt-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">🏍️ Rider Pay Rates — Per Market</h2>
+          <p className="text-sm text-gray-500 mb-6">Configure rider earning rates independently for each market. Changes take effect for the next delivery in that market.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Market</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Base Pay (₹)</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Bonus/km (₹)</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Bonus After (km)</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {markets.map((m: any) => (
+                  <MarketRiderConfigRow key={m.id} market={m} onSave={handleUpdateRiderConfig} loading={loading} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function MarketRiderConfigRow({ market, onSave, loading }: { market: any; onSave: (id: string, base: string, bonusPerKm: string, bonusAfterKm: string) => void; loading: boolean }) {
+  const [base, setBase] = React.useState(market.riderBaseEarning?.toString() || '30');
+  const [bonusPerKm, setBonusPerKm] = React.useState(market.riderDistanceBonusPerKm?.toString() || '5');
+  const [bonusAfterKm, setBonusAfterKm] = React.useState(market.riderBonusAfterKm?.toString() || '5');
+
+  return (
+    <tr className="border-b border-slate-100 hover:bg-slate-50">
+      <td className="px-4 py-3 font-semibold text-gray-900">{market.name}</td>
+      <td className="px-4 py-3">
+        <input type="number" step="any" value={base} onChange={e => setBase(e.target.value)}
+          className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-green-700 outline-none focus:ring-2 focus:ring-green-400" />
+      </td>
+      <td className="px-4 py-3">
+        <input type="number" step="any" value={bonusPerKm} onChange={e => setBonusPerKm(e.target.value)}
+          className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-green-400" />
+      </td>
+      <td className="px-4 py-3">
+        <input type="number" step="any" value={bonusAfterKm} onChange={e => setBonusAfterKm(e.target.value)}
+          className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-green-400" />
+      </td>
+      <td className="px-4 py-3">
+        <button
+          disabled={loading}
+          onClick={() => onSave(market.id, base, bonusPerKm, bonusAfterKm)}
+          className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
+        >
+          Save
+        </button>
+      </td>
+    </tr>
   );
 }

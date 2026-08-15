@@ -264,4 +264,25 @@ export class MarketsService {
     await this.cacheManager.del(`markets_village_${market.villageId}`);
     return updated;
   }
+
+  async updateRiderConfig(id: string, dto: { riderBaseEarning: number; riderDistanceBonusPerKm: number; riderBonusAfterKm: number }, user: any) {
+    const market = await this.prisma.market.findUnique({ where: { id } });
+    if (!market) throw new NotFoundException('Market not found');
+
+    if (user?.role?.name === 'MARKET_ADMIN' && market.adminId !== user.id) {
+      throw new BadRequestException('You can only update rider config for your own market.');
+    }
+
+    const updated = await this.prisma.market.update({
+      where: { id },
+      data: {
+        riderBaseEarning:        dto.riderBaseEarning        !== undefined ? Number(dto.riderBaseEarning)        : market.riderBaseEarning,
+        riderDistanceBonusPerKm: dto.riderDistanceBonusPerKm !== undefined ? Number(dto.riderDistanceBonusPerKm) : market.riderDistanceBonusPerKm,
+        riderBonusAfterKm:       dto.riderBonusAfterKm       !== undefined ? Number(dto.riderBonusAfterKm)       : market.riderBonusAfterKm,
+      }
+    });
+
+    await this.cacheManager.del(`market_details_${id}`);
+    return updated;
+  }
 }

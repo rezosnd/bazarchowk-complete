@@ -676,22 +676,32 @@ export class OrdersService {
         }
       }
 
-      // Rider Earning Creation logic
+      // Rider Earning Creation logic — rates driven by Market config, not hardcoded
       if (dto.status === OrderStatus.DELIVERED || dto.status === OrderStatus.CUSTOMER_REFUSED) {
         if (order.riderId) {
           const existingDelivery = await this.prisma.delivery.findUnique({ where: { orderId } });
           const existingEarning = await this.prisma.riderEarning.findFirst({ where: { deliveryId: existingDelivery?.id } });
 
           if (existingDelivery && !existingEarning) {
-            // Calculate base earning, distance bonus, etc.
+            // Fetch market config for this order's shop to get rider rates
+            const shopWithMarket = await this.prisma.shop.findUnique({
+              where: { id: order.shopId },
+              include: { market: { select: { riderBaseEarning: true, riderDistanceBonusPerKm: true, riderBonusAfterKm: true } } }
+            });
+
+            // Use market-specific rates, falling back to safe defaults
+            const baseAmount        = shopWithMarket?.market?.riderBaseEarning        ?? 30;
+            const bonusPerKm        = shopWithMarket?.market?.riderDistanceBonusPerKm ?? 5;
+            const bonusAfterKm      = shopWithMarket?.market?.riderBonusAfterKm        ?? 5;
+
             const distance = existingDelivery.distanceKm || 0;
-            const baseAmount = 30; // 30 Rs base
-            const distanceBonus = distance > 5 ? (distance - 5) * 5 : 0; // 5 Rs per extra km
+            const distanceBonus = distance > bonusAfterKm ? (distance - bonusAfterKm) * bonusPerKm : 0;
 
             let returnCompensation = 0;
             let type = 'DELIVERY';
             if (dto.status === OrderStatus.CUSTOMER_REFUSED) {
-              returnCompensation = 15; // 15 Rs compensation for refused
+              // Return compensation = 50% of base pay for the wasted trip
+              returnCompensation = Math.round(baseAmount * 0.5);
               type = 'RETURN';
             }
 
@@ -711,8 +721,6 @@ export class OrdersService {
               }
             });
           }
-          // Rider Earning Creation logic
-          // (Already handled in the block above for DELIVERED)
         }
       }
 

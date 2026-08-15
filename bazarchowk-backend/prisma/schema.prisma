@@ -1470,9 +1470,12 @@ model Market {
   imageUrl    String?
 
   // Configuration
-  deliveryChargeConfig Json? // Stores JSON like { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 }
-  gstPercentage        Float @default(18.0)
-  platformFee          Float @default(0.0) // Flat platform fee in INR
+  deliveryChargeConfig      Json?  // Stores JSON like { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 }
+  gstPercentage             Float  @default(18.0)
+  platformFee               Float  @default(0.0)  // Flat platform fee in INR
+  riderBaseEarning          Float  @default(30.0) // Base pay per delivery in INR
+  riderDistanceBonusPerKm   Float  @default(5.0)  // Extra pay per km beyond riderBonusAfterKm
+  riderBonusAfterKm         Float  @default(5.0)  // Start distance bonus after this many km
 
   adminId String? @unique
   admin   User?   @relation(fields: [adminId], references: [id])

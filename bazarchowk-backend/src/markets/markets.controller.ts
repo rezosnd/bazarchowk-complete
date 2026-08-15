@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Query } from '@nestjs/common';
 import { MarketsService } from './markets.service';
 import {
   CreateCountryDto,
@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Market & Location Management')
 @Controller('markets')
@@ -140,5 +141,18 @@ export class MarketsController {
   @ApiOperation({ summary: 'Get full market details' })
   getMarketDetails(@Param('id') id: string) {
     return this.marketsService.getMarketDetails(id);
+  }
+
+  @Patch('market-nodes/:id/rider-config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update rider earning config for a market (per-market rates)' })
+  updateRiderConfig(
+    @Param('id') id: string,
+    @Body() dto: { riderBaseEarning: number; riderDistanceBonusPerKm: number; riderBonusAfterKm: number },
+    @CurrentUser() user?: any
+  ) {
+    return this.marketsService.updateRiderConfig(id, dto, user);
   }
 }
