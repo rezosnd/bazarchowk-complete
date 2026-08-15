@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet,
-  Modal, TextInput, ActivityIndicator, FlatList, Linking, Platform
+  Modal, TextInput, ActivityIndicator, FlatList, Linking, Platform, Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -470,11 +470,10 @@ export default function PartnerServicesScreen() {
             {shopUpiId ? (
               <>
                 <View style={{ padding: 16, backgroundColor: '#FFF', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 8, marginBottom: 12 }}>
-                  <QRCode
-                    value={`upi://pay?pa=${shopUpiId}&pn=${encodeURIComponent(shopName)}&am=${qrBooking?.totalAmount || qrBooking?.serviceOffering?.price || 0}&cu=INR`}
-                    size={210}
-                    color="#0F172A"
-                    backgroundColor="#FFFFFF"
+                  <Image 
+                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(`upi://pay?pa=${shopUpiId}&pn=${encodeURIComponent(shopName)}&am=${qrBooking?.totalAmount || qrBooking?.serviceOffering?.price || 0}&cu=INR`)}` }}
+                    style={{ width: 210, height: 210 }}
+                    resizeMode="contain"
                   />
                 </View>
                 <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>UPI ID: <Text style={{ fontWeight: '700', color: '#0F172A' }}>{shopUpiId}</Text></Text>
