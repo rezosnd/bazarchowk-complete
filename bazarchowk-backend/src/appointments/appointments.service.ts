@@ -110,7 +110,7 @@ export class AppointmentsService {
   async getProviderSlots(providerId: string) {
     const provider = await this.prisma.provider.findUnique({ where: { id: providerId } });
     if (!provider) throw new NotFoundException('Provider not found');
-    const capacity = provider.customersPerHour || 1;
+    const capacity = (provider as any).customersPerHour || 1;
 
     const existingSlots = await this.prisma.timeSlot.findMany({
       where: { providerId },
@@ -198,7 +198,7 @@ export class AppointmentsService {
                       providerId: dto.providerId,
                       startTime,
                       endTime,
-                      maxCapacity: p?.customersPerHour || 1,
+                      maxCapacity: (p as any)?.customersPerHour || 1,
                       currentBookings: 0,
                       isBooked: false
                   }
