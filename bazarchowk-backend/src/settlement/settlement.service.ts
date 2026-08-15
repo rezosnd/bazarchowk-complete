@@ -8,6 +8,7 @@ import {
   VerifyDepositDto,
   CreateSettlementDto,
   MarkSettlementPaidDto,
+  AdminForceCollectDto,
 } from './dto/settlement.dto';
 
 @Injectable()
@@ -279,27 +280,29 @@ export class SettlementService {
       let netSettlementAmt = 0;
 
       const settlementItems = orders.map(order => {
-        const commission = (order.totalAmount * commissionPct) / 100;
+        const commission = (order.subtotal * commissionPct) / 100;
         const isSelfPickupCOD = order.paymentMethod === 'COD' && order.deliveryAddressId === null;
         
         let netAmount = 0;
         if (isSelfPickupCOD) {
-            // Shop already collected the cash directly from customer
-            // They owe the platform the commission
-            netAmount = -commission;
+            // Shop already collected the cash directly from customer (which includes platformFee, taxes, etc.)
+            // The shop should only keep (subtotal - commission)
+            // So they owe the platform the rest: (totalAmount - subtotal + commission)
+            netAmount = order.subtotal - commission - order.totalAmount;
         } else {
             // Platform collected the cash (or Rider collected and deposited to Admin)
-            netAmount = order.totalAmount - commission - order.deliveryFee;
+            // The shop gets their item total minus commission
+            netAmount = order.subtotal - commission;
         }
 
-        totalOrderAmount += order.totalAmount;
+        totalOrderAmount += order.subtotal;
         totalDeliveryFees += order.deliveryFee;
         platformCommission += commission;
         netSettlementAmt += netAmount;
 
         return {
           orderId: order.id,
-          orderAmount: order.totalAmount,
+          orderAmount: order.subtotal,
           commission,
           deliveryFee: order.deliveryFee,
           netAmount,
@@ -480,22 +483,22 @@ export class SettlementService {
       pendingSettlementAmt,
       ordersCustom, ordersCustomCOD, ordersCustomOnline, settlementsCustom
     ] = await Promise.all([
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: firstDayOfMonth } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: firstDayOfMonth } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: firstDayOfMonth } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: today } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: today } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: today } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: firstDayOfMonth } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: firstDayOfMonth } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: firstDayOfMonth } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: today } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: today } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: today } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: sevenDaysAgo } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: firstDayOfMonth } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: today } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: 'DELIVERED', settlementItem: null } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: customStart, lte: customEnd } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: customStart, lte: customEnd } } }),
-      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: customStart, lte: customEnd } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: 'DELIVERED', settlementItem: null } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: customStart, lte: customEnd } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: customStart, lte: customEnd } } }),
+      this.prisma.order.aggregate({ _sum: { subtotal: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: customStart, lte: customEnd } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: customStart, lte: customEnd } } }),
     ]);
 
@@ -504,34 +507,34 @@ export class SettlementService {
 
     return {
       last7Days: {
-        grossSales: orders7Days._sum.totalAmount || 0,
-        codCollected: orders7DaysCOD._sum.totalAmount || 0,
-        onlinePaid: orders7DaysOnline._sum.totalAmount || 0,
+        grossSales: orders7Days._sum.subtotal || 0,
+        codCollected: orders7DaysCOD._sum.subtotal || 0,
+        onlinePaid: orders7DaysOnline._sum.subtotal || 0,
         totalDeliveries: orders7Days._count.id || 0,
-        netSettled: settlements7Days._sum.netSettlementAmt || (orders7Days._sum.totalAmount || 0),
+        netSettled: settlements7Days._sum.netSettlementAmt || (orders7Days._sum.subtotal || 0),
       },
       thisMonth: {
-        grossSales: ordersThisMonth._sum.totalAmount || 0,
-        codCollected: ordersThisMonthCOD._sum.totalAmount || 0,
-        onlinePaid: ordersThisMonthOnline._sum.totalAmount || 0,
+        grossSales: ordersThisMonth._sum.subtotal || 0,
+        codCollected: ordersThisMonthCOD._sum.subtotal || 0,
+        onlinePaid: ordersThisMonthOnline._sum.subtotal || 0,
         totalDeliveries: ordersThisMonth._count.id || 0,
-        netSettled: settlementsThisMonth._sum.netSettlementAmt || (ordersThisMonth._sum.totalAmount || 0),
+        netSettled: settlementsThisMonth._sum.netSettlementAmt || (ordersThisMonth._sum.subtotal || 0),
       },
       today: {
-        grossSales: ordersToday._sum.totalAmount || 0,
-        codCollected: ordersTodayCOD._sum.totalAmount || 0,
-        onlinePaid: ordersTodayOnline._sum.totalAmount || 0,
+        grossSales: ordersToday._sum.subtotal || 0,
+        codCollected: ordersTodayCOD._sum.subtotal || 0,
+        onlinePaid: ordersTodayOnline._sum.subtotal || 0,
         totalDeliveries: ordersToday._count.id || 0,
-        netSettled: settlementsToday._sum.netSettlementAmt || (ordersToday._sum.totalAmount || 0),
+        netSettled: settlementsToday._sum.netSettlementAmt || (ordersToday._sum.subtotal || 0),
       },
       custom: {
-        grossSales: ordersCustom._sum.totalAmount || 0,
-        codCollected: ordersCustomCOD._sum.totalAmount || 0,
-        onlinePaid: ordersCustomOnline._sum.totalAmount || 0,
+        grossSales: ordersCustom._sum.subtotal || 0,
+        codCollected: ordersCustomCOD._sum.subtotal || 0,
+        onlinePaid: ordersCustomOnline._sum.subtotal || 0,
         totalDeliveries: ordersCustom._count.id || 0,
-        netSettled: settlementsCustom._sum.netSettlementAmt || (ordersCustom._sum.totalAmount || 0),
+        netSettled: settlementsCustom._sum.netSettlementAmt || (ordersCustom._sum.subtotal || 0),
       },
-      pendingSettlement: pendingSettlementAmt._sum.totalAmount || 0,
+      pendingSettlement: pendingSettlementAmt._sum.subtotal || 0,
     };
   }
   async getUnsettledShopsSummary(user?: any) {
@@ -552,7 +555,7 @@ export class SettlementService {
           status: 'DELIVERED',
           settlementItem: null, // not yet in any settlement
         },
-        select: { id: true, totalAmount: true, paymentMethod: true, deliveryAddressId: true, deliveryFee: true }
+        select: { id: true, subtotal: true, totalAmount: true, paymentMethod: true, deliveryAddressId: true, deliveryFee: true }
       });
 
       if (orders.length > 0) {
@@ -561,7 +564,7 @@ export class SettlementService {
         let deliveryFeeTotal = 0;
         
         for (const o of orders) {
-          grossAmount += o.totalAmount;
+          grossAmount += o.subtotal;
           deliveryFeeTotal += o.deliveryFee;
           const isSelfPickupCOD = o.paymentMethod === 'COD' && o.deliveryAddressId === null;
           if (!isSelfPickupCOD) {

@@ -41,6 +41,7 @@ export default function MarketsPage() {
 
   // Market Admin Settings State
   const [gstPercentage, setGstPercentage] = useState('18');
+  const [platformFee, setPlatformFee] = useState('0');
   const [deliveryBase, setDeliveryBase] = useState('20');
   const [myMarket, setMyMarket] = useState<any>(null);
   // Tiered delivery fee: order value → delivery charge
@@ -63,6 +64,7 @@ export default function MarketsPage() {
       if (market) {
         setMyMarket(market);
         setGstPercentage(market.gstPercentage?.toString() || '18');
+        setPlatformFee(market.platformFee?.toString() || '0');
         if (market.deliveryChargeConfig?.default) {
           setDeliveryBase(market.deliveryChargeConfig.default.toString());
         }
@@ -308,6 +310,7 @@ export default function MarketsPage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
           gstPercentage: parseFloat(gstPercentage),
+          platformFee: parseFloat(platformFee),
           deliveryChargeConfig: { 
             default: parseFloat(deliveryBase),
             tiers: deliveryTiers.map(t => ({
@@ -351,7 +354,12 @@ export default function MarketsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">GST Percentage (%)</label>
                   <input required type="number" step="any" value={gstPercentage} onChange={e=>setGstPercentage(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-                  <p className="text-xs text-gray-400 mt-1">Standard tax applied to platform fees.</p>
+                  <p className="text-xs text-gray-400 mt-1">Standard tax applied to order item total.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Platform Fee (₹)</label>
+                  <input required type="number" step="any" value={platformFee} onChange={e=>setPlatformFee(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                  <p className="text-xs text-gray-400 mt-1">Fixed fee charged to the customer directly.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Default Delivery Fee (₹)</label>

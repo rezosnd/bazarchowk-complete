@@ -78,11 +78,13 @@ export class OrdersService {
 
     let deliveryFee = 0;
     let taxAmount = 0;
+    let platformFee = 0;
 
     if (shop.marketId) {
       const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
       if (market) {
-        taxAmount = (itemTotal * (market.gstPercentage || 18)) / 100;
+        platformFee = market.platformFee || 0;
+        taxAmount = (itemTotal * (market.gstPercentage || 0)) / 100;
         let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
         if (market.deliveryChargeConfig) {
           try {
@@ -124,15 +126,14 @@ export class OrdersService {
         }
       }
       if (cityConfig && cityConfig.taxPercent) {
-        // taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
-        taxAmount = 0; // Tax removed by admin request
+        taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+        platformFee = cityConfig.platformFeePercent || 0;
       } else {
-        // taxAmount = (itemTotal * 5) / 100;
-        taxAmount = 0; // Tax removed by admin request
+        taxAmount = 0;
       }
     }
 
-    const totalAmount = itemTotal + taxAmount + deliveryFee;
+    const totalAmount = itemTotal + taxAmount + deliveryFee + platformFee;
 
     let walletBalance = 0;
     let walletAmountUsed = 0;
@@ -147,6 +148,7 @@ export class OrdersService {
     return {
       itemTotal,
       taxAmount,
+      platformFee,
       deliveryFee,
       totalAmount,
       walletBalance,
@@ -245,15 +247,16 @@ export class OrdersService {
       }
     }
 
-    // Self-pickup: no delivery fee
     let calculatedDeliveryFee = 0;
     let taxAmount = 0;
+    let platformFee = 0;
 
     if (!isSelfPickup) {
       if (shop.marketId) {
         const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
         if (market) {
-          taxAmount = 0; // Tax removed by admin request
+          platformFee = market.platformFee || 0;
+          taxAmount = (totalAmount * (market.gstPercentage || 0)) / 100;
           let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
           if (market.deliveryChargeConfig) {
             try {
@@ -283,37 +286,35 @@ export class OrdersService {
             }
           }
         }
-      } else {
-        const cityConfig = await this.prisma.cityConfig.findFirst({
-          where: { name: { equals: shop.city, mode: 'insensitive' } }
-        });
+        } else {
+          const cityConfig = await this.prisma.cityConfig.findFirst({ where: { name: { equals: shop.city, mode: 'insensitive' } } });
+          calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
 
-        calculatedDeliveryFee = cityConfig?.defaultDeliveryFee ?? 0;
+          if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
+            const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
+            for (const tier of tiers) {
+              if (distanceKm <= tier.uptoKm) { calculatedDeliveryFee = tier.fee; break; }
+            }
+          }
 
-        if (cityConfig?.distanceFeeTiers && Array.isArray(cityConfig.distanceFeeTiers) && distanceKm > 0) {
-          const tiers = [...(cityConfig.distanceFeeTiers as any[])].sort((a: any, b: any) => a.uptoKm - b.uptoKm);
-          for (const tier of tiers) {
-            if (distanceKm <= tier.uptoKm) { calculatedDeliveryFee = tier.fee; break; }
+          if (cityConfig && cityConfig.taxPercent) {
+            taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+            platformFee = cityConfig.platformFeePercent || 0;
+          } else {
+            taxAmount = 0;
           }
         }
-
-        if (cityConfig && cityConfig.taxPercent) {
-          taxAmount = 0; // Tax removed by admin request
-        } else {
-          taxAmount = 0; // Tax removed by admin request
+      } else {
+        if (shop.marketId) {
+          const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
+          if (market) {
+            platformFee = market.platformFee || 0;
+            taxAmount = (totalAmount * (market.gstPercentage || 0)) / 100;
+          }
         }
       }
-    } else {
-      if (shop.marketId) {
-        const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
-        taxAmount = (totalAmount * (market?.gstPercentage || 18)) / 100;
-      } else {
-        taxAmount = (totalAmount * 5) / 100;
-      }
-    }
 
-    const subtotal = totalAmount;
-    totalAmount = subtotal + taxAmount + calculatedDeliveryFee;
+      const orderTotal = totalAmount + taxAmount + calculatedDeliveryFee + platformFee;
 
     // Check Wallet Balance if WALLET is selected or useWallet is true
     let walletAmountUsed = 0;
@@ -324,8 +325,8 @@ export class OrdersService {
       const userWallet = await this.prisma.wallet.findUnique({ where: { userId: customerId } });
       if (userWallet && userWallet.balance > 0) {
         // If the balance covers the entire order
-        if (userWallet.balance >= totalAmount) {
-          walletAmountUsed = totalAmount;
+        if (userWallet.balance >= orderTotal) {
+          walletAmountUsed = orderTotal;
           paymentMethod = 'WALLET'; // Force to wallet since it's fully covered
           paymentStatus = PaymentStatus.PAID;
         } else {
@@ -373,15 +374,16 @@ export class OrdersService {
           orderNumber,
           customerId,
           shopId: createDto.shopId,
-          deliveryAddressId: isSelfPickup ? null : createDto.deliveryAddressId,
+          deliveryAddressId: isSelfPickup ? undefined : createDto.deliveryAddressId,
           paymentMethod,
           paymentStatus,
           status: OrderStatus.PLACED,
-          subtotal,
+          subtotal: totalAmount,
           taxAmount,
+          platformFee,
           deliveryFee: calculatedDeliveryFee,
           walletAmountUsed,
-          totalAmount,
+          totalAmount: orderTotal,
           items: { create: orderItemsData },
           statusHistory: {
             create: {
@@ -481,8 +483,9 @@ export class OrdersService {
         order.totalAmount,
         {
           shopName: order.shop?.name,
-          subtotal,
+          subtotal: totalAmount,
           taxAmount,
+          platformFee,
           deliveryFee: calculatedDeliveryFee,
           walletAmountUsed,
           paymentMethod: String(paymentMethod),

@@ -65,14 +65,14 @@ export default function UnserviceableScreen() {
 
       {/* Notify Me button — positioned at the area in image where the button text is */}
       <TouchableOpacity
-        style={[styles.notifyBtn, { bottom: insets.bottom + height * 0.18 }]}
+        style={[styles.notifyBtn, { bottom: insets.bottom + height * 0.12 }]}
         onPress={() => setShowModal(true)}
         activeOpacity={0.7}
       />
 
       {/* Change Location button — positioned at the bottom */}
       <TouchableOpacity
-        style={[styles.changeLocBtn, { bottom: insets.bottom + height * 0.06 }]}
+        style={[styles.changeLocBtn, { bottom: insets.bottom + height * 0.04 }]}
         onPress={() => router.push('/addresses')}
         activeOpacity={0.5}
       />

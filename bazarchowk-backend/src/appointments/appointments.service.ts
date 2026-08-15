@@ -454,10 +454,10 @@ export class AppointmentsService {
 
     if (!appointment) throw new NotFoundException('Appointment not found');
 
-    // ownerIdOrShopId could be the user ID (JWT) or the shopId
-    // Try to find shop by ownerId first, then by shopId
+    // Try to find if the appointment's shop is owned by the user, or if the user is the shop itself
     const shop = await this.prisma.shop.findFirst({
       where: {
+        id: appointment.provider.shopId,
         OR: [
           { ownerId: ownerIdOrShopId },
           { id: ownerIdOrShopId },
@@ -465,7 +465,7 @@ export class AppointmentsService {
       }
     });
 
-    if (!shop || appointment.provider.shopId !== shop.id) {
+    if (!shop) {
       throw new BadRequestException('Not your appointment');
     }
 

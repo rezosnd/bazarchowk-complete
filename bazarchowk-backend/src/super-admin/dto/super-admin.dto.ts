@@ -109,6 +109,12 @@ export class UpdateMarketDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  platformFee?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   deliveryChargeConfig?: any;
 
   @ApiPropertyOptional()

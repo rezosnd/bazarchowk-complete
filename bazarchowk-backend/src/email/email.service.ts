@@ -231,26 +231,31 @@ export class EmailService {
       const taxAmount = options?.taxAmount ?? 0;
       const deliveryFee = options?.deliveryFee ?? 0;
       const walletUsed = options?.walletAmountUsed ?? 0;
+      const platformFee = options?.platformFee ?? 0;
+      const isSelfPickup = options?.deliveryType === 'SELF_PICKUP';
+      
+      let y = doc.y;
+      
+      const drawTextLine = (label: string, val: string, isBold = false) => {
+        doc.fontSize(12).fillColor(isBold ? '#111827' : '#4b5563').text(label, 300, y);
+        doc.fontSize(12).fillColor('#111827').text(val, 450, y, { width: 85, align: 'right' });
+        y += 20;
+      };
 
-      doc.text('Item Subtotal:', 300, doc.y);
-      doc.text(`Rs. ${subtotal.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
-      doc.moveDown(0.5);
-
-      doc.text('Taxes & GST:', 300, doc.y);
-      doc.text(`Rs. ${taxAmount.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
-      doc.moveDown(0.5);
-
-      doc.text('Delivery Fee:', 300, doc.y);
-      doc.text(deliveryFee === 0 ? 'FREE' : `Rs. ${deliveryFee.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
-      doc.moveDown(0.5);
-
-      if (walletUsed > 0) {
-        doc.fillColor('#FF8A00').text('Wallet Applied:', 300, doc.y);
-        doc.text(`-Rs. ${walletUsed.toFixed(2)}`, 450, doc.y, { width: 85, align: 'right' });
-        doc.moveDown(0.5);
+      drawTextLine('Item Subtotal:', `Rs. ${subtotal.toFixed(2)}`);
+      if (platformFee > 0) {
+        drawTextLine('Platform Fee:', `Rs. ${platformFee.toFixed(2)}`);
       }
-
-      doc.moveDown(2);
+      drawTextLine('Taxes & GST:', `Rs. ${taxAmount.toFixed(2)}`);
+      drawTextLine('Delivery Fee:', isSelfPickup ? 'FREE' : `Rs. ${deliveryFee.toFixed(2)}`);
+      if (walletUsed > 0) {
+        doc.fillColor('#FF8A00');
+        drawTextLine('Wallet Applied:', `-Rs. ${walletUsed.toFixed(2)}`);
+        doc.fillColor('#0F172A');
+      }
+      
+      doc.y = y;
+      doc.moveDown(1);
       const totalBoxY = doc.y;
       doc.rect(290, totalBoxY, 255, 32).fill('#FF8A00');
       doc.fillColor('#FFF').font('Helvetica-Bold').fontSize(13);
@@ -278,6 +283,7 @@ export class EmailService {
       shopName?: string;
       subtotal?: number;
       taxAmount?: number;
+      platformFee?: number;
       deliveryFee?: number;
       walletAmountUsed?: number;
       paymentMethod?: string;
@@ -287,11 +293,18 @@ export class EmailService {
     const shopName = options?.shopName || 'BazarChowk Partner';
     const subtotal = options?.subtotal ?? items.reduce((s, i) => s + i.price, 0);
     const taxAmount = options?.taxAmount ?? 0;
+    const platformFee = options?.platformFee ?? 0;
     const deliveryFee = options?.deliveryFee ?? 0;
     const walletUsed = options?.walletAmountUsed ?? 0;
     const payMethod = options?.paymentMethod || 'COD';
     const isSelfPickup = options?.deliveryType === 'SELF_PICKUP';
     const payLabel = payMethod === 'RAZORPAY' ? 'Paid Online (UPI/Card)' : isSelfPickup ? 'Pay at Shop (Cash)' : 'Cash on Delivery';
+
+    const platformFeeRow = platformFee > 0 ? `
+      <tr>
+        <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">Platform Fee</td>
+        <td style="padding:8px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;">₹${platformFee.toFixed(2)}</td>
+      </tr>` : '';
 
     const itemRows = items.map(item => `
       <tr>
@@ -368,15 +381,15 @@ export class EmailService {
             <td colspan="2" style="padding:12px 15px;color:#4b5563;font-size:14px;border-top:1px solid #e5e7eb;">Subtotal</td>
             <td style="padding:12px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;border-top:1px solid #e5e7eb;">₹${subtotal.toFixed(2)}</td>
           </tr>
+          ${platformFeeRow}
           <tr>
             <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">Taxes</td>
             <td style="padding:8px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;">₹${taxAmount.toFixed(2)}</td>
           </tr>
-          ${!isSelfPickup ? `
           <tr>
-            <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">Delivery Fee</td>
-            <td style="padding:8px 15px;text-align:right;color:#111827;font-weight:600;font-size:14px;">₹${deliveryFee.toFixed(2)}</td>
-          </tr>` : ''}
+            <td colspan="2" style="padding:8px 15px;color:#4b5563;font-size:14px;">${isSelfPickup ? 'Delivery' : 'Delivery Fee'}</td>
+            <td style="padding:8px 15px;text-align:right;color:${isSelfPickup ? '#16a34a' : '#111827'};font-weight:600;font-size:14px;">${isSelfPickup ? 'FREE' : '₹'+deliveryFee.toFixed(2)}</td>
+          </tr>
           ${walletRow}
           <tr style="background-color: #f9fafb;">
             <td colspan="2" style="padding:15px;color:#111827;font-size:16px;font-weight:700;border-top:2px solid #e5e7eb;">Total Paid</td>

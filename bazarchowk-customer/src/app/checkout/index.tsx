@@ -323,7 +323,10 @@ export default function CheckoutScreen() {
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billCard}>
               <BillRow label="Item Total" value={`₹${(billDetails.itemTotal ?? 0).toFixed(2)}`} />
-              <BillRow label="Taxes & Charges" value={`₹${(billDetails.taxAmount ?? 0).toFixed(2)}`} />
+              {(billDetails.platformFee ?? 0) > 0 && (
+                <BillRow label="Platform Fee" value={`₹${(billDetails.platformFee ?? 0).toFixed(2)}`} />
+              )}
+              <BillRow label="Taxes (GST)" value={`₹${(billDetails.taxAmount ?? 0).toFixed(2)}`} />
               <BillRow
                 label={isSelfPickup ? 'Delivery Fee' : 'Delivery Fee'}
                 value={isSelfPickup ? '₹0.00 FREE 🎉' : `₹${(billDetails.deliveryFee ?? 0).toFixed(2)}`}
