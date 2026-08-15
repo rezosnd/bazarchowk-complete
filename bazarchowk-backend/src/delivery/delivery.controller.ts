@@ -38,6 +38,14 @@ export class DeliveryController {
     return this.deliveryService.getMyActiveDeliveries(user.id);
   }
 
+  @Get('history')
+  @UseGuards(RolesGuard)
+  @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')
+  @ApiOperation({ summary: 'Get delivery history for the current rider' })
+  getDeliveryHistory(@CurrentUser() user: any) {
+    return this.deliveryService.getDeliveryHistory(user.id);
+  }
+
   @Patch(':id/assign')
   @UseGuards(RolesGuard)
   @Roles('RIDER', 'DELIVERY_PARTNER', 'ADMIN')

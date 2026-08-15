@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { PaymentMethod, PaymentStatus, OrderStatus, TransactionType, TransactionReason } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, OrderStatus, TransactionType, TransactionReason, DeliveryStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';

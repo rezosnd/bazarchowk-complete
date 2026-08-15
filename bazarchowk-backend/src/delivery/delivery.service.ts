@@ -65,11 +65,22 @@ export class DeliveryService {
     return this.prisma.delivery.findMany({
       where: {
         deliveryPartnerId: partner.id,
-        status: {
-          in: [DeliveryStatus.ASSIGNED, DeliveryStatus.ACCEPTED, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT]
-        }
+        status: { notIn: [DeliveryStatus.DELIVERED, DeliveryStatus.FAILED] }
       },
-      include: { order: { include: { shop: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
+      include: { order: { include: { shop: true, customer: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getDeliveryHistory(userId: string) {
+    const partner = await this.prisma.deliveryPartner.findUnique({ where: { userId } });
+    if (!partner) return [];
+    
+    return this.prisma.delivery.findMany({
+      where: { deliveryPartnerId: partner.id },
+      include: { order: { include: { shop: true, customer: true, deliveryAddress: true, items: { include: { productVariant: { include: { product: true } } } } } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200
     });
   }
 

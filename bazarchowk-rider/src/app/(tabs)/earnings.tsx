@@ -27,7 +27,7 @@ export default function RiderEarningsScreen() {
     setLoading(true);
     try {
       const [deliveriesRes, cashRes] = await Promise.all([
-        api.get('/deliveries/rider').catch(() => ({ data: [] })),
+        api.get('/delivery/history').catch(() => ({ data: [] })),
         api.get('/settlement/cash/my-summary').catch(() => ({ data: { pendingCollections: [], totalOutstanding: 0 } })),
       ]);
 

@@ -740,6 +740,16 @@ export default function HomeScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
         >
           <AIHero />
+          
+          {/* Animated Welcome Banner (GIF) */}
+          <View style={{ alignItems: 'center', marginVertical: 8, zIndex: 10 }}>
+            <Image 
+              source={require('@/assets/images/animation.gif')} 
+              style={{ width: '92%', height: 80 }} 
+              contentFit="contain" 
+            />
+          </View>
+          
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <CategoriesGrid />
