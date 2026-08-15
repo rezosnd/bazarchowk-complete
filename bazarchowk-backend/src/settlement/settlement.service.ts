@@ -202,6 +202,40 @@ export class SettlementService {
     return updatedDeposit;
   }
 
+  async adminForceCollect(adminId: string, dto: AdminForceCollectDto) {
+    const { riderId, collectionIds, totalAmount } = dto;
+    
+    // 1. Create a RiderDeposit as VERIFIED
+    const deposit = await this.prisma.riderDeposit.create({
+      data: {
+        riderId,
+        totalAmount,
+        status: 'VERIFIED',
+        verifiedById: adminId,
+        verifiedAt: new Date(),
+      }
+    });
+
+    // 2. Update CashCollections
+    await this.prisma.cashCollection.updateMany({
+      where: { id: { in: collectionIds }, riderId },
+      data: {
+        status: 'VERIFIED',
+        riderDepositId: deposit.id
+      }
+    });
+
+    // 3. Notify Rider
+    await this.notificationsService.sendInAppNotification(
+      riderId,
+      'Cash Deposited',
+      `Admin has marked your cash deposit of ₹${totalAmount.toFixed(2)} as deposited.`,
+      'SYSTEM'
+    );
+    
+    return deposit;
+  }
+
   // =============== ADMIN: SHOP SETTLEMENT ===============
 
   /**
@@ -458,7 +492,7 @@ export class SettlementService {
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: sevenDaysAgo } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: firstDayOfMonth } } }),
       this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'COMPLETED', settledAt: { gte: today } } }),
-      this.prisma.shopSettlement.aggregate({ _sum: { netSettlementAmt: true }, where: { shopId: shop.id, status: 'PENDING' } }),
+      this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: 'DELIVERED', settlementItem: null } }),
       this.prisma.order.aggregate({ _sum: { totalAmount: true }, _count: { id: true }, where: { shopId: shop.id, status: validStatuses, createdAt: { gte: customStart, lte: customEnd } } }),
       this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: 'COD', createdAt: { gte: customStart, lte: customEnd } } }),
       this.prisma.order.aggregate({ _sum: { totalAmount: true }, where: { shopId: shop.id, status: validStatuses, paymentMethod: { not: 'COD' }, createdAt: { gte: customStart, lte: customEnd } } }),
@@ -497,7 +531,7 @@ export class SettlementService {
         totalDeliveries: ordersCustom._count.id || 0,
         netSettled: settlementsCustom._sum.netSettlementAmt || (ordersCustom._sum.totalAmount || 0),
       },
-      pendingSettlement: pendingSettlementAmt._sum.netSettlementAmt || 0,
+      pendingSettlement: pendingSettlementAmt._sum.totalAmount || 0,
     };
   }
   async getUnsettledShopsSummary(user?: any) {

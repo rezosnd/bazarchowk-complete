@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, IsEnum, Min } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsEnum, Min, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RecordCashCollectionDto {
@@ -19,6 +19,8 @@ export class RecordCashCollectionDto {
 
 export class SubmitRiderDepositDto {
   @ApiProperty({ description: 'Array of CashCollection IDs to include in this deposit' })
+  @IsArray()
+  @IsString({ each: true })
   collectionIds: string[];
 
   @ApiProperty({ description: 'Total cash amount being submitted' })
@@ -30,6 +32,22 @@ export class SubmitRiderDepositDto {
   @IsOptional()
   @IsString()
   receiptImageUrl?: string;
+}
+
+export class AdminForceCollectDto {
+  @ApiProperty({ description: 'Rider ID' })
+  @IsString()
+  riderId: string;
+
+  @ApiProperty({ description: 'Array of CashCollection IDs' })
+  @IsArray()
+  @IsString({ each: true })
+  collectionIds: string[];
+
+  @ApiProperty({ description: 'Total amount' })
+  @IsNumber()
+  @Min(0)
+  totalAmount: number;
 }
 
 export class VerifyDepositDto {

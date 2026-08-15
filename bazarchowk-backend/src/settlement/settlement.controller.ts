@@ -11,6 +11,7 @@ import {
   VerifyDepositDto,
   CreateSettlementDto,
   MarkSettlementPaidDto,
+  AdminForceCollectDto,
 } from './dto/settlement.dto';
 
 @ApiTags('Cash Collection & Settlement (Module 46)')
@@ -62,6 +63,14 @@ export class SettlementController {
   @ApiOperation({ summary: 'Admin: Verify or reject a rider cash deposit' })
   verifyDeposit(@Param('id') id: string, @Body() dto: VerifyDepositDto, @CurrentUser() user: any) {
     return this.settlementService.verifyDeposit(id, user.id, dto);
+  }
+
+  @Post('deposits/admin-collect')
+  @UseGuards(RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MARKET_ADMIN', 'FINANCE_ADMIN')
+  @ApiOperation({ summary: 'Admin: Force collect raw cash from rider without rider initiating deposit' })
+  adminForceCollect(@Body() dto: AdminForceCollectDto, @CurrentUser() user: any) {
+    return this.settlementService.adminForceCollect(user.id, dto);
   }
 
   // ---- SETTLEMENT MANAGEMENT ----

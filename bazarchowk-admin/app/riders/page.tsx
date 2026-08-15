@@ -227,6 +227,34 @@ function CashVerificationTab() {
     }
   };
 
+  const handleForceCollect = async (group: any) => {
+    if (!confirm(`Mark ₹${group.totalAmount.toFixed(2)} as collected directly from ${group.rider?.firstName}?`)) return;
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_BASE}/settlement/deposits/admin-collect`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          riderId: group.collections[0]?.riderId,
+          collectionIds: group.collections.map((c: any) => c.id),
+          totalAmount: group.totalAmount
+        }),
+      });
+      if (res.ok) {
+        alert('Cash marked as deposited successfully!');
+        fetchPendingVerifications();
+      } else {
+        const error = await res.json();
+        alert('Failed: ' + error.message);
+      }
+    } catch (e) {
+      alert('Network Error');
+    }
+  };
+
   const totalPending = deposits.length + rawCollections.length;
 
   return (
@@ -331,7 +359,19 @@ function CashVerificationTab() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400 mt-3 text-center">Rider needs to visit hub to deposit this cash</p>
+                  
+                  <div className="mt-4 flex flex-col items-center">
+                    <button 
+                      onClick={() => handleForceCollect(group)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Mark Cash as Deposited by Rider
+                    </button>
+                    <p className="text-xs text-gray-400 mt-2 text-center">Use this if rider dropped cash but forgot to submit in app</p>
+                  </div>
                 </div>
               ))}
             </div>
