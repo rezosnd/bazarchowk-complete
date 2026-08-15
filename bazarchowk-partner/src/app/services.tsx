@@ -152,15 +152,34 @@ export default function PartnerServicesScreen() {
     },
   });
 
-  const { data: bookings } = useQuery({
+  const [shopUpiId, setShopUpiId] = useState<string | null>(null);
+  const [shopName, setShopName] = useState<string>('BazarChowk Shop');
+
+  useEffect(() => {
+    // Fetch UPI ID separately to power the payment QR
+    api.get('/shops/me').then(res => {
+      setShopUpiId(res.data?.upiId || null);
+      setShopName(res.data?.name || 'BazarChowk Shop');
+    }).catch(() => {});
+  }, []);
+
+  const { data: bookings, refetch: refetchBookings } = useQuery({
     queryKey: ['partner-bookings'],
     queryFn: async () => (await api.get(`/appointments/shop/all`)).data,
   });
 
+  // onSuccess must be inside useMutation config (TanStack v5 — not in mutate() call)
   const statusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) =>
-      api.patch(`/appointments/shop/${id}/status`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['partner-bookings'] }),
+    mutationFn: async ({ id, status, booking }: { id: string; status: string; booking?: any }) => {
+      await api.patch(`/appointments/shop/${id}/status`, { status });
+      return { status, booking };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-bookings'] });
+      if (result.status === 'COMPLETED' && result.booking?.paymentStatus !== 'PAID') {
+        setQrBooking(result.booking);
+      }
+    },
     onError: (err: any) => Alert.alert('Error', err.response?.data?.message || 'Failed to update status'),
   });
 
@@ -312,19 +331,16 @@ export default function PartnerServicesScreen() {
                   {b.status === 'CONFIRMED' && (
                     <TouchableOpacity
                       style={[styles.confirmBtn, { marginTop: 8 }]}
-                      onPress={() => {
-                        statusMutation.mutate({ id: b.id, status: 'COMPLETED' }, {
-                          onSuccess: () => {
-                            if (b.paymentStatus !== 'PAID') {
-                              setQrBooking(b);
-                            }
-                          }
-                        });
-                      }}
+                      onPress={() => statusMutation.mutate({ id: b.id, status: 'COMPLETED', booking: b })}
                       disabled={statusMutation.isPending}
                     >
-                      <Ionicons name="checkmark-done" size={18} color="#FFF" />
-                      <Text style={styles.confirmText}>Mark as Service Done</Text>
+                      {statusMutation.isPending
+                        ? <ActivityIndicator size="small" color="#FFF" />
+                        : <>
+                            <Ionicons name="checkmark-done" size={18} color="#FFF" />
+                            <Text style={styles.confirmText}>Mark as Service Done</Text>
+                          </>
+                      }
                     </TouchableOpacity>
                   )}
                 </View>
@@ -410,29 +426,43 @@ export default function PartnerServicesScreen() {
           <View style={[styles.sheet, { alignItems: 'center', paddingBottom: 40 }]}>
             <View style={styles.sheetHandle} />
             <View style={[styles.sheetHeader, { width: '100%' }]}>
-              <Text style={styles.sheetTitle}>Collect Payment</Text>
+              <Text style={styles.sheetTitle}>Collect Payment 💰</Text>
               <TouchableOpacity onPress={() => setQrBooking(null)}><Ionicons name="close-circle" size={26} color="#94A3B8" /></TouchableOpacity>
             </View>
-            <Text style={{ fontSize: 16, color: '#64748B', marginBottom: 20, textAlign: 'center' }}>
-              Service completed! Ask {qrBooking?.customer?.firstName || 'the customer'} to scan and pay.
+
+            <Text style={{ fontSize: 15, color: '#64748B', marginBottom: 6, textAlign: 'center' }}>
+              Service completed! Ask{' '}
+              <Text style={{ fontWeight: '700', color: '#0F172A' }}>
+                {qrBooking?.customer?.firstName || 'the customer'}
+              </Text>{' '}to scan and pay.
             </Text>
-            {qrBooking?.shopUpiId ? (
-              <View style={{ padding: 16, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
-                <QRCode
-                  value={`upi://pay?pa=${qrBooking.shopUpiId}&pn=${qrBooking.shopName || 'BazarChowk Shop'}&am=${qrBooking.totalAmount || qrBooking.serviceOffering?.price}&cu=INR`}
-                  size={200}
-                />
-              </View>
+
+            <Text style={{ fontSize: 28, fontWeight: '900', color: PRIMARY, marginBottom: 20 }}>
+              ₹{qrBooking?.totalAmount || qrBooking?.serviceOffering?.price || 0}
+            </Text>
+
+            {shopUpiId ? (
+              <>
+                <View style={{ padding: 16, backgroundColor: '#FFF', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 8, marginBottom: 12 }}>
+                  <QRCode
+                    value={`upi://pay?pa=${shopUpiId}&pn=${encodeURIComponent(shopName)}&am=${qrBooking?.totalAmount || qrBooking?.serviceOffering?.price || 0}&cu=INR`}
+                    size={210}
+                    color="#0F172A"
+                    backgroundColor="#FFFFFF"
+                  />
+                </View>
+                <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>UPI ID: <Text style={{ fontWeight: '700', color: '#0F172A' }}>{shopUpiId}</Text></Text>
+                <Text style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginBottom: 20 }}>Customer scans above to pay via any UPI app</Text>
+              </>
             ) : (
-              <View style={{ padding: 20, backgroundColor: '#FEE2E2', borderRadius: 12 }}>
-                <Text style={{ color: '#DC2626', textAlign: 'center' }}>You have not set up your UPI ID in your Profile. Please go to Profile to add it.</Text>
+              <View style={{ padding: 20, backgroundColor: '#FEF3C7', borderRadius: 14, borderWidth: 1, borderColor: '#FCD34D', marginBottom: 20, width: '100%' }}>
+                <Text style={{ color: '#92400E', textAlign: 'center', fontWeight: '600', fontSize: 14 }}>⚠️ UPI ID not set up</Text>
+                <Text style={{ color: '#92400E', textAlign: 'center', fontSize: 13, marginTop: 6 }}>Go to Profile → Shop Settings to add your UPI ID so customers can pay digitally.</Text>
               </View>
             )}
-            <Text style={{ fontSize: 24, fontWeight: '900', color: PRIMARY, marginTop: 20 }}>
-              ₹{qrBooking?.totalAmount || qrBooking?.serviceOffering?.price}
-            </Text>
-            <TouchableOpacity style={[styles.saveBtn, { width: '100%', marginTop: 24 }]} onPress={() => setQrBooking(null)}>
-              <Text style={styles.saveBtnText}>Done</Text>
+
+            <TouchableOpacity style={[styles.saveBtn, { width: '100%' }]} onPress={() => setQrBooking(null)}>
+              <Text style={styles.saveBtnText}>Mark as Paid & Close</Text>
             </TouchableOpacity>
           </View>
         </View>
