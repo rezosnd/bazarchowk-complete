@@ -74,12 +74,13 @@ export default function ServiceCategoryScreen() {
   const bookMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSlot || !selectedService || !selectedProvider) return;
-      return api.post('/appointments/book', {
-        shopId: selectedShop.id,
+      return api.post('/appointments', {
         serviceOfferingId: selectedService.id,
         providerId: selectedProvider.id,
         timeSlotId: selectedSlot.id,
         paymentMethod: 'COD',
+        paymentStatus: 'PENDING',
+        notes: 'Booked via Quick Modal',
       });
     },
     onSuccess: () => {

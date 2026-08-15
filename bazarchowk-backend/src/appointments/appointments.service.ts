@@ -446,14 +446,28 @@ export class AppointmentsService {
     });
   }
 
-  async updateAppointmentStatus(appointmentId: string, shopId: string, status: AppointmentStatus) {
+  async updateAppointmentStatus(appointmentId: string, ownerIdOrShopId: string, status: AppointmentStatus) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
-      include: { provider: true }
+      include: { provider: { include: { shop: true } } }
     });
 
     if (!appointment) throw new NotFoundException('Appointment not found');
-    if (appointment.provider.shopId !== shopId) throw new BadRequestException('Not your appointment');
+
+    // ownerIdOrShopId could be the user ID (JWT) or the shopId
+    // Try to find shop by ownerId first, then by shopId
+    const shop = await this.prisma.shop.findFirst({
+      where: {
+        OR: [
+          { ownerId: ownerIdOrShopId },
+          { id: ownerIdOrShopId },
+        ]
+      }
+    });
+
+    if (!shop || appointment.provider.shopId !== shop.id) {
+      throw new BadRequestException('Not your appointment');
+    }
 
     return this.prisma.appointment.update({
       where: { id: appointmentId },

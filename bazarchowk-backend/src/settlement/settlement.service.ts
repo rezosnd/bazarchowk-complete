@@ -119,20 +119,43 @@ export class SettlementService {
   // =============== MARKET ADMIN: DEPOSIT VERIFICATION ===============
 
   async getPendingDeposits(user?: any) {
-    const marketId = await this.getAdminMarketId(user);
-    const where: any = { status: 'PENDING' };
-    if (marketId) {
-      // where.rider = { deliveryPartner: { marketId } };
-    }
-    
-    return this.prisma.riderDeposit.findMany({
-      where,
-      include: {
-        rider: { select: { firstName: true, lastName: true, phone: true } },
-        collections: { include: { order: { select: { orderNumber: true, totalAmount: true } } } },
-      },
-      orderBy: { depositDate: 'asc' },
-    });
+    // Return both formal deposits AND raw collected-but-not-submitted cash
+    const [deposits, rawCollections] = await Promise.all([
+      this.prisma.riderDeposit.findMany({
+        where: { status: 'PENDING' },
+        include: {
+          rider: { select: { firstName: true, lastName: true, phone: true } },
+          collections: { include: { order: { select: { orderNumber: true, totalAmount: true, paymentMethod: true } } } },
+        },
+        orderBy: { depositDate: 'asc' },
+      }),
+      // Raw collections not yet grouped into a deposit batch — auto-created by failsafe
+      this.prisma.cashCollection.findMany({
+        where: { status: 'COLLECTED', riderDepositId: null },
+        include: {
+          rider: { select: { firstName: true, lastName: true, phone: true } },
+          order: { select: { orderNumber: true, totalAmount: true, paymentMethod: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    // Group raw collections by riderId for admin clarity
+    const collectionsByRider = rawCollections.reduce((acc: any, c: any) => {
+      const id = c.riderId;
+      if (!acc[id]) {
+        acc[id] = { id: `raw_${id}`, type: 'RAW_COLLECTION', rider: c.rider, totalAmount: 0, collections: [] };
+      }
+      acc[id].collections.push(c);
+      acc[id].totalAmount += c.amountCollected;
+      return acc;
+    }, {} as Record<string, any>);
+
+    return {
+      deposits,
+      rawCollections: Object.values(collectionsByRider),
+      totalPendingCount: deposits.length + Object.keys(collectionsByRider).length,
+    };
   }
 
   async verifyDeposit(depositId: string, adminId: string, dto: VerifyDepositDto) {

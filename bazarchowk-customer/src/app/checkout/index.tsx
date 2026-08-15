@@ -56,7 +56,7 @@ export default function CheckoutScreen() {
       // Self-pickup: no address needed, compute local bill
       const items = cart?.items || [];
       const itemTotal = items.reduce((sum: number, item: any) => sum + (item.productVariant?.price ?? 0) * (item.quantity || 1), 0);
-      const taxAmount = Math.round(itemTotal * 0.05 * 100) / 100;
+      const taxAmount = 0; // Tax removed by admin request
       setBillDetails({ itemTotal, taxAmount, deliveryFee: 0, walletAmountUsed: 0, payableAmount: itemTotal + taxAmount, walletBalance: 0 });
     } else if (selectedAddressId && shopId) {
       fetchBillDetails();
@@ -80,7 +80,7 @@ export default function CheckoutScreen() {
       // fallback
       const items = cart?.items || [];
       const itemTotal = items.reduce((sum: number, item: any) => sum + (item.productVariant?.price ?? 0) * (item.quantity || 1), 0);
-      const taxAmount = Math.round(itemTotal * 0.05 * 100) / 100;
+      const taxAmount = 0; // Tax removed by admin request
       setBillDetails({ itemTotal, taxAmount, deliveryFee: 0, walletAmountUsed: 0, payableAmount: itemTotal + taxAmount, walletBalance: 0 });
     } finally { setFetchingBill(false); }
   };

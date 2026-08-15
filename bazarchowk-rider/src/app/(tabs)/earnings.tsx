@@ -42,7 +42,7 @@ export default function RiderEarningsScreen() {
 
       const filtered = allDeliveries.filter(inRange);
       const completed = filtered.filter((d: any) => d.status === 'DELIVERED');
-      const deliveryEarnings = completed.length * 25;
+      const deliveryEarnings = completed.reduce((sum: number, d: any) => sum + (d.order?.deliveryFee || 0), 0);
 
       const pending = cashRes.data?.pendingCollections || [];
       const cashInHand = cashRes.data?.totalOutstanding || 0;
@@ -133,7 +133,7 @@ export default function RiderEarningsScreen() {
               </View>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatLabel}>Rate per Trip</Text>
-                <Text style={styles.heroStatVal}>₹25</Text>
+                <Text style={styles.heroStatVal}>₹{completed.length ? (deliveryEarnings / completed.length).toFixed(1) : 0}</Text>
               </View>
             </View>
           </View>
@@ -195,7 +195,7 @@ export default function RiderEarningsScreen() {
                   <View style={[styles.statusBadge, item.status === 'DELIVERED' ? styles.bgGreen : styles.bgGray]}>
                     <Text style={item.status === 'DELIVERED' ? styles.textGreen : styles.textGray}>{item.status || 'COMPLETED'}</Text>
                   </View>
-                  <Text style={styles.ledgerAmount}>+ ₹25</Text>
+                  <Text style={styles.ledgerAmount}>+ ₹{item.order?.deliveryFee || 0}</Text>
                 </View>
                 {item.order?.paymentMethod === 'COD' && (
                   <Text style={styles.codTag}>COD — ₹{Number(item.order?.totalAmount).toFixed(2)} collected</Text>

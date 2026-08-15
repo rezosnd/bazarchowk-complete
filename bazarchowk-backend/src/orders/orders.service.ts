@@ -124,9 +124,11 @@ export class OrdersService {
         }
       }
       if (cityConfig && cityConfig.taxPercent) {
-        taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+        // taxAmount = (itemTotal * cityConfig.taxPercent) / 100;
+        taxAmount = 0; // Tax removed by admin request
       } else {
-        taxAmount = (itemTotal * 5) / 100;
+        // taxAmount = (itemTotal * 5) / 100;
+        taxAmount = 0; // Tax removed by admin request
       }
     }
 
@@ -251,7 +253,7 @@ export class OrdersService {
       if (shop.marketId) {
         const market = await this.prisma.market.findUnique({ where: { id: shop.marketId } });
         if (market) {
-          taxAmount = (totalAmount * (market.gstPercentage || 18)) / 100;
+          taxAmount = 0; // Tax removed by admin request
           let config: any = { "<100": 40, "<200": 30, "default": 20, "freeAbove": 500 };
           if (market.deliveryChargeConfig) {
             try {
@@ -296,9 +298,9 @@ export class OrdersService {
         }
 
         if (cityConfig && cityConfig.taxPercent) {
-          taxAmount = (totalAmount * cityConfig.taxPercent) / 100;
+          taxAmount = 0; // Tax removed by admin request
         } else {
-          taxAmount = (totalAmount * 5) / 100;
+          taxAmount = 0; // Tax removed by admin request
         }
       }
     } else {

@@ -164,10 +164,10 @@ export default function RevenueDashboardScreen() {
               {data.netEarnings < 0 ? `- ₹${Math.abs(data.netEarnings).toLocaleString()}` : `₹${data.netEarnings.toLocaleString()}`}
             </Text>
             <View style={styles.heroBadgeRow}>
-              <View style={styles.heroBadge}>
+              {/* <View style={styles.heroBadge}>
                 <Ionicons name="trending-up" size={16} color="#00B140" />
                 <Text style={styles.heroBadgeText}>+12% vs last {filter.toLowerCase()}</Text>
-              </View>
+              </View> */}
               <View style={styles.heroBadgePending}>
                 <Ionicons name="time-outline" size={16} color="#F59E0B" />
                 <Text style={styles.heroBadgeTextPending}>₹{data.pendingSettlement.toLocaleString()} Pending</Text>
