@@ -179,8 +179,8 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
   }));
 
   return (
-    <View style={styles.tabItem} pointerEvents="box-none">
-      <View style={{ position: 'absolute', top: -24, width: 56, height: 56, zIndex: 100 }} pointerEvents="box-none">
+    <View style={[styles.tabItem, { width: '100%' }]} pointerEvents="box-none">
+      <View style={{ position: 'absolute', top: -24, width: 56, height: 56, zIndex: 100, alignSelf: 'center' }} pointerEvents="box-none">
 
         {/* Main 56px Button */}
         <Animated.View style={[styles.aiButtonCircleLarge, btnStyle]}>
@@ -238,7 +238,7 @@ function TabIcon({
   });
 
   return (
-    <Animated.View style={[styles.tabItem, animatedStyle]}>
+    <Animated.View style={[styles.tabItem, { width: '100%' }, animatedStyle]}>
       <Ionicons name={name} size={24} color={color} />
       <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
         {label}
@@ -309,7 +309,7 @@ export default function TabsLayout() {
                   }}
                   resizeMode="contain"
                 />
-                <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+                <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
               </View>
 
               {/* Precise SVG Glass Overlay with Notch Cutout */}
@@ -330,7 +330,7 @@ export default function TabsLayout() {
                     A 32 32 0 0 1 32 0
                     Z
                   `} 
-                  fill="rgba(255,255,255,0.88)" 
+                  fill="rgba(255,255,255,0.65)" 
                 />
                 {/* Subtle white inner glow stroke instead of a dark outline */}
                 <Path 
@@ -445,7 +445,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingTop: 12,
-    width: W / 5,
   },
   tabLabel: {
     fontSize: 10,
