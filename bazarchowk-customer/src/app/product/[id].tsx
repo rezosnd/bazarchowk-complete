@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,6 +71,19 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      const url = `https://bazarchowk-complete.vercel.app/product/${product.id}`;
+      await Share.share({
+        message: `Check out ${product.name} on BazarChowk! ${url}`,
+        url: url,
+        title: product.name
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   if (loading || !product) {
     return (
       <View style={styles.center}>
@@ -91,7 +104,7 @@ export default function ProductDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TouchableOpacity style={styles.backBtn}>
+          <TouchableOpacity style={styles.backBtn} onPress={handleShare}>
             <Ionicons name="share-social-outline" size={24} color="#122018" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/cart')}>

@@ -173,7 +173,7 @@ export function LanguageSelector() {
         <Ionicons name="chevron-down" size={12} color={TEXT_MAIN} />
       </TouchableOpacity>
 
-      <Modal visible={modalVisible} transparent animationType="none" onRequestClose={closeSheet}>
+      <Modal visible={modalVisible} transparent={true} statusBarTranslucent={true} animationType="none" onRequestClose={closeSheet}>
         <View style={styles.modalOverlay}>
           <Animated.View style={[StyleSheet.absoluteFill, bgAnimatedStyle]}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
