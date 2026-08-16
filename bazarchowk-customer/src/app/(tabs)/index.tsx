@@ -37,11 +37,16 @@ import { TextInput } from 'react-native-gesture-handler';
 const { width: W } = Dimensions.get('window');
 
 const EMERALD = '#00B140';
+const DARK_EMERALD = '#008F35';
+const DEEP_EMERALD = '#006B2A';
+const SOFT_GREEN = '#EAF8EF';
 const ORANGE = '#FF8A00';
-const BG = '#F3FAF5'; // Premium Zomato-style background
+const YELLOW = '#FFC928';
+const BG = '#F7FAF8';
 const CARD_BG = '#FFFFFF';
-const TEXT_MAIN = '#111827';
-const TEXT_MUTED = '#6B7280';
+const TEXT_MAIN = '#17221B';
+const TEXT_MUTED = '#69736D';
+const BORDER = '#E5EBE7';
 
 // ─── Asset ───────────────────────────────────────────────────────────────────
 const LOGO_SRC = require('@/assets/images/APP-ICON.png');
@@ -167,235 +172,162 @@ function AIHero() {
   const isListening = useAIStore(state => state.isListening);
   const { user } = useAuthStore();
   const pulse = useSharedValue(1);
-  const borderGlow = useSharedValue(0.2);
 
   useEffect(() => {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.6, { duration: 1500, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 1500, easing: Easing.in(Easing.ease) }) // Smooth reset
+        withTiming(1.3, { duration: 1500, easing: Easing.out(Easing.ease) }),
+        withTiming(1, { duration: 1500, easing: Easing.in(Easing.ease) })
       ),
       -1, false
     );
   }, []);
 
-  useEffect(() => {
-    if (isListening) {
-      borderGlow.value = withRepeat(
-        withSequence(
-          withTiming(0.4, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.2, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1, true
-      );
-    } else {
-      borderGlow.value = withTiming(0.2, { duration: 300 });
-    }
-  }, [isListening]);
-
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
-    opacity: interpolate(pulse.value, [1, 1.6], [0.8, 0]),
+    opacity: interpolate(pulse.value, [1, 1.3], [0.5, 0]),
   }));
 
-  const borderStyle = useAnimatedStyle(() => {
-    if (!isListening) return { borderColor: 'transparent', borderWidth: 0, shadowOpacity: 0 };
-    return {
-      borderColor: `rgba(0, 177, 64, ${borderGlow.value})`,
-      borderWidth: 2,
-      shadowColor: '#00B140',
-      shadowOpacity: borderGlow.value,
-      shadowRadius: 20,
-      elevation: 10,
-    };
-  });
-
-  const [showComingSoon, setShowComingSoon] = useState(false);
-  const comingSoonOpacity = useSharedValue(0);
-
+  const toggleListening = useAIStore((state) => state.toggleListening);
   const handlePress = () => {
-    setShowComingSoon(true);
-    comingSoonOpacity.value = withSequence(
-      withTiming(1, { duration: 300 }),
-      withTiming(1, { duration: 2000 }),
-      withTiming(0, { duration: 500 })
-    );
-    setTimeout(() => setShowComingSoon(false), 2800);
+    toggleListening();
   };
 
-  const comingSoonStyle = useAnimatedStyle(() => ({
-    opacity: comingSoonOpacity.value,
-    transform: [{ translateY: interpolate(comingSoonOpacity.value, [0, 1], [10, 0]) }]
-  }));
-
   return (
-    <Animated.View style={[styles.aiHeroWrapper, borderStyle]}>
-      <LinearGradient colors={['#00B140', '#00752A']} style={styles.aiHero}>
-      <View style={styles.aiHeroTop}>
-        <View style={styles.aiHeroContent}>
-          <View style={styles.aiBrandRow}>
-            <View style={styles.aiLogoBox}>
-              <Image source={LOGO_SRC} style={{ width: 24, height: 24 }} contentFit="contain" />
+    <View style={styles.aiHeroWrapper}>
+      <LinearGradient colors={[EMERALD, DARK_EMERALD]} style={styles.aiHero}>
+        <View style={styles.aiHeroTop}>
+          <View style={styles.aiHeroContent}>
+            <View style={styles.aiBrandRow}>
+              <Ionicons name="sparkles" size={16} color="#FFF" />
+              <Text style={styles.aiTitle}>Bazar AI Assistant</Text>
             </View>
-            <View>
-              <Text style={styles.aiTitle}>{t('ai.title')}</Text>
-              <Text style={styles.aiSubtitle}>{t('ai.subtitle')}</Text>
-            </View>
-          </View>
-          <View style={styles.aiGreeting}>
             <Text style={styles.aiGreetingText}>{t('ai.greeting', { name: user?.firstName || 'there' })}</Text>
           </View>
+
+          <View style={styles.aiMicContainerLarge}>
+            {isListening && <Animated.View style={[styles.aiMicGlowLarge, glowStyle]} />}
+            <TouchableOpacity 
+              style={styles.aiMicBtnLarge} 
+              activeOpacity={0.8}
+              onPress={handlePress}
+            >
+              <Ionicons name="mic" size={28} color={EMERALD} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.aiMicContainerLarge}>
-          <Animated.View style={[styles.aiMicGlowLarge, glowStyle, { backgroundColor: '#00D64D' }]} />
-          
-          <TouchableOpacity 
-            style={styles.aiMicBtnLarge} 
-            activeOpacity={0.8}
-            onPress={handlePress}
-          >
-            <Ionicons name="mic" size={32} color="#FFF" />
-          </TouchableOpacity>
-
-          {showComingSoon && (
-            <Animated.View style={[{ position: 'absolute', bottom: -40, width: 140, backgroundColor: 'rgba(0,0,0,0.8)', padding: 8, borderRadius: 12, alignItems: 'center' }, comingSoonStyle]}>
-              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold', textAlign: 'center' }}>✨ AI is in progress... We will be back!</Text>
-            </Animated.View>
-          )}
-        </View>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.aiPillScroll}>
-        {[
-          t('ai.pills.vegetables'),
-          t('ai.pills.plumber'),
-          t('ai.pills.doctor'),
-          t('ai.pills.pandit'),
-          t('ai.pills.medicine')
-        ].map((txt, i) => (
-          <TouchableOpacity key={i} style={styles.aiPill} activeOpacity={0.7}>
-            <Text style={styles.aiPillText}>{txt}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.aiPillScroll}>
+          {[
+            { label: 'Fresh Vegetables', icon: 'basket-outline' },
+            { label: 'Order Food', icon: 'restaurant-outline' },
+            { label: 'Find a Plumber', icon: 'build-outline' },
+            { label: 'More', icon: 'ellipsis-horizontal' },
+          ].map((item, i) => (
+            <TouchableOpacity key={i} style={styles.aiPill} activeOpacity={0.7}>
+              <Ionicons name={item.icon as any} size={14} color="#FFF" />
+              <Text style={styles.aiPillText}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </LinearGradient>
-    </Animated.View>
+    </View>
   );
 }
 
 function GlobalSearch() {
-  const { t } = useTranslation();
   return (
     <View style={styles.searchWrapper}>
       <TouchableOpacity style={styles.searchBar} activeOpacity={0.9} onPress={() => router.push('/search')}>
-        <Ionicons name="search" size={22} color={TEXT_MUTED} />
-        <Text style={styles.searchPlaceholder} numberOfLines={1}>{t('search.placeholder')}</Text>
-        <Ionicons name="mic-outline" size={24} color={TEXT_MAIN} style={{ marginRight: 12 }} />
-        <View style={styles.searchSparkle}>
-          <Ionicons name="sparkles" size={16} color="#FFF" />
+        <Ionicons name="search" size={20} color={TEXT_MUTED} />
+        <Text style={styles.searchPlaceholder} numberOfLines={1}>Search groceries, food & more</Text>
+        <View style={styles.searchRight}>
+          <Ionicons name="mic-outline" size={22} color={TEXT_MUTED} />
+          <View style={styles.searchSparkle}>
+            <Ionicons name="sparkles" size={18} color={EMERALD} />
+          </View>
         </View>
       </TouchableOpacity>
     </View>
   );
 }
 
-function CategoriesGrid() {
-  const { t } = useTranslation();
-  
+function ServiceDiscovery() {
+  const services = [
+    { id: 'groceries', name: 'Groceries', icon: 'basket', color: EMERALD, bg: SOFT_GREEN, route: '/(tabs)/categories' },
+    { id: 'food', name: 'Food', icon: 'restaurant', color: ORANGE, bg: '#FFF7ED', route: '/search' },
+    { id: 'medicine', name: 'Medicine', icon: 'medkit', color: '#3B82F6', bg: '#EFF6FF', route: '/search' },
+    { id: 'salon', name: 'Salon', icon: 'cut', color: '#EC4899', bg: '#FDF2F8', route: '/service-category?type=Salon' },
+    { id: 'services', name: 'Services', icon: 'build', color: '#8B5CF6', bg: '#F5F3FF', route: '/search' },
+  ];
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitleMain}>What are you looking for?</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+        {services.map((s) => (
+          <TouchableOpacity 
+             key={s.id} 
+             style={styles.serviceDiscItem} 
+             onPress={() => router.push(s.route as any)}
+             activeOpacity={0.8}
+          >
+             <View style={[styles.serviceDiscIconWrap, { backgroundColor: s.bg }]}>
+                <Ionicons name={s.icon as any} size={28} color={s.color} />
+             </View>
+             <Text style={styles.serviceDiscText}>{s.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function ShopByCategory() {
   const { data: fetchedCategories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => HomeService.getCategories()
   });
 
-  const displayCategories = fetchedCategories.slice(0, 8);
+  if (isLoading || fetchedCategories.length === 0) return null;
 
   return (
-    <View style={styles.categoryGrid}>
-      {displayCategories.map((c: any) => (
-        <TouchableOpacity
-          key={c.id}
-          style={styles.catItem}
-          activeOpacity={0.7}
-          onPress={() => router.push(`/category/${c.id}?name=${encodeURIComponent(c.name || 'Category')}` as any)}
-        >
-          <View style={styles.catIconWrap}>
-            {c.imageUrl || c.iconUrl ? (
-              <Image source={{ uri: c.imageUrl || c.iconUrl }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-            ) : (
-              <Ionicons name="grid" size={26} color={EMERALD} />
-            )}
-          </View>
-          <Text
-            style={styles.catText}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
+    <View style={styles.section}>
+      <SectionHeader title="Shop by Category" onPress={() => router.push('/(tabs)/categories')} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+        {fetchedCategories.slice(0, 10).map((c: any) => (
+          <TouchableOpacity
+            key={c.id}
+            style={styles.categoryCard}
+            activeOpacity={0.8}
+            onPress={() => router.push(`/category/${c.id}?name=${encodeURIComponent(c.name || 'Category')}` as any)}
           >
-            {c.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-
-      {/* View All Button */}
-      <TouchableOpacity
-        style={styles.catItem}
-        activeOpacity={0.7}
-        onPress={() => router.push('/(tabs)/categories')}
-      >
-        <View style={[styles.catIconWrap, { backgroundColor: EMERALD }]}>
-          <Ionicons name="grid" size={26} color="#FFFFFF" />
-        </View>
-        <Text
-          style={styles.catText}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.8}
-        >
-          {t('categories.more') || 'More'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function ServicesCategoryGrid() {
-  const { t } = useTranslation();
-  
-  const services = [
-    { id: 'salon', name: 'Salon', icon: 'cut', color: '#EC4899', bg: '#FCE7F3', type: 'Salon' },
-    { id: 'plumber', name: 'Plumber', icon: 'build', color: '#3B82F6', bg: '#DBEAFE', type: 'Plumber' },
-    { id: 'electrician', name: 'Electrician', icon: 'flash', color: '#EAB308', bg: '#FEF08A', type: 'Electrician' },
-    { id: 'cleaning', name: 'Cleaning', icon: 'sparkles', color: '#14B8A6', bg: '#CCFBF1', type: 'Cleaning' },
-  ];
-
-  return (
-    <View style={[styles.categoryGrid, { marginTop: 16 }]}>
-       {services.map((s) => (
-          <TouchableOpacity 
-             key={s.id} 
-             style={styles.catItem} 
-             onPress={() => router.push(`/service-category?type=${s.type}` as any)}
-          >
-             <View style={[styles.catIconWrap, { backgroundColor: s.bg }]}>
-                <Ionicons name={s.icon as any} size={26} color={s.color} />
-             </View>
-             <Text style={styles.catText} numberOfLines={1}>{s.name}</Text>
+            <View style={styles.categoryImgWrap}>
+              {c.imageUrl || c.iconUrl ? (
+                <Image source={{ uri: c.imageUrl || c.iconUrl }} style={styles.categoryImg} contentFit="cover" />
+              ) : (
+                <Ionicons name="grid" size={24} color={TEXT_MUTED} />
+              )}
+            </View>
+            <Text style={styles.categoryLabel} numberOfLines={2}>{c.name}</Text>
           </TouchableOpacity>
-       ))}
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ title, onPress }: { title: string, onPress?: () => void }) {
   const { t } = useTranslation();
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn}>
-        <Text style={styles.seeAllTxt}>{t('common.seeAll')}</Text>
-        <Ionicons name="chevron-forward" size={16} color={EMERALD} />
-      </TouchableOpacity>
+      {onPress && (
+        <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn} onPress={onPress}>
+          <Text style={styles.seeAllTxt}>{t('common.seeAll')}</Text>
+          <Ionicons name="chevron-forward" size={16} color={EMERALD} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -413,7 +345,7 @@ function NearbyShops({ lat, lng, city }: { lat?: number, lng?: number, city?: st
 
   return (
     <View style={styles.section}>
-      <SectionHeader title={t('sections.nearbyShops')} />
+      <SectionHeader title="Local Favorites Near You" onPress={() => router.push('/search')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {shops.map((shop: any) => (
           <TouchableOpacity key={shop.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/shop/${shop.id}`)}>
@@ -458,7 +390,7 @@ function NearbyServices({ lat, lng, city }: { lat?: number, lng?: number, city?:
 
   return (
     <View style={styles.section}>
-      <SectionHeader title="Services Near You" />
+      <SectionHeader title="Services Near You" onPress={() => router.push('/search')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {services.map((svc: any) => (
           <TouchableOpacity key={svc.id} style={styles.shopCard} activeOpacity={0.9} onPress={() => router.push(`/services/${svc.id}`)}>
@@ -500,7 +432,7 @@ function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
 
   return (
     <View style={styles.section}>
-      <SectionHeader title={t('sections.popularMarkets')} />
+      <SectionHeader title={t('sections.popularMarkets')} onPress={() => router.push('/search')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {markets.map((m: any) => (
           <TouchableOpacity key={m.id} style={styles.marketCard} activeOpacity={0.9} onPress={() => router.push(`/market/${m.id}` as any)}>
@@ -542,31 +474,28 @@ function PromoCarousel({ lat, lng }: { lat?: number, lng?: number }) {
   if (isLoading || ads.length === 0) return null;
 
   return (
-    <View style={[styles.section, { paddingTop: 0, paddingBottom: 16 }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll} pagingEnabled snapToInterval={W - 32} decelerationRate="fast">
+    <View style={[styles.section, { paddingTop: 0 }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll} pagingEnabled snapToInterval={W - 28} decelerationRate="fast">
         {ads.map((ad: any) => (
           <TouchableOpacity 
             key={ad.id} 
             activeOpacity={0.9} 
-            style={{ width: W - 48, height: 160, marginRight: 16 }}
+            style={{ width: W - 48, height: (W - 48) * (7/16), marginRight: 20 }}
             onPress={() => {
               if (ad.shop?.id) {
                 router.push(`/shop/${ad.shop.id}`);
-              } else if (ad.targetUrl) {
-                // If there's a target URL but no shop ID, we could handle it, but for now we just log
-                console.log('Target URL:', ad.targetUrl);
               }
             }}
           >
             {ad.imageUrl ? (
               <Image 
                 source={{ uri: ad.imageUrl }} 
-                style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+                style={{ width: '100%', height: '100%', borderRadius: 24 }} 
                 contentFit="cover" 
               />
             ) : (
-              <View style={{ width: '100%', height: '100%', borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="megaphone-outline" size={32} color="#CBD5E1" />
+              <View style={{ width: '100%', height: '100%', borderRadius: 24, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: BORDER }}>
+                <Ionicons name="image-outline" size={32} color="#CBD5E1" />
               </View>
             )}
           </TouchableOpacity>
@@ -576,54 +505,33 @@ function PromoCarousel({ lat, lng }: { lat?: number, lng?: number }) {
   );
 }
 
-function TodaysOffers() {
-  const { t } = useTranslation();
+function TodaysBestDeals() {
   return (
-    <View style={styles.section}>
-      <SectionHeader title={t('sections.todaysOffers')} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
-        <TouchableOpacity activeOpacity={0.9}>
-          <LinearGradient colors={['#DCFCE7', '#BBF7D0']} style={styles.offerCard}>
-            <View style={styles.offerContent}>
-              <Text style={[styles.offerTag, { color: EMERALD }]}>UP TO</Text>
-              <Text style={[styles.offerTitle, { color: '#065F46' }]}>50% {t('offers.off')}</Text>
-              <Text style={[styles.offerSub, { color: '#065F46' }]}>On {t('categories.grocery')}</Text>
+    <View style={[styles.section, { backgroundColor: SOFT_GREEN, paddingVertical: 24, marginHorizontal: -20, paddingHorizontal: 20 }]}>
+      <SectionHeader title="Today's Best Deals" onPress={() => router.push('/search')} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.hScroll, { paddingHorizontal: 0 }]}>
+        <TouchableOpacity activeOpacity={0.9} style={styles.dealCard}>
+          <View style={styles.dealContent}>
+            <View style={[styles.dealBadge, { backgroundColor: '#FEF2F2' }]}>
+              <Ionicons name="pricetag" size={12} color="#EF4444" />
+              <Text style={[styles.dealBadgeTxt, { color: '#EF4444' }]}>20% OFF</Text>
             </View>
-            <Image source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=200&q=80' }} style={styles.offerImg} contentFit="cover" />
-          </LinearGradient>
+            <Text style={styles.dealTitle}>Fresh Grocery</Text>
+            <Text style={styles.dealSub}>Discount on all fresh items</Text>
+          </View>
+          <Image source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=200&q=80' }} style={styles.dealImg} contentFit="cover" />
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.9}>
-          <LinearGradient colors={['#FFEDD5', '#FED7AA']} style={styles.offerCard}>
-            <View style={styles.offerContent}>
-              <Text style={[styles.offerTag, { color: ORANGE }]}>FREE</Text>
-              <Text style={[styles.offerTitle, { color: '#9A3412' }]}>DELIVERY</Text>
-              <Text style={[styles.offerSub, { color: '#9A3412' }]}>On Orders above ₹199</Text>
+        <TouchableOpacity activeOpacity={0.9} style={styles.dealCard}>
+          <View style={styles.dealContent}>
+            <View style={[styles.dealBadge, { backgroundColor: '#FFFBEB' }]}>
+              <Ionicons name="flash" size={12} color={ORANGE} />
+              <Text style={[styles.dealBadgeTxt, { color: ORANGE }]}>FREE DELIVERY</Text>
             </View>
-            <Image source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80' }} style={styles.offerImg} contentFit="cover" />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <TouchableOpacity activeOpacity={0.9}>
-          <LinearGradient colors={['#DBEAFE', '#BFDBFE']} style={styles.offerCard}>
-            <View style={styles.offerContent}>
-              <Text style={[styles.offerTag, { color: '#2563EB' }]}>FLAT</Text>
-              <Text style={[styles.offerTitle, { color: '#1E40AF' }]}>20% CB</Text>
-              <Text style={[styles.offerSub, { color: '#1E40AF' }]}>On {t('categories.medicine')}</Text>
-            </View>
-            <Image source={{ uri: 'https://images.unsplash.com/photo-1584308666744-24d5e478ac5c?auto=format&fit=crop&w=200&q=80' }} style={styles.offerImg} contentFit="cover" />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <TouchableOpacity activeOpacity={0.9}>
-          <LinearGradient colors={['#FCE7F3', '#FBCFE8']} style={styles.offerCard}>
-            <View style={styles.offerContent}>
-              <Text style={[styles.offerTag, { color: '#DB2777' }]}>{t('categories.salon').toUpperCase()}</Text>
-              <Text style={[styles.offerTitle, { color: '#9D174D' }]}>OFFERS</Text>
-              <Text style={[styles.offerSub, { color: '#9D174D' }]}>Up to 40% {t('offers.off')}</Text>
-            </View>
-            <Image source={{ uri: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=200&q=80' }} style={styles.offerImg} contentFit="cover" />
-          </LinearGradient>
+            <Text style={styles.dealTitle}>On ₹199+</Text>
+            <Text style={styles.dealSub}>Get your order delivered free</Text>
+          </View>
+          <Image source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80' }} style={styles.dealImg} contentFit="cover" />
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -642,7 +550,7 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
 
   return (
     <View style={styles.section}>
-      <SectionHeader title={t('sections.recommended')} />
+      <SectionHeader title="Popular Near You" onPress={() => router.push('/search')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {products.map((prod: any) => {
           const isOutOfStock = !prod.variants?.[0] || prod.variants[0].stock <= 0;
@@ -659,11 +567,12 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
             <View style={styles.productPriceRow}>
               <Text style={styles.productPrice}>₹{prod.variants?.[0]?.price || prod.basePrice}</Text>
               {isOutOfStock ? (
-                <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }]}>
+                <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: BORDER }]}>
                   <Text style={[styles.addBtnText, { color: '#94A3B8', fontSize: 10 }]}>OUT OF STOCK</Text>
                 </View>
               ) : (
                 <TouchableOpacity style={styles.addBtn} onPress={() => router.push(`/product/${prod.id}`)}>
+                  <Ionicons name="add" size={14} color={EMERALD} />
                   <Text style={styles.addBtnText}>ADD</Text>
                 </TouchableOpacity>
               )}
@@ -724,43 +633,28 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Fancy Blended Background Gradient (Blinkit/Zepto style) */}
-      <LinearGradient
-        colors={['#D1F5DF', '#F3FAF5', '#F3FAF5']}
-        locations={[0, 0.3, 1]}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 500 }}
-      />
-
       <Animated.View style={animatedMainStyle}>
-        <View style={{ paddingTop: insets.top }}>
+        <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 16 }}>
           <HomeHeader />
         </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
+          contentContainerStyle={[
+            styles.scrollContent, 
+            { 
+              paddingTop: 16,
+              paddingBottom: 130 + insets.bottom 
+            }
+          ]}
         >
           <AIHero />
-          
-          {/* Animated Welcome Banner (GIF) */}
-          <View style={{ alignItems: 'center', marginVertical: 8, zIndex: 10 }}>
-            <Image 
-              source={require('@/assets/images/animation.gif')} 
-              style={{ width: '92%', height: 80 }} 
-              contentFit="contain" 
-            />
-          </View>
-          
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
-          <CategoriesGrid />
-          <ServicesCategoryGrid />
-
-          <NearbyServices lat={location?.lat} lng={location?.lng} city={location?.city} />
-          <NearbyShops lat={location?.lat} lng={location?.lng} city={location?.city} />
-          <PopularMarkets lat={location?.lat} lng={location?.lng} />
-          <TodaysOffers />
-          
+          <ServiceDiscovery />
+          <ShopByCategory />
+          <TodaysBestDeals />
           <RecommendedSection lat={location?.lat} lng={location?.lng} city={location?.city} />
+          <NearbyShops lat={location?.lat} lng={location?.lng} city={location?.city} />
         </ScrollView>
         
         {/* Subtle backdrop reaction when listening */}
@@ -781,7 +675,7 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   scrollContent: {
-    paddingBottom: 110, // space for 72px tab bar + safe area
+    // paddingBottom is set dynamically inline to account for safe area and elevated button
   },
 
   // Header
@@ -1117,44 +1011,64 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: EMERALD,
+    backgroundColor: '#F3FAF5',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Categories (Accessible Grid)
-  categoryGrid: {
+  searchRight: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 8,
-    marginTop: 32, // space below search
-    justifyContent: 'flex-start',
-  },
-  catItem: {
-    width: '25%', // 4 columns for large, accessible touch targets
     alignItems: 'center',
-    marginBottom: 24,
+    gap: 12,
   },
-  catIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28, // perfect circle
+
+  // Categories & Service Discovery
+  serviceHScroll: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  serviceDiscItem: {
+    alignItems: 'center',
+    width: 72,
+  },
+  serviceDiscIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  serviceDiscText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: TEXT_MAIN,
+    textAlign: 'center',
+  },
+  categoryCard: {
+    alignItems: 'center',
+    width: 80,
+  },
+  categoryImgWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    ...Platform.select({
-      ios: { shadowColor: EMERALD, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16 },
-      android: { elevation: 4 },
-    }),
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
   },
-  catText: {
-    fontFamily: 'Inter-Medium',
+  categoryImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  categoryLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '500',
+    color: TEXT_MUTED,
     textAlign: 'center',
-    paddingHorizontal: 4,
     width: '100%',
   },
 
@@ -1175,6 +1089,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: TEXT_MAIN,
     letterSpacing: -0.3,
+  },
+  sectionTitleMain: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 22,
+    fontWeight: '900',
+    color: TEXT_MAIN,
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   seeAllBtn: {
     flexDirection: 'row',
@@ -1304,40 +1226,54 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
 
-  // Offer Card
-  offerCard: {
+  // Deal Card
+  dealCard: {
     width: 290,
     height: 150,
-    borderRadius: 24,
+    borderRadius: 20,
+    backgroundColor: CARD_BG,
     flexDirection: 'row',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: BORDER,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
+      android: { elevation: 2 },
+    }),
   },
-  offerContent: {
-    padding: 20,
+  dealContent: {
+    padding: 16,
     flex: 1,
     justifyContent: 'center',
   },
-  offerTag: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 6,
+  dealBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  offerTitle: {
-    fontSize: 28,
-    fontWeight: '900',
+  dealBadgeTxt: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  dealTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: TEXT_MAIN,
     marginBottom: 4,
   },
-  offerSub: {
-    fontSize: 14,
-    fontWeight: '600',
+  dealSub: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: TEXT_MUTED,
   },
-  offerImg: {
-    width: 140,
+  dealImg: {
+    width: 120,
     height: 150,
-    position: 'absolute',
-    right: -10,
-    bottom: -10,
-    borderRadius: 24,
   },
 
   // FAB
@@ -1393,10 +1329,15 @@ const styles = StyleSheet.create({
     color: TEXT_MAIN,
   },
   addBtn: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F3FAF5',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 177, 64, 0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   addBtnText: {
     fontSize: 12,

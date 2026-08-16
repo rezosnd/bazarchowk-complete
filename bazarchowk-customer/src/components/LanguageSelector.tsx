@@ -81,13 +81,13 @@ function LanguageCard({ lang, isSelected, onPress }: { lang: typeof LANGUAGES[0]
       }}
     >
       <Animated.View style={[styles.langCard, animatedStyle]}>
-        <View style={styles.langCardLeft}>
+        <View style={styles.langCardTop}>
           <Text style={[styles.langNative, isSelected && { color: EMERALD }]}>{lang.native}</Text>
-          <Text style={styles.langName}>{lang.name}</Text>
+          <View style={[styles.radioCircle, isSelected && { borderColor: EMERALD }]}>
+            <Animated.View style={[styles.radioFill, indicatorStyle]} />
+          </View>
         </View>
-        <View style={[styles.radioCircle, isSelected && { borderColor: EMERALD }]}>
-          <Animated.View style={[styles.radioFill, indicatorStyle]} />
-        </View>
+        <Text style={styles.langName}>{lang.name}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -166,9 +166,11 @@ export function LanguageSelector() {
   return (
     <>
       <TouchableOpacity style={styles.langChip} activeOpacity={0.7} onPress={openSheet}>
-        <Ionicons name="language" size={16} color={EMERALD} />
+        <View style={styles.langIconWrapper}>
+          <Ionicons name="language" size={14} color={EMERALD} />
+        </View>
         <Text style={styles.langChipText}>{i18n.language ? i18n.language.toUpperCase() : 'EN'}</Text>
-        <Ionicons name="chevron-down" size={14} color={TEXT_MUTED} />
+        <Ionicons name="chevron-down" size={12} color={TEXT_MAIN} />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent animationType="none" onRequestClose={closeSheet}>
@@ -224,18 +226,31 @@ const styles = StyleSheet.create({
   langChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3FAF5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0, 177, 64, 0.2)',
+    borderColor: '#E5E7EB',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  langIconWrapper: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F3FAF5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   langChipText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: EMERALD,
+    fontSize: 12,
+    fontWeight: '700',
+    color: TEXT_MAIN,
   },
   modalOverlay: {
     flex: 1,
@@ -292,37 +307,41 @@ const styles = StyleSheet.create({
   langListContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 12,
   },
   langCard: {
-    height: 76,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    width: (W - 48 - 12) / 2, // 2 columns with 12 gap and 24 horizontal padding each side = 48
+    height: 85,
+    padding: 16,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#EAEAEA',
+    justifyContent: 'space-between',
   },
-  langCardLeft: {
-    flexDirection: 'column',
-    gap: 2,
+  langCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
   },
   langNative: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: TEXT_MAIN,
   },
   langName: {
     fontSize: 13,
     color: TEXT_MUTED,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#DADADA',
     alignItems: 'center',
@@ -330,9 +349,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF'
   },
   radioFill: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: EMERALD,
   },
   footer: {
