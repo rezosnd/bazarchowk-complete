@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, Animated, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, Platform, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import api from '@/services/api';
 import { Image } from 'expo-image';
 import { socketService } from '@/services/socket';
 import { WebView } from 'react-native-webview';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 const PRIMARY = '#00B140';

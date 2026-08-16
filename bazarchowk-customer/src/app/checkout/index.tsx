@@ -9,6 +9,9 @@ try { RazorpayCheckout = require('react-native-razorpay').default; } catch (e) {
 import api from '@/services/api';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { Header } from '@/components/Header';
+import { PressableScale } from '@/components/PressableScale';
 
 const PRIMARY = '#00B140';
 

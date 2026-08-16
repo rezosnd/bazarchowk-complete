@@ -68,7 +68,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store';
 import { useAppStore } from '@/store/app.store';
 
-function HomeHeader() {
+export function HomeHeader() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { cart } = useCartStore();
@@ -727,19 +727,7 @@ export default function HomeScreen() {
 
           <AIHero />
 
-          {/* WELCOME GIF - Reduced vertical gap */}
-          <View style={styles.welcomeGifContainer}>
-            <Image 
-              source={require('@/assets/images/animation.gif')} 
-              style={styles.welcomeGif} 
-              contentFit="cover" 
-            />
-            {/* Blending Gradients to mask the rectangular edges */}
-            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} style={styles.fadeTop} />
-            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} style={styles.fadeBottom} />
-            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeLeft} />
-            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeRight} />
-          </View>
+
 
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />

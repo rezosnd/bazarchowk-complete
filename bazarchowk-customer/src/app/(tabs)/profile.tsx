@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Header } from '@/components/Header';
+import { HomeHeader } from './index';
 import { PressableScale } from '@/components/PressableScale';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
@@ -79,7 +79,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <Header title="My Profile" showBack={false} />
+      <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E5EBE7' }}>
+        <HomeHeader />
+      </View>
 
       <ScrollView
         style={{ flex: 1 }}

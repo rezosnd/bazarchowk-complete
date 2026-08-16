@@ -39,7 +39,6 @@ import { useAIStore } from '@/store/aiStore';
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
 
-import { BottomTabBar } from '@react-navigation/bottom-tabs';
 import { useAppStore } from '@/store/app.store';
 
 // ─── Global AI Overlay ────────────────────────────────────────────────────────
@@ -124,11 +123,11 @@ function GlobalAIOverlay({ animatedY }: { animatedY: any }) {
       {/* Crisp Mic Button perfectly aligned over the blur */}
       <Animated.View style={[{
         position: 'absolute',
-        bottom: buttonCenterY - 36,
+        bottom: buttonCenterY - 24,
         alignSelf: 'center',
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: EMERALD,
         alignItems: 'center',
         justifyContent: 'center',
@@ -138,7 +137,7 @@ function GlobalAIOverlay({ animatedY }: { animatedY: any }) {
         shadowRadius: 30,
         elevation: 10,
       }, animatedY]}>
-        <Ionicons name="mic" size={30} color="#FFF" style={{ left: 0, top: 0 }} />
+        <Ionicons name="mic" size={26} color="#FFF" style={{ left: 0, top: 0 }} />
       </Animated.View>
     </Animated.View>
   );
@@ -181,9 +180,9 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
 
   return (
     <View style={styles.tabItem} pointerEvents="box-none">
-      <View style={{ position: 'absolute', top: -36, width: 72, height: 72, zIndex: 100 }} pointerEvents="box-none">
+      <View style={{ position: 'absolute', top: -24, width: 56, height: 56, zIndex: 100 }} pointerEvents="box-none">
 
-        {/* Main 72px Button */}
+        {/* Main 56px Button */}
         <Animated.View style={[styles.aiButtonCircleLarge, btnStyle]}>
           <TouchableOpacity 
             activeOpacity={1} 
@@ -192,7 +191,7 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
             onPress={onPress}
             style={styles.btnCenter}
           >
-            <Ionicons name="mic" size={30} color="#FFF" style={{ left: 0, top: 0 }} />
+            <Ionicons name="mic" size={26} color="#FFF" style={{ left: 0, top: 0 }} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -287,47 +286,101 @@ export default function TabsLayout() {
   return (
     <>
     <Tabs
-      tabBar={(props) => (
-        <Animated.View style={[{ position: 'absolute', bottom: 0, left: 0, right: 0, elevation: 10, zIndex: 10 }, animatedTabStyle]}>
-          <BottomTabBar {...props} />
-        </Animated.View>
-      )}
+      tabBar={(props) => {
+        const { state, descriptors, navigation } = props;
+        return (
+          <Animated.View style={[{ position: 'absolute', bottom: bottomPad, left: 16, right: 16, height: tabHeight, elevation: 10, zIndex: 10, flexDirection: 'row' }, animatedTabStyle]}>
+            
+            {/* Background */}
+            <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
+              
+              {/* Underlay Glass: preserves the blurred background and scooty behind the SVG */}
+              <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 32, overflow: 'hidden' }}>
+                <Image 
+                  source={require('@/assets/images/scooty.png')} 
+                  style={{
+                    position: 'absolute',
+                    top: -30,
+                    alignSelf: 'center',
+                    width: 150,
+                    height: 90,
+                    zIndex: 10,
+                    opacity: 0.9
+                  }}
+                  resizeMode="contain"
+                />
+                <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+              </View>
+
+              {/* Precise SVG Glass Overlay with Notch Cutout */}
+              <Svg width={W - 32} height={tabHeight} style={StyleSheet.absoluteFill}>
+                <Path 
+                  d={`
+                    M 32 0
+                    L ${(W - 32) / 2 - 45} 0
+                    C ${(W - 32) / 2 - 30} 0, ${(W - 32) / 2 - 24} 36, ${(W - 32) / 2} 36
+                    C ${(W - 32) / 2 + 24} 36, ${(W - 32) / 2 + 30} 0, ${(W - 32) / 2 + 45} 0
+                    L ${(W - 32) - 32} 0
+                    A 32 32 0 0 1 ${(W - 32)} 32
+                    L ${(W - 32)} ${tabHeight - 32}
+                    A 32 32 0 0 1 ${(W - 32) - 32} ${tabHeight}
+                    L 32 ${tabHeight}
+                    A 32 32 0 0 1 0 ${tabHeight - 32}
+                    L 0 32
+                    A 32 32 0 0 1 32 0
+                    Z
+                  `} 
+                  fill="rgba(255,255,255,0.88)" 
+                />
+                {/* Subtle white inner glow stroke instead of a dark outline */}
+                <Path 
+                  d={`
+                    M 32 0
+                    L ${(W - 32) / 2 - 45} 0
+                    C ${(W - 32) / 2 - 30} 0, ${(W - 32) / 2 - 24} 36, ${(W - 32) / 2} 36
+                    C ${(W - 32) / 2 + 24} 36, ${(W - 32) / 2 + 30} 0, ${(W - 32) / 2 + 45} 0
+                    L ${(W - 32) - 32} 0
+                    A 32 32 0 0 1 ${(W - 32)} 32
+                    L ${(W - 32)} ${tabHeight - 32}
+                    A 32 32 0 0 1 ${(W - 32) - 32} ${tabHeight}
+                    L 32 ${tabHeight}
+                    A 32 32 0 0 1 0 ${tabHeight - 32}
+                    L 0 32
+                    A 32 32 0 0 1 32 0
+                    Z
+                  `} 
+                  fill="none" 
+                  stroke="rgba(255,255,255,0.9)" 
+                  strokeWidth={1} 
+                />
+              </Svg>
+            </View>
+
+            {/* Tabs */}
+            {state.routes.map((route: any, index: number) => {
+              const { options } = descriptors[route.key];
+              const isFocused = state.index === index;
+
+              const onPress = () => {
+                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+              };
+
+              if (options.tabBarButton) {
+                return <React.Fragment key={route.key}>{options.tabBarButton({ onPress, accessibilityState: { selected: isFocused } })}</React.Fragment>;
+              }
+
+              return (
+                <TouchableOpacity key={route.key} activeOpacity={1} onPress={onPress} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  {options.tabBarIcon ? options.tabBarIcon({ focused: isFocused, color: isFocused ? EMERALD : '#9CA3AF', size: 24 }) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </Animated.View>
+        );
+      }}
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: bottomPad, // Strictly above system navigation
-          left: 16,
-          right: 16,
-          height: tabHeight,
-          elevation: 0,
-          borderTopWidth: 0,
-          backgroundColor: 'transparent',
-        },
-        tabBarBackground: () => (
-          <View style={styles.glassContainer}>
-            <Image 
-              source={require('@/assets/images/scooty.png')} 
-              style={{
-                position: 'absolute',
-                top: -30,
-                alignSelf: 'center',
-                width: 150,
-                height: 90,
-                zIndex: 10
-              }}
-              resizeMode="contain"
-            />
-            <BlurView
-              intensity={30}
-              tint="light"
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Base translucent color overlay */}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.85)' }]} />
-          </View>
-        ),
       }}
     >
       <Tabs.Screen
@@ -402,9 +455,9 @@ const styles = StyleSheet.create({
   },
   
   aiButtonCircleLarge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: EMERALD,
     shadowColor: EMERALD,
     shadowOffset: { width: 0, height: 10 },
@@ -415,8 +468,8 @@ const styles = StyleSheet.create({
   btnCenter: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 72,
-    height: 72,
+    width: 56,
+    height: 56,
   },
   absoluteCenter: {
     position: 'absolute',

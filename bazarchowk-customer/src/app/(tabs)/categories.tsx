@@ -12,7 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import api from '@/services/api';
 import { useAuthStore } from '@/store';
-import { Header } from '@/components/Header';
+import { HomeHeader } from './index';
 import { PressableScale } from '@/components/PressableScale';
 
 const { width: W } = Dimensions.get('window');
@@ -70,7 +70,9 @@ export default function CategoriesScreen() {
 
   return (
     <View style={styles.root}>
-      <Header title="All Categories" showBack={false} />
+      <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E5EBE7' }}>
+        <HomeHeader />
+      </View>
 
       <ScrollView
         style={{ flex: 1 }}

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
 import { router } from 'expo-router';
-import { Header } from '@/components/Header';
+import { HomeHeader } from './index';
 import { PressableScale } from '@/components/PressableScale';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -50,7 +50,9 @@ export default function OrdersScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.root}>
-        <Header title="My Orders" showBack={false} />
+        <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E5EBE7' }}>
+          <HomeHeader />
+        </View>
         <View style={styles.center}>
           <View style={styles.emptyIconBg}>
             <Ionicons name="receipt-outline" size={56} color="#8B9690" />
@@ -63,7 +65,9 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.root}>
-      <Header title="My Orders" showBack={false} />
+      <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E5EBE7' }}>
+        <HomeHeader />
+      </View>
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>
