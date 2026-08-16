@@ -39,9 +39,12 @@ import { useAIStore } from '@/store/aiStore';
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
 
+import { BottomTabBar } from '@react-navigation/bottom-tabs';
+import { useAppStore } from '@/store/app.store';
+
 // ─── Global AI Overlay ────────────────────────────────────────────────────────
 
-function GlobalAIOverlay() {
+function GlobalAIOverlay({ animatedY }: { animatedY: any }) {
   const isListening = useAIStore((state) => state.isListening);
   const overlayOpacity = useSharedValue(0);
   const insets = useSafeAreaInsets();
@@ -119,7 +122,7 @@ function GlobalAIOverlay() {
       <Animated.View style={[rippleBase, style5]} />
 
       {/* Crisp Mic Button perfectly aligned over the blur */}
-      <View style={{
+      <Animated.View style={[{
         position: 'absolute',
         bottom: buttonCenterY - 36,
         alignSelf: 'center',
@@ -134,9 +137,9 @@ function GlobalAIOverlay() {
         shadowOpacity: 0.5,
         shadowRadius: 30,
         elevation: 10,
-      }}>
+      }, animatedY]}>
         <Ionicons name="mic" size={30} color="#FFF" style={{ left: 0, top: 0 }} />
-      </View>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -251,6 +254,8 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   
+  const { isTabBarVisible } = useAppStore();
+
   // Strict Safe Area logic: bottom navigation floats ABOVE the system navigation
   const bottomPad = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : Math.max(insets.bottom, 12);
   const tabHeight = 65; 
@@ -266,9 +271,27 @@ export default function TabsLayout() {
     }
   }, [isAuthenticated]);
 
+  const animatedTabStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: withTiming(isTabBarVisible ? 0 : 150, {
+            duration: 350,
+            easing: Easing.out(Easing.exp),
+          }),
+        },
+      ],
+    };
+  });
+
   return (
     <>
     <Tabs
+      tabBar={(props) => (
+        <Animated.View style={[{ position: 'absolute', bottom: 0, left: 0, right: 0, elevation: 10, zIndex: 10 }, animatedTabStyle]}>
+          <BottomTabBar {...props} />
+        </Animated.View>
+      )}
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -346,7 +369,7 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
-    <GlobalAIOverlay />
+    <GlobalAIOverlay animatedY={animatedTabStyle} />
     </>
   );
 }

@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +66,7 @@ import { socketService } from '@/services/socket';
 
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store';
+import { useAppStore } from '@/store/app.store';
 
 function HomeHeader() {
   const queryClient = useQueryClient();
@@ -590,6 +591,7 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
 
 import { useCurrentLocation } from '@/hooks';
 
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isListening = useAIStore(state => state.isListening);
@@ -597,6 +599,27 @@ export default function HomeScreen() {
 
   const scale = useSharedValue(1);
   const overlayOpacity = useSharedValue(0);
+
+  const { isTabBarVisible, setTabBarVisible } = useAppStore();
+  const prevScrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event: any) => {
+      const currentY = event.contentOffset.y;
+      const diff = currentY - prevScrollY.value;
+      
+      // Don't trigger if near the very top (bounce effect)
+      if (currentY < 100) {
+        if (!isTabBarVisible) runOnJS(setTabBarVisible)(true);
+      } else if (diff > 10) { // Scrolling down page (finger up) -> Hide Tab Bar
+        if (isTabBarVisible) runOnJS(setTabBarVisible)(false);
+      } else if (diff < -15) { // Scrolling up page (finger down) -> Show Tab Bar
+        if (!isTabBarVisible) runOnJS(setTabBarVisible)(true);
+      }
+      
+      prevScrollY.value = currentY;
+    }
+  });
 
   const { data: markets = [], isLoading: isLoadingMarkets } = useQuery({ 
     queryKey: ['markets', location?.lat, location?.lng], 
@@ -662,8 +685,10 @@ export default function HomeScreen() {
           <HomeHeader />
         </BlurView>
 
-        <ScrollView
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent, 
             { 
@@ -723,7 +748,7 @@ export default function HomeScreen() {
           <TodaysBestDeals />
           <RecommendedSection lat={location?.lat} lng={location?.lng} city={location?.city} />
           <NearbyShops lat={location?.lat} lng={location?.lng} city={location?.city} />
-        </ScrollView>
+        </Animated.ScrollView>
         
         {/* Subtle backdrop reaction when listening */}
         <Animated.View style={[StyleSheet.absoluteFill, overlayStyle, { pointerEvents: 'none' as any }]}>

@@ -8,12 +8,14 @@ interface AppState {
 
   // UI
   isOnline: boolean;
+  isTabBarVisible: boolean; // Global tab bar visibility for animations
 
   // Actions
   setLocationPermission: (status: 'granted' | 'denied' | 'undetermined') => void;
   setCurrentCity: (city: string) => void;
   setCoordinates: (coords: { lat: number; lng: number }) => void;
   setIsOnline: (online: boolean) => void;
+  setTabBarVisible: (visible: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -21,9 +23,11 @@ export const useAppStore = create<AppState>((set) => ({
   currentCity: null,
   coordinates: null,
   isOnline: true,
+  isTabBarVisible: true,
 
   setLocationPermission: (status) => set({ locationPermission: status }),
   setCurrentCity: (city) => set({ currentCity: city }),
   setCoordinates: (coords) => set({ coordinates: coords }),
   setIsOnline: (online) => set({ isOnline: online }),
+  setTabBarVisible: (visible) => set({ isTabBarVisible: visible }),
 }));
