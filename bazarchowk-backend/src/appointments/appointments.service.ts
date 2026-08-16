@@ -361,7 +361,15 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { customerId },
       include: {
-        provider: true,
+        provider: {
+          include: {
+            shop: {
+              include: {
+                owner: { select: { phone: true } }
+              }
+            }
+          }
+        },
         serviceOffering: true,
         timeSlot: true,
         serviceAddress: true,

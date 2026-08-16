@@ -123,7 +123,7 @@ function GlobalAIOverlay({ animatedY }: { animatedY: any }) {
       {/* Crisp Mic Button perfectly aligned over the blur */}
       <Animated.View style={[{
         position: 'absolute',
-        bottom: buttonCenterY - 24,
+        bottom: buttonCenterY - 28,
         alignSelf: 'center',
         width: 56,
         height: 56,
@@ -180,7 +180,7 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
 
   return (
     <View style={[styles.tabItem, { width: '100%' }]} pointerEvents="box-none">
-      <View style={{ position: 'absolute', top: -24, width: 56, height: 56, zIndex: 100, alignSelf: 'center' }} pointerEvents="box-none">
+      <View style={{ position: 'absolute', top: -28, width: 56, height: 56, zIndex: 100, alignSelf: 'center' }} pointerEvents="box-none">
 
         {/* Main 56px Button */}
         <Animated.View style={[styles.aiButtonCircleLarge, btnStyle]}>
@@ -197,7 +197,7 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
 
       </View>
       <View pointerEvents="none" style={{ height: 24, width: 24 }} />
-      <Text pointerEvents="none" style={[styles.tabLabel, { color: '#4B5563' }]} numberOfLines={1}>{label}</Text>
+      <Text pointerEvents="none" style={[styles.tabLabel, { color: '#9CA3AF' }]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }
@@ -292,66 +292,34 @@ export default function TabsLayout() {
           <Animated.View style={[{ position: 'absolute', bottom: bottomPad, left: 16, right: 16, height: tabHeight, elevation: 10, zIndex: 10, flexDirection: 'row' }, animatedTabStyle]}>
             
             {/* Background */}
-            <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
+            <View style={[StyleSheet.absoluteFill, {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 8,
+            }]} pointerEvents="none">
               
-              {/* Underlay Glass: preserves the blurred background and scooty behind the SVG */}
-              <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 32, overflow: 'hidden' }}>
-                <Image 
-                  source={require('@/assets/images/scooty.png')} 
-                  style={{
-                    position: 'absolute',
-                    top: -30,
-                    alignSelf: 'center',
-                    width: 150,
-                    height: 90,
-                    zIndex: 10,
-                    opacity: 0.9
-                  }}
-                  resizeMode="contain"
-                />
-                <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
-              </View>
-
               {/* Precise SVG Glass Overlay with Notch Cutout */}
               <Svg width={W - 32} height={tabHeight} style={StyleSheet.absoluteFill}>
                 <Path 
                   d={`
-                    M 32 0
-                    L ${(W - 32) / 2 - 45} 0
-                    C ${(W - 32) / 2 - 30} 0, ${(W - 32) / 2 - 24} 36, ${(W - 32) / 2} 36
-                    C ${(W - 32) / 2 + 24} 36, ${(W - 32) / 2 + 30} 0, ${(W - 32) / 2 + 45} 0
-                    L ${(W - 32) - 32} 0
-                    A 32 32 0 0 1 ${(W - 32)} 32
-                    L ${(W - 32)} ${tabHeight - 32}
-                    A 32 32 0 0 1 ${(W - 32) - 32} ${tabHeight}
-                    L 32 ${tabHeight}
-                    A 32 32 0 0 1 0 ${tabHeight - 32}
-                    L 0 32
-                    A 32 32 0 0 1 32 0
+                    M 24 0
+                    L ${(W - 32) / 2 - 46.5} 0
+                    A 12 12 0 0 1 ${(W - 32) / 2 - 34.9} 9
+                    A 36 36 0 0 0 ${(W - 32) / 2 + 34.9} 9
+                    A 12 12 0 0 1 ${(W - 32) / 2 + 46.5} 0
+                    L ${(W - 32) - 24} 0
+                    A 24 24 0 0 1 ${(W - 32)} 24
+                    L ${(W - 32)} ${tabHeight - 24}
+                    A 24 24 0 0 1 ${(W - 32) - 24} ${tabHeight}
+                    L 24 ${tabHeight}
+                    A 24 24 0 0 1 0 ${tabHeight - 24}
+                    L 0 24
+                    A 24 24 0 0 1 24 0
                     Z
                   `} 
-                  fill="rgba(255,255,255,0.65)" 
-                />
-                {/* Subtle white inner glow stroke instead of a dark outline */}
-                <Path 
-                  d={`
-                    M 32 0
-                    L ${(W - 32) / 2 - 45} 0
-                    C ${(W - 32) / 2 - 30} 0, ${(W - 32) / 2 - 24} 36, ${(W - 32) / 2} 36
-                    C ${(W - 32) / 2 + 24} 36, ${(W - 32) / 2 + 30} 0, ${(W - 32) / 2 + 45} 0
-                    L ${(W - 32) - 32} 0
-                    A 32 32 0 0 1 ${(W - 32)} 32
-                    L ${(W - 32)} ${tabHeight - 32}
-                    A 32 32 0 0 1 ${(W - 32) - 32} ${tabHeight}
-                    L 32 ${tabHeight}
-                    A 32 32 0 0 1 0 ${tabHeight - 32}
-                    L 0 32
-                    A 32 32 0 0 1 32 0
-                    Z
-                  `} 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.9)" 
-                  strokeWidth={1} 
+                  fill="rgba(255, 255, 255, 0.98)" 
                 />
               </Svg>
             </View>

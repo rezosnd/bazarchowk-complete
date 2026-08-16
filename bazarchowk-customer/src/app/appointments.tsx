@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
@@ -47,6 +47,14 @@ export default function AppointmentsTab() {
     }
   };
 
+  const handleCall = (phone: string) => {
+    if (!phone) {
+      Alert.alert('Unavailable', 'Contact number not provided.');
+      return;
+    }
+    Linking.openURL(`tel:${phone}`);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -72,7 +80,7 @@ export default function AppointmentsTab() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {upcoming.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Active Bookings</Text>
@@ -88,9 +96,15 @@ export default function AppointmentsTab() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.serviceName} numberOfLines={2}>{app.serviceOffering.name}</Text>
                         <Text style={styles.providerName}>{app.provider.name} • {app.provider.specialty || 'Professional'}</Text>
+                        {app.provider?.shop?.owner?.phone && (
+                          <TouchableOpacity onPress={() => handleCall(app.provider.shop.owner.phone)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <Feather name="phone" size={12} color="#00B140" />
+                            <Text style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </View>
-                    
+
                     <View style={{ alignItems: 'flex-end', minWidth: 80 }}>
                       <View style={[styles.badge, { backgroundColor: badge.bg, marginBottom: 6 }]}>
                         <Feather name={badge.icon as any} size={12} color={badge.text} />
@@ -139,7 +153,7 @@ export default function AppointmentsTab() {
                     </View>
                   </View>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => handleCancel(app.id)}
                     disabled={cancelMutation.isPending}
                     style={styles.cancelBtn}
@@ -170,6 +184,12 @@ export default function AppointmentsTab() {
                       <Text style={styles.pastDateText}>
                         {new Date(app.timeSlot.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {app.provider.name}
                       </Text>
+                      {app.provider?.shop?.owner?.phone && (
+                        <TouchableOpacity onPress={() => handleCall(app.provider.shop.owner.phone)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                          <Feather name="phone" size={12} color="#00B140" />
+                          <Text style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -206,26 +226,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7FAF8' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7FAF8' },
   loadingText: { marginTop: 16, color: '#66736B', fontWeight: '600' },
-  
+
   header: { paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 4, zIndex: 10 },
   backBtn: { marginRight: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 26, fontWeight: '900', color: '#122018', letterSpacing: -0.5 },
   headerSubtitle: { color: '#66736B', fontSize: 13, fontWeight: '500', marginTop: 2 },
-  
+
   scrollContent: { padding: 20, paddingBottom: 100 },
   section: { marginBottom: 32 },
   sectionTitle: { fontSize: 18, fontWeight: '900', color: '#122018', marginBottom: 16, letterSpacing: -0.3 },
-  
+
   card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 6, borderWidth: 1, borderColor: '#EAF8F0' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   serviceInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 },
   serviceIconWrap: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#EAF8F0' },
   serviceName: { fontSize: 17, fontWeight: '800', color: '#122018', marginBottom: 4, letterSpacing: -0.2 },
   providerName: { fontSize: 13, color: '#66736B', fontWeight: '600' },
-  
+
   badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
-  
+
   addressBox: { backgroundColor: '#F7FAF8', padding: 12, borderRadius: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#EAF8F0' },
   addressIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', marginRight: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
 
@@ -235,10 +255,10 @@ const styles = StyleSheet.create({
   dtLabel: { fontSize: 11, color: '#66736B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
   dtValue: { fontSize: 14, color: '#122018', fontWeight: '800' },
   divider: { height: 40, width: 1, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
-  
+
   cancelBtn: { backgroundColor: '#FEF2F2', paddingVertical: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FEE2E2' },
   cancelBtnText: { color: '#DC2626', fontWeight: '800', marginLeft: 8, fontSize: 15 },
-  
+
   pastCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#EAF8F0', marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
   pastInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   pastIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
@@ -246,7 +266,7 @@ const styles = StyleSheet.create({
   pastDateText: { color: '#66736B', fontSize: 12, marginTop: 4, fontWeight: '500' },
   pastPrice: { fontWeight: '900', color: '#122018', fontSize: 15 },
   pastStatus: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 4 },
-  
+
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, marginTop: 20 },
   emptyIconWrap: { width: 100, height: 100, backgroundColor: '#F0FDF4', borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   emptyTitle: { fontSize: 24, fontWeight: '900', color: '#122018', letterSpacing: -0.5 },
