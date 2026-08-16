@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
 import { router } from 'expo-router';
+import { Header } from '@/components/Header';
+import { PressableScale } from '@/components/PressableScale';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const PRIMARY = '#00B140';
 
@@ -33,121 +36,136 @@ export default function OrdersScreen() {
     }
   };
 
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'DELIVERED': return { bg: '#EAF8F0', text: '#008F3C' };
+      case 'CANCELLED': return { bg: '#FEE2E2', text: '#DC2626' };
+      case 'PLACED': return { bg: '#FFF1DF', text: '#FF8A00' };
+      case 'CONFIRMED': return { bg: '#E0F2FE', text: '#0284C7' };
+      case 'IN TRANSIT': return { bg: '#F3E8FF', text: '#9333EA' };
+      default: return { bg: '#FFF1DF', text: '#FF8A00' };
+    }
+  };
+
   if (!isAuthenticated) {
     return (
-      <View style={styles.center}>
-        <View style={styles.emptyIconBg}>
-          <Ionicons name="receipt-outline" size={56} color="#8B9690" />
+      <View style={styles.root}>
+        <Header title="My Orders" showBack={false} />
+        <View style={styles.center}>
+          <View style={styles.emptyIconBg}>
+            <Ionicons name="receipt-outline" size={56} color="#8B9690" />
+          </View>
+          <Text style={styles.emptyText}>You need to login first</Text>
         </View>
-        <Text style={styles.emptyText}>You need to login first</Text>
       </View>
     );
   }
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
-  }
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={styles.headerTitle}>My Orders</Text>
+    <View style={styles.root}>
+      <Header title="My Orders" showBack={false} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {orders.length === 0 ? (
-          <View style={styles.centerEmpty}>
-            <View style={styles.emptyIconBg}>
-              <Ionicons name="receipt-outline" size={48} color={PRIMARY} />
-            </View>
-            <Text style={styles.emptyText}>No orders yet</Text>
-            <Text style={styles.emptySub}>Your next local order will appear here.</Text>
-          </View>
-        ) : (
-          orders.map((order) => (
-            <TouchableOpacity 
-              key={order.id} 
-              style={styles.orderCard} 
-              activeOpacity={0.7}
-              onPress={() => router.push(`/order/${order.id}` as any)}
-            >
-              <View style={styles.orderHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={styles.storeIconWrap}>
-                    <Ionicons name="storefront-outline" size={20} color="#56625B" />
-                  </View>
-                  <View>
-                    <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
-                    <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString()} • {order.items?.length || 1} item{order.items?.length > 1 ? 's' : ''}</Text>
-                  </View>
-                </View>
-                <View style={[
-                  styles.statusBadge, 
-                  order.status === 'DELIVERED' ? styles.statusSuccess :
-                  order.status === 'CANCELLED' ? styles.statusCancelled : styles.statusPending
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    order.status === 'DELIVERED' ? styles.statusTextSuccess :
-                    order.status === 'CANCELLED' ? styles.statusTextCancelled : styles.statusTextPending
-                  ]}>{order.status}</Text>
-                </View>
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>
+      ) : (
+        <ScrollView 
+          contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 16) + 80 }]} 
+          showsVerticalScrollIndicator={false}
+        >
+          {orders.length === 0 ? (
+            <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.centerEmpty}>
+              <View style={styles.emptyIconBg}>
+                <Ionicons name="bag-handle-outline" size={48} color={PRIMARY} />
               </View>
+              <Text style={styles.emptyText}>No orders yet</Text>
+              <Text style={styles.emptySub}>Your next local order will appear here.</Text>
+            </Animated.View>
+          ) : (
+            orders.map((order, index) => {
+              const statusStyle = getStatusStyles(order.status);
+              return (
+                <Animated.View key={order.id} entering={FadeInDown.delay(index * 50).springify().damping(15)}>
+                  <PressableScale 
+                    style={styles.orderCard} 
+                    onPress={() => router.push(`/order/${order.id}` as any)}
+                  >
+                    <View style={styles.orderHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={styles.storeIconWrap}>
+                          <Ionicons name="storefront" size={20} color="#122018" />
+                        </View>
+                        <View>
+                          <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
+                          <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • {order.items?.length || 1} item{order.items?.length > 1 ? 's' : ''}</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{order.status}</Text>
+                      </View>
+                    </View>
 
-              <View style={styles.divider} />
+                    <View style={styles.divider} />
 
-              <View style={styles.itemsRow}>
-                <Text style={styles.itemsText} numberOfLines={2}>
-                  {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.product?.name || 'Item'} (${item.productVariant?.name})`).join(', ')}
-                </Text>
-              </View>
+                    <View style={styles.itemsRow}>
+                      <Text style={styles.itemsText} numberOfLines={2}>
+                        {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.product?.name || 'Item'}`).join(', ')}
+                      </Text>
+                    </View>
 
-              <View style={styles.divider} />
+                    <View style={styles.divider} />
 
-              <View style={styles.orderFooter}>
-                <Text style={styles.totalText}>₹{order.totalAmount.toFixed(2)}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#00B140" />
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+                    <View style={styles.orderFooter}>
+                      <Text style={styles.totalText}>₹{order.totalAmount?.toFixed(2)}</Text>
+                      <View style={styles.viewDetailsWrap}>
+                        <Text style={styles.viewDetailsText}>View Details</Text>
+                        <Ionicons name="arrow-forward" size={16} color="#00B140" />
+                      </View>
+                    </View>
+                  </PressableScale>
+                </Animated.View>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
-  centerEmpty: { alignItems: 'center', marginTop: 100 },
-  container: { flex: 1, backgroundColor: '#F7FAF8' },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#122018', paddingHorizontal: 20, paddingVertical: 12 },
-  emptyIconBg: { width: 80, height: 80, borderRadius: 24, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  emptyText: { fontSize: 20, fontWeight: '700', color: '#122018', marginBottom: 8 },
+  root: { flex: 1, backgroundColor: '#F7FBF8' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centerEmpty: { alignItems: 'center', marginTop: '40%' },
+  
+  emptyIconBg: { width: 88, height: 88, borderRadius: 32, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  emptyText: { fontSize: 20, fontWeight: '800', color: '#122018', marginBottom: 8 },
   emptySub: { fontSize: 14, color: '#66736B' },
   
-  scroll: { padding: 16, paddingBottom: 130 },
+  scroll: { padding: 16 },
   
-  orderCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  orderCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 24, 
+    padding: 20, 
+    marginBottom: 16, 
+    borderWidth: 1, 
+    borderColor: '#E5EBE7', 
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 
+  },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  storeIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
-  shopName: { fontSize: 16, fontWeight: '700', color: '#122018' },
-  orderDate: { fontSize: 13, color: '#66736B', marginTop: 4 },
+  storeIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F7FBF8', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#EAF8F0' },
+  shopName: { fontSize: 16, fontWeight: '800', color: '#122018', letterSpacing: -0.2 },
+  orderDate: { fontSize: 13, color: '#66736B', marginTop: 4, fontWeight: '500' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  statusSuccess: { backgroundColor: '#EAF8F0' },
-  statusPending: { backgroundColor: '#FFF1DF' },
-  statusCancelled: { backgroundColor: '#FEE2E2' },
-  statusText: { fontSize: 10, fontWeight: '800' },
-  statusTextSuccess: { color: '#008F3C' },
-  statusTextPending: { color: '#FF8A00' },
-  statusTextCancelled: { color: '#DC2626' },
+  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   
-  divider: { height: 1, backgroundColor: '#E5EBE7', marginVertical: 14 },
+  divider: { height: 1, backgroundColor: '#F0F5F2', marginVertical: 16 },
   
   itemsRow: {},
-  itemsText: { fontSize: 14, color: '#66736B', lineHeight: 22 },
+  itemsText: { fontSize: 14, color: '#4B5563', lineHeight: 22, fontWeight: '500' },
   
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  totalText: { fontSize: 18, fontWeight: '700', color: '#122018' },
-  viewDetailsText: { fontSize: 13, fontWeight: '600', color: '#00B140' }
+  totalText: { fontSize: 20, fontWeight: '800', color: '#122018' },
+  viewDetailsWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  viewDetailsText: { fontSize: 14, fontWeight: '700', color: '#00B140' }
 });

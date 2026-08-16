@@ -157,74 +157,67 @@ export default function CheckoutScreen() {
   const canPlaceOrder = isSelfPickup ? true : (!!selectedAddressId && !deliveryError);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#122018" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={styles.root}>
+      <Header title="Checkout" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 24) + 100 }]} showsVerticalScrollIndicator={false}>
 
         {/* ── DELIVERY TYPE TOGGLE ── */}
-        <View style={styles.section}>
+        <Animated.View entering={FadeInDown.springify().damping(15)} style={styles.section}>
           <Text style={styles.sectionTitle}>How do you want to receive it?</Text>
           <View style={styles.toggleRow}>
-            <TouchableOpacity
+            <PressableScale
               style={[styles.toggleBtn, deliveryType === 'DELIVERY' && styles.toggleBtnActive]}
               onPress={() => setDeliveryType('DELIVERY')}
-              activeOpacity={0.8}
             >
-              <Ionicons name="bicycle" size={22} color={deliveryType === 'DELIVERY' ? '#FFF' : '#66736B'} />
+              <Ionicons name="bicycle" size={24} color={deliveryType === 'DELIVERY' ? '#FFF' : '#66736B'} />
               <Text style={[styles.toggleText, deliveryType === 'DELIVERY' && styles.toggleTextActive]}>Home Delivery</Text>
-              <Text style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.8)' }]}>Rider brings to you</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              <Text style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.85)' }]}>Rider brings to you</Text>
+            </PressableScale>
+            <PressableScale
               style={[styles.toggleBtn, deliveryType === 'SELF_PICKUP' && styles.toggleBtnActive]}
               onPress={() => setDeliveryType('SELF_PICKUP')}
-              activeOpacity={0.8}
             >
-              <Ionicons name="bag-handle" size={22} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#66736B'} />
+              <Ionicons name="bag-handle" size={24} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#66736B'} />
               <Text style={[styles.toggleText, deliveryType === 'SELF_PICKUP' && styles.toggleTextActive]}>Self Pickup</Text>
-              <Text style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.8)' }]}>FREE · Pick from shop</Text>
-            </TouchableOpacity>
+              <Text style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.85)' }]}>FREE · Pick from shop</Text>
+            </PressableScale>
           </View>
-        </View>
+        </Animated.View>
 
         {/* ── SELF PICKUP INFO BANNER ── */}
         {isSelfPickup && (
-          <View style={styles.pickupBanner}>
-            <Ionicons name="storefront" size={24} color="#D97706" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
+          <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.pickupBanner}>
+            <View style={styles.pickupIconWrap}>
+              <Ionicons name="storefront" size={24} color="#D97706" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</Text>
               {shopInfo?.address && <Text style={styles.pickupAddr}>{shopInfo.address}</Text>}
-              <Text style={styles.pickupHint}>Bring this order ID to the shop counter. The shop will prepare your order.</Text>
+              <Text style={styles.pickupHint}>Bring your order ID to the counter.</Text>
             </View>
-          </View>
+          </Animated.View>
         )}
 
-        {/* ── DELIVERY ADDRESS (only for home delivery) ── */}
+        {/* ── DELIVERY ADDRESS ── */}
         {!isSelfPickup && (
-          <View style={styles.section}>
+          <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Delivery Address</Text>
-              <TouchableOpacity onPress={() => router.push('/addresses/new' as any)}>
+              <PressableScale onPress={() => router.push('/addresses/new' as any)}>
                 <Text style={styles.addText}>+ Add New</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
             {addresses.length === 0 ? (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyText}>No addresses found. Add one to continue.</Text>
               </View>
             ) : addresses.map(addr => (
-              <TouchableOpacity
+              <PressableScale
                 key={addr.id}
                 style={[styles.addressCard, selectedAddressId === addr.id && styles.addressCardActive]}
                 onPress={() => setSelectedAddressId(addr.id)}
-                activeOpacity={0.7}
+                scaleTo={0.98}
               >
                 <View style={[styles.radio, selectedAddressId === addr.id && styles.radioActive]}>
                   {selectedAddressId === addr.id && <View style={styles.radioInner} />}
@@ -238,88 +231,88 @@ export default function CheckoutScreen() {
                     {addr.houseFlat}, {addr.street}, {addr.city}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* ── DELIVERY ERROR ── */}
         {deliveryError && !isSelfPickup && (
-          <View style={styles.errorCard}>
-            <Ionicons name="warning" size={22} color="#EF4444" />
+          <Animated.View entering={FadeInDown.springify()} style={styles.errorCard}>
+            <Ionicons name="warning" size={24} color="#DC2626" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.errorTitle}>Out of Delivery Range</Text>
               <Text style={styles.errorDesc}>{deliveryError}</Text>
-              <TouchableOpacity onPress={() => setDeliveryType('SELF_PICKUP')} style={styles.switchPickupBtn}>
+              <PressableScale onPress={() => setDeliveryType('SELF_PICKUP')} style={styles.switchPickupBtn}>
                 <Text style={styles.switchPickupText}>Switch to Self Pickup →</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* ── PAYMENT METHOD ── */}
-        <View style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(15)} style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
 
-          {/* COD */}
-          <TouchableOpacity
+          <PressableScale
             style={[styles.paymentCard, paymentMethod === 'COD' && styles.paymentCardActive]}
             onPress={() => setPaymentMethod('COD')}
+            scaleTo={0.98}
           >
             <View style={[styles.payIcon, { backgroundColor: '#EAF8F0' }]}>
-              <Ionicons name="cash" size={22} color={PRIMARY} />
+              <Ionicons name="cash" size={24} color={PRIMARY} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>
-                {isSelfPickup ? 'Pay at Shop (Cash)' : 'Cash on Delivery'}
+                {isSelfPickup ? 'Pay at Shop' : 'Cash on Delivery'}
               </Text>
-              <Text style={styles.paymentSub}>Pay when you {isSelfPickup ? 'collect' : 'receive'} your order</Text>
+              <Text style={styles.paymentSub}>Pay when you {isSelfPickup ? 'collect' : 'receive'} order</Text>
             </View>
             <View style={[styles.radio, paymentMethod === 'COD' && styles.radioActive]}>
               {paymentMethod === 'COD' && <View style={styles.radioInner} />}
             </View>
-          </TouchableOpacity>
+          </PressableScale>
 
-          {/* Pay Online */}
-          <TouchableOpacity
+          <PressableScale
             style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
             onPress={() => setPaymentMethod('RAZORPAY')}
+            scaleTo={0.98}
           >
             <View style={[styles.payIcon, { backgroundColor: '#EEF2FF' }]}>
-              <Ionicons name="card" size={22} color="#4F46E5" />
+              <Ionicons name="card" size={24} color="#4F46E5" />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online</Text>
-              <Text style={styles.paymentSub}>Cards · UPI · Net Banking · EMI</Text>
+              <Text style={styles.paymentSub}>Cards · UPI · Net Banking</Text>
             </View>
             <View style={[styles.radio, paymentMethod === 'RAZORPAY' && styles.radioActive]}>
               {paymentMethod === 'RAZORPAY' && <View style={styles.radioInner} />}
             </View>
-          </TouchableOpacity>
+          </PressableScale>
 
-          {/* Wallet */}
           {billDetails?.walletBalance > 0 && (
-            <TouchableOpacity
+            <PressableScale
               style={[styles.paymentCard, useWallet && styles.paymentCardActive]}
               onPress={() => setUseWallet(!useWallet)}
+              scaleTo={0.98}
             >
               <View style={[styles.payIcon, { backgroundColor: '#FFF4E6' }]}>
-                <Ionicons name="wallet" size={22} color="#FF8A00" />
+                <Ionicons name="wallet" size={24} color="#FF8A00" />
               </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={[styles.paymentText, useWallet && styles.paymentTextActive]}>BazarChowk Wallet</Text>
                 <Text style={styles.paymentSub}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</Text>
               </View>
               <View style={[styles.checkbox, useWallet && styles.checkboxActive]}>
-                {useWallet && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                {useWallet && <Ionicons name="checkmark" size={16} color="#FFF" />}
               </View>
-            </TouchableOpacity>
+            </PressableScale>
           )}
-        </View>
+        </Animated.View>
 
         {/* ── BILL DETAILS ── */}
         {billDetails && (
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify().damping(15)} style={styles.section}>
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billCard}>
               <BillRow label="Item Total" value={`₹${(billDetails.itemTotal ?? 0).toFixed(2)}`} />
@@ -338,28 +331,28 @@ export default function CheckoutScreen() {
               <View style={styles.totalDivider} />
               <BillRow label="Total to Pay" value={`₹${totalToPay.toFixed(2)}`} isTotal />
             </View>
-          </View>
+          </Animated.View>
         )}
 
       </ScrollView>
 
       {/* ── BOTTOM BAR ── */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={{ flex: 1 }}>
           <Text style={styles.bottomLabel}>{isSelfPickup ? 'Self Pickup · FREE delivery' : 'Home Delivery'}</Text>
           {fetchingBill ? (
-            <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start' }} />
+            <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
           ) : (
             <Text style={styles.bottomTotal}>₹{totalToPay.toFixed(2)}</Text>
           )}
         </View>
-        <TouchableOpacity
+        <PressableScale
           style={[styles.placeBtn, (!canPlaceOrder || placingOrder) && { opacity: 0.6 }]}
           disabled={!canPlaceOrder || placingOrder}
           onPress={handlePlaceOrder}
         >
           {placingOrder ? <ActivityIndicator color="#FFF" /> : <Text style={styles.placeBtnText}>Place Order</Text>}
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );
@@ -375,73 +368,65 @@ function BillRow({ label, value, valueColor, isTotal }: { label: string; value: 
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
-  container: { flex: 1, backgroundColor: '#F7FAF8' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderColor: '#E5EBE7' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#122018' },
-  scroll: { padding: 20, paddingBottom: 130, gap: 20 },
+  root: { flex: 1, backgroundColor: '#F7FBF8' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scroll: { padding: 16, paddingBottom: 130, gap: 24 },
   section: {},
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 12 },
-  addText: { fontSize: 14, fontWeight: '700', color: PRIMARY },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 12, letterSpacing: -0.2 },
+  addText: { fontSize: 14, fontWeight: '800', color: PRIMARY },
 
-  // Delivery type toggle
   toggleRow: { flexDirection: 'row', gap: 12 },
-  toggleBtn: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#E5EBE7' },
+  toggleBtn: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.02, shadowRadius: 12, elevation: 2 },
   toggleBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
-  toggleText: { fontSize: 15, fontWeight: '700', color: '#122018', textAlign: 'center' },
+  toggleText: { fontSize: 15, fontWeight: '800', color: '#122018', textAlign: 'center' },
   toggleTextActive: { color: '#FFFFFF' },
-  toggleSub: { fontSize: 12, color: '#66736B', textAlign: 'center', fontWeight: '500' },
+  toggleSub: { fontSize: 12, color: '#66736B', textAlign: 'center', fontWeight: '600' },
 
-  // Self pickup banner
-  pickupBanner: { flexDirection: 'row', backgroundColor: '#FFF4E6', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#FFE4C4' },
-  pickupTitle: { fontSize: 16, fontWeight: '700', color: '#D97706', marginBottom: 4 },
-  pickupAddr: { fontSize: 13, color: '#B45309', marginBottom: 4 },
+  pickupBanner: { flexDirection: 'row', backgroundColor: '#FFF7ED', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#FFEDD5', alignItems: 'center' },
+  pickupIconWrap: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#FFEDD5', alignItems: 'center', justifyContent: 'center' },
+  pickupTitle: { fontSize: 16, fontWeight: '800', color: '#B45309', marginBottom: 4 },
+  pickupAddr: { fontSize: 14, color: '#92400E', marginBottom: 6, fontWeight: '500' },
   pickupHint: { fontSize: 13, color: '#D97706', lineHeight: 20 },
 
-  // Address
-  emptyCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E5EBE7', borderStyle: 'dashed' },
-  emptyText: { color: '#66736B', textAlign: 'center' },
-  addressCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 10 },
-  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0' },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#8B9690', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  emptyCard: { backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7', borderStyle: 'dashed' },
+  emptyText: { color: '#66736B', textAlign: 'center', fontWeight: '500' },
+  
+  addressCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 12, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.02, shadowRadius: 12, elevation: 1 },
+  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0', borderWidth: 1.5 },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#8B9690', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   radioActive: { borderColor: PRIMARY },
   radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: PRIMARY },
-  addressInfo: { flex: 1, marginLeft: 12 },
-  addressType: { fontSize: 13, fontWeight: '700', color: '#66736B' },
-  addressFull: { fontSize: 14, color: '#122018', marginTop: 4, lineHeight: 22 },
+  addressInfo: { flex: 1, marginLeft: 16 },
+  addressType: { fontSize: 14, fontWeight: '800', color: '#66736B' },
+  addressFull: { fontSize: 15, color: '#122018', marginTop: 6, lineHeight: 22, fontWeight: '500' },
 
-  // Error
-  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#FECACA' },
-  errorTitle: { fontSize: 15, fontWeight: '700', color: '#991B1B', marginBottom: 4 },
-  errorDesc: { fontSize: 14, color: '#B91C1C', lineHeight: 20 },
-  switchPickupBtn: { marginTop: 12, alignSelf: 'flex-start', backgroundColor: '#FEE2E2', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  switchPickupText: { color: '#DC2626', fontWeight: '700', fontSize: 13 },
+  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#FEE2E2', alignItems: 'center' },
+  errorTitle: { fontSize: 16, fontWeight: '800', color: '#991B1B', marginBottom: 4 },
+  errorDesc: { fontSize: 14, color: '#B91C1C', lineHeight: 22, fontWeight: '500' },
+  switchPickupBtn: { marginTop: 12, alignSelf: 'flex-start', backgroundColor: '#FEE2E2', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  switchPickupText: { color: '#DC2626', fontWeight: '800', fontSize: 14 },
 
-  // Payment
-  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 12 },
-  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0' },
-  payIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  paymentText: { fontSize: 15, fontWeight: '700', color: '#122018' },
-  paymentTextActive: { color: '#008F3C', fontWeight: '700' },
-  paymentSub: { fontSize: 13, color: '#66736B', marginTop: 2 },
+  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 12, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.02, shadowRadius: 12, elevation: 1 },
+  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0', borderWidth: 1.5 },
+  payIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  paymentText: { fontSize: 16, fontWeight: '800', color: '#122018' },
+  paymentTextActive: { color: '#00B140' },
+  paymentSub: { fontSize: 14, color: '#66736B', marginTop: 4, fontWeight: '500' },
   checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, borderColor: '#8B9690', alignItems: 'center', justifyContent: 'center' },
   checkboxActive: { borderColor: PRIMARY, backgroundColor: PRIMARY },
 
-  // Bill
-  billCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7' },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
-  billLabel: { fontSize: 14, color: '#66736B', fontWeight: '500' },
-  billValue: { fontSize: 14, color: '#122018', fontWeight: '600' },
-  billLabelTotal: { fontSize: 16, fontWeight: '800', color: '#122018' },
-  billValueTotal: { fontSize: 18, fontWeight: '800', color: PRIMARY },
-  totalDivider: { height: 1, backgroundColor: '#E5EBE7', marginBottom: 14 },
+  billCard: { backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.02, shadowRadius: 12, elevation: 1 },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  billLabel: { fontSize: 15, color: '#66736B', fontWeight: '500' },
+  billValue: { fontSize: 15, color: '#122018', fontWeight: '700' },
+  billLabelTotal: { fontSize: 18, fontWeight: '800', color: '#122018' },
+  billValueTotal: { fontSize: 20, fontWeight: '900', color: PRIMARY },
+  totalDivider: { height: 1, backgroundColor: '#F0F5F2', marginVertical: 4, marginBottom: 16 },
 
-  // Bottom bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5EBE7', paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 16, elevation: 10 },
-  bottomLabel: { fontSize: 13, color: '#66736B', fontWeight: '600' },
-  bottomTotal: { fontSize: 22, fontWeight: '800', color: '#122018', marginTop: 2 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5EBE7', paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: -12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 12 },
+  bottomLabel: { fontSize: 14, color: '#66736B', fontWeight: '600' },
+  bottomTotal: { fontSize: 24, fontWeight: '900', color: '#122018', marginTop: 2, letterSpacing: -0.5 },
   placeBtn: { flex: 1, backgroundColor: PRIMARY, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  placeBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  placeBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
 });

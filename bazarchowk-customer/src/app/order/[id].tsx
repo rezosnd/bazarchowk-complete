@@ -200,7 +200,7 @@ export default function OrderTrackingScreen() {
       )}
 
       {/* Floating Header */}
-      <View style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
+      <Animated.View entering={FadeInUp.springify().damping(15)} style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtnFloat}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
@@ -211,10 +211,10 @@ export default function OrderTrackingScreen() {
           </View>
         )}
         <View style={{ width: 48 }} />
-      </View>
+      </Animated.View>
 
       {/* BOTTOM SHEET */}
-      <View style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <Animated.View entering={FadeInDown.springify().damping(15)} style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         {isTrackingActive && order.rider && (
           <View style={styles.riderCard}>
             <View style={styles.riderAvatarWrap}>
@@ -270,9 +270,9 @@ export default function OrderTrackingScreen() {
               return (
                 <View key={step.id} style={styles.timelineItem}>
                   <View style={styles.timelineIconLine}>
-                    <View style={[styles.timelineDot, isActive && styles.timelineDotActive, isCurrent && styles.timelineDotCurrent]}>
+                    <Animated.View style={[styles.timelineDot, isActive && styles.timelineDotActive, isCurrent && styles.timelineDotCurrent]}>
                       <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : '#8B9690'} />
-                    </View>
+                    </Animated.View>
                     {index < TIMELINE.length - 1 && (
                       <View style={[styles.timelineLine, isActive && styles.timelineLineActive]} />
                     )}
@@ -286,7 +286,7 @@ export default function OrderTrackingScreen() {
             })}
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -310,50 +310,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
   },
-  etaLabel: { fontSize: 12, color: '#66736B', fontWeight: '600', textTransform: 'uppercase' },
-  etaTime: { fontSize: 18, color: PRIMARY, fontWeight: '800' },
+  etaLabel: { fontSize: 12, color: '#66736B', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  etaTime: { fontSize: 20, color: PRIMARY, fontWeight: '900', letterSpacing: -0.5 },
 
   bottomSheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    backgroundColor: '#FFFFFF', borderTopLeftRadius: 36, borderTopRightRadius: 36,
     paddingTop: 8, paddingHorizontal: 24,
-    shadowColor: '#00B140', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 20,
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: -12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 20,
     maxHeight: height * 0.55,
   },
   riderCard: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderColor: '#E5EBE7',
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 20, borderBottomWidth: 1, borderColor: '#F0F5F2',
   },
   riderAvatarWrap: { position: 'relative', marginRight: 16 },
-  riderAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F7FAF8' },
-  pulseDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#FFFFFF' },
+  riderAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#F7FBF8', borderWidth: 2, borderColor: '#EAF8F0' },
+  pulseDot: { position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, borderRadius: 8, backgroundColor: PRIMARY, borderWidth: 3, borderColor: '#FFFFFF' },
   riderInfo: { flex: 1 },
-  riderName: { fontSize: 16, fontWeight: '700', color: '#122018' },
-  riderVehicle: { fontSize: 13, color: '#66736B', fontWeight: '500', marginTop: 2 },
+  riderName: { fontSize: 18, fontWeight: '800', color: '#122018', letterSpacing: -0.2 },
+  riderVehicle: { fontSize: 14, color: '#66736B', fontWeight: '600', marginTop: 2 },
   riderActions: { flexDirection: 'row', gap: 12 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F7FBF8', alignItems: 'center', justifyContent: 'center' },
   
   timelineScroll: { paddingTop: 20 },
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 20 },
+  sheetTitle: { fontSize: 20, fontWeight: '800', color: '#122018', marginBottom: 24, letterSpacing: -0.5 },
   
   timeline: { paddingLeft: 10 },
-  timelineItem: { flexDirection: 'row', marginBottom: 24 },
+  timelineItem: { flexDirection: 'row', marginBottom: 28 },
   timelineIconLine: { alignItems: 'center', marginRight: 16 },
-  timelineDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  timelineDotActive: { backgroundColor: PRIMARY },
+  timelineDot: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F7FBF8', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  timelineDotActive: { backgroundColor: PRIMARY, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
   timelineDotCurrent: { backgroundColor: ACCENT, shadowColor: ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
-  timelineLine: { width: 2, height: '100%', backgroundColor: '#E5EBE7', position: 'absolute', top: 32, zIndex: 1 },
+  timelineLine: { width: 2, height: '100%', backgroundColor: '#F0F5F2', position: 'absolute', top: 36, zIndex: 1 },
   timelineLineActive: { backgroundColor: PRIMARY },
   
-  timelineContent: { flex: 1, paddingTop: 4 },
-  timelineText: { fontSize: 15, fontWeight: '600', color: '#8B9690' },
-  timelineTextActive: { color: '#122018', fontWeight: '700' },
-  timelineSubText: { fontSize: 13, color: '#66736B', marginTop: 4, lineHeight: 18 },
+  timelineContent: { flex: 1, paddingTop: 6 },
+  timelineText: { fontSize: 16, fontWeight: '600', color: '#8B9690' },
+  timelineTextActive: { color: '#122018', fontWeight: '800' },
+  timelineSubText: { fontSize: 14, color: '#66736B', marginTop: 4, lineHeight: 20, fontWeight: '500' },
 
   rateBanner: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF4E6',
-    padding: 16, borderRadius: 20, marginTop: 16, borderWidth: 1, borderColor: '#FFE4C4'
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED',
+    padding: 20, borderRadius: 24, marginTop: 16, borderWidth: 1, borderColor: '#FFEDD5'
   },
-  rateIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFE4C4', alignItems: 'center', justifyContent: 'center' },
-  rateTitle: { fontSize: 15, fontWeight: '700', color: '#D97706' },
-  rateSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
+  rateIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFEDD5', alignItems: 'center', justifyContent: 'center' },
+  rateTitle: { fontSize: 16, fontWeight: '800', color: '#B45309' },
+  rateSub: { fontSize: 13, color: '#92400E', marginTop: 2, fontWeight: '500' },
 });

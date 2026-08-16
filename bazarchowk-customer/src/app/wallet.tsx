@@ -4,6 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import api from '@/services/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Header } from '@/components/Header';
+import { PressableScale } from '@/components/PressableScale';
+import Animated, { FadeInUp, FadeInDown, useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
+
 // @ts-ignore
 let RazorpayCheckout: any = null;
 try {
@@ -44,7 +49,7 @@ export default function WalletScreen() {
     try {
       const { data: linkData } = await api.post('/wallet/deposit/create-link', {
         amount,
-        redirectUri: 'ignored' // no longer needed for native SDK
+        redirectUri: 'ignored'
       });
 
       if (!RazorpayCheckout) {
@@ -76,140 +81,145 @@ export default function WalletScreen() {
     }
   };
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
-  }
+  const isValidAmount = parseFloat(addAmount) > 0;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#122018" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>BazarChowk Wallet</Text>
-      </View>
+    <View style={styles.root}>
+      <Header title="BazarChowk Wallet" />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <View style={styles.balanceBg} />
-          <View style={styles.balanceContent}>
-            <Text style={styles.balanceLabel}>Available Balance</Text>
-            <Text style={styles.balanceAmount}>₹{wallet?.balance?.toFixed(2) || '0.00'}</Text>
-          </View>
-          <Ionicons name="wallet" size={80} color="rgba(255,255,255,0.15)" style={styles.bgIcon} />
-        </View>
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>
+      ) : (
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 16) + 40 }]} showsVerticalScrollIndicator={false}>
+          
+          {/* Balance Card */}
+          <Animated.View entering={FadeInUp.springify().damping(18)} style={styles.balanceCardWrapper}>
+            <LinearGradient colors={['#008F3C', '#00B140']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={styles.balanceCard}>
+              <View style={styles.balanceContent}>
+                <Text style={styles.balanceLabel}>Available Balance</Text>
+                <Text style={styles.balanceAmount}>₹{wallet?.balance?.toFixed(2) || '0.00'}</Text>
+              </View>
+              <Ionicons name="wallet" size={100} color="rgba(255,255,255,0.15)" style={styles.bgIcon} />
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Add Money Section */}
-        <View style={styles.addMoneySection}>
-          <Text style={styles.sectionTitle}>Add Money</Text>
-          <View style={styles.inputRow}>
-            <Text style={styles.currencySymbol}>₹</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              value={addAmount}
-              onChangeText={setAddAmount}
-            />
-            <TouchableOpacity 
-              style={[styles.addBtn, (!addAmount || adding) && { opacity: 0.5 }]} 
-              disabled={!addAmount || adding}
-              onPress={handleAddMoney}
-            >
-              {adding ? <ActivityIndicator color="#FFF" /> : <Text style={styles.addText}>Add</Text>}
-            </TouchableOpacity>
-          </View>
-          <View style={styles.quickAmounts}>
-            {[100, 500, 1000].map(amt => (
-              <TouchableOpacity key={amt} style={styles.quickChip} onPress={() => setAddAmount(amt.toString())}>
-                <Text style={styles.quickText}>+₹{amt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Recent Transactions */}
-        <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Recent Transactions</Text>
-        
-        {wallet?.transactions?.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="receipt-outline" size={48} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No transactions yet</Text>
-          </View>
-        ) : (
-          wallet?.transactions?.map((tx: any) => (
-            <View key={tx.id} style={styles.txCard}>
-              <View style={[styles.txIconBox, tx.type === 'CREDIT' ? styles.bgGreen : styles.bgRed]}>
-                <Ionicons 
-                  name={tx.type === 'CREDIT' ? 'arrow-down' : 'arrow-up'} 
-                  size={20} 
-                  color={tx.type === 'CREDIT' ? '#008F3C' : '#DC2626'} 
-                />
-              </View>
-              <View style={styles.txInfo}>
-                <Text style={styles.txReason}>{tx.reason}</Text>
-                <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleString()}</Text>
-              </View>
-              <View style={styles.txAmountBox}>
-                <Text style={[styles.txAmount, tx.type === 'CREDIT' ? styles.textGreen : styles.textRed]}>
-                  {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toFixed(2)}
-                </Text>
-                <Text style={styles.txBal}>Bal: ₹{tx.balanceAfter.toFixed(2)}</Text>
-              </View>
+          {/* Add Money Section */}
+          <Animated.View entering={FadeInUp.delay(100).springify().damping(18)} style={styles.addMoneySection}>
+            <Text style={styles.sectionTitle}>Add Money</Text>
+            <View style={styles.inputRow}>
+              <Text style={styles.currencySymbol}>₹</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                value={addAmount}
+                onChangeText={setAddAmount}
+                placeholderTextColor="#8B9690"
+              />
+              <PressableScale 
+                style={[styles.addBtn, !isValidAmount && styles.addBtnDisabled]} 
+                disabled={!isValidAmount || adding}
+                onPress={handleAddMoney}
+              >
+                {adding ? <ActivityIndicator color="#FFF" /> : <Text style={styles.addText}>Add</Text>}
+              </PressableScale>
             </View>
-          ))
-        )}
+            <View style={styles.quickAmounts}>
+              {[100, 500, 1000].map(amt => (
+                <PressableScale 
+                  key={amt} 
+                  style={[styles.quickChip, addAmount === amt.toString() && styles.quickChipActive]} 
+                  onPress={() => setAddAmount(amt.toString())}
+                >
+                  <Text style={[styles.quickText, addAmount === amt.toString() && styles.quickTextActive]}>+₹{amt}</Text>
+                </PressableScale>
+              ))}
+            </View>
+          </Animated.View>
 
-      </ScrollView>
+          {/* Recent Transactions */}
+          <Text style={[styles.sectionTitle, { marginTop: 12, paddingHorizontal: 4 }]}>Recent Transactions</Text>
+          
+          {wallet?.transactions?.length === 0 ? (
+            <Animated.View entering={FadeInDown.springify()} style={styles.emptyState}>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="receipt-outline" size={40} color="#00B140" />
+              </View>
+              <Text style={styles.emptyText}>No transactions yet</Text>
+            </Animated.View>
+          ) : (
+            wallet?.transactions?.map((tx: any, index: number) => (
+              <Animated.View key={tx.id} entering={FadeInDown.delay(index * 40).springify().damping(15)} style={styles.txCard}>
+                <View style={[styles.txIconBox, tx.type === 'CREDIT' ? styles.bgGreen : styles.bgRed]}>
+                  <Ionicons 
+                    name={tx.type === 'CREDIT' ? 'arrow-down' : 'arrow-up'} 
+                    size={22} 
+                    color={tx.type === 'CREDIT' ? '#00B140' : '#DC2626'} 
+                  />
+                </View>
+                <View style={styles.txInfo}>
+                  <Text style={styles.txReason}>{tx.type === 'CREDIT' ? 'DEPOSIT' : 'PURCHASE'}</Text>
+                  <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
+                <View style={styles.txAmountBox}>
+                  <Text style={[styles.txAmount, tx.type === 'CREDIT' ? styles.textGreen : styles.textRed]}>
+                    {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount?.toFixed(2)}
+                  </Text>
+                  <Text style={styles.txBal}>Bal: ₹{tx.balanceAfter?.toFixed(2)}</Text>
+                </View>
+              </Animated.View>
+            ))
+          )}
+
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
-  container: { flex: 1, backgroundColor: '#F7FAF8' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 16,
-    backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E5EBE7',
+  root: { flex: 1, backgroundColor: '#F7FBF8' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scroll: { padding: 16, gap: 20 },
+  
+  balanceCardWrapper: {
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 12,
+    borderRadius: 24, overflow: 'hidden'
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#122018', marginLeft: 8 },
+  balanceCard: { height: 170, padding: 24, justifyContent: 'center' },
+  balanceContent: { zIndex: 2 },
+  balanceLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', marginBottom: 8, letterSpacing: 0.5 },
+  balanceAmount: { color: '#FFF', fontSize: 44, fontWeight: '900', letterSpacing: -1 },
+  bgIcon: { position: 'absolute', right: -20, bottom: -20, transform: [{ rotate: '-15deg' }] },
   
-  scroll: { padding: 20, gap: 24, paddingBottom: 100 },
-  
-  balanceCard: { height: 160, borderRadius: 24, overflow: 'hidden', backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
-  balanceBg: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.1)' },
-  balanceContent: { flex: 1, justifyContent: 'center', padding: 24 },
-  balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  balanceAmount: { color: '#FFF', fontSize: 40, fontWeight: '800' },
-  bgIcon: { position: 'absolute', right: -10, bottom: -10 },
-  
-  addMoneySection: { backgroundColor: '#FFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7' },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 16 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 8 },
-  currencySymbol: { fontSize: 24, fontWeight: '700', color: '#66736B', marginRight: 8 },
-  input: { flex: 1, fontSize: 24, fontWeight: '800', color: '#122018', height: 48 },
-  addBtn: { backgroundColor: PRIMARY, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  addMoneySection: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 16, letterSpacing: -0.2 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F7FBF8', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#EAF8F0' },
+  currencySymbol: { fontSize: 28, fontWeight: '700', color: '#66736B', marginRight: 12 },
+  input: { flex: 1, fontSize: 28, fontWeight: '800', color: '#122018', height: 56 },
+  addBtn: { backgroundColor: PRIMARY, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  addBtnDisabled: { backgroundColor: '#CBD5E1' },
   addText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
   quickAmounts: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  quickChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFF' },
-  quickText: { color: '#66736B', fontWeight: '700' },
+  quickChip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7', backgroundColor: '#FFFFFF' },
+  quickChipActive: { backgroundColor: '#EAF8F0', borderColor: '#00B140' },
+  quickText: { color: '#66736B', fontWeight: '700', fontSize: 15 },
+  quickTextActive: { color: '#008F3C' },
   
-  txCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5EBE7' },
-  txIconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  txCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, marginBottom: 4, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 },
+  txIconBox: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   bgGreen: { backgroundColor: '#EAF8F0' },
-  bgRed: { backgroundColor: '#FEE2E2' },
+  bgRed: { backgroundColor: '#FEF2F2' },
   txInfo: { flex: 1, marginLeft: 16 },
-  txReason: { fontSize: 16, fontWeight: '700', color: '#122018', marginBottom: 4 },
-  txDate: { fontSize: 13, color: '#66736B', fontWeight: '500' },
+  txReason: { fontSize: 16, fontWeight: '800', color: '#122018', marginBottom: 4, letterSpacing: -0.2 },
+  txDate: { fontSize: 13, color: '#8B9690', fontWeight: '600' },
   txAmountBox: { alignItems: 'flex-end' },
-  txAmount: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  textGreen: { color: '#008F3C' },
+  txAmount: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  textGreen: { color: '#00B140' },
   textRed: { color: '#DC2626' },
   txBal: { fontSize: 12, color: '#8B9690', fontWeight: '600' },
   
-  emptyState: { alignItems: 'center', marginTop: 24 },
-  emptyText: { color: '#66736B', marginTop: 12, fontWeight: '600' }
+  emptyState: { alignItems: 'center', marginTop: 32 },
+  emptyIconWrap: { width: 80, height: 80, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5EBE7', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyText: { color: '#122018', fontSize: 18, fontWeight: '700' }
 });

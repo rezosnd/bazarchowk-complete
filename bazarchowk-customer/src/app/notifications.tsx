@@ -1,13 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import api from '@/services/api';
 import { socketService } from '@/services/socket';
+import { Header } from '@/components/Header';
+import { PressableScale } from '@/components/PressableScale';
+import Animated, { FadeInUp, FadeInDown, withRepeat, withSequence, withTiming, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 const PRIMARY = '#00B140';
+
+const PulsingDot = () => {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  
+  useEffect(() => {
+    scale.value = withRepeat(withSequence(withTiming(1.2, { duration: 1000 }), withTiming(1, { duration: 1000 })), -1, true);
+    opacity.value = withRepeat(withSequence(withTiming(0.6, { duration: 1000 }), withTiming(1, { duration: 1000 })), -1, true);
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return <Animated.View style={[styles.unreadDot, style]} />;
+};
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -16,13 +36,10 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     fetchNotifications();
-    
-    // Setup socket connection for real-time notifications
     socketService.connect();
     
     const handleNewNotification = (notification: any) => {
       setNotifications(prev => {
-        // Avoid duplicates
         if (prev.some(n => n.id === notification.id)) return prev;
         return [notification, ...prev];
       });
@@ -64,125 +81,126 @@ export default function NotificationsScreen() {
     }
   };
 
-  const getIcon = (type: string) => {
+  const getTypeStyle = (type: string) => {
     switch (type) {
-      case 'ORDER': return <Ionicons name="receipt" size={24} color="#3B82F6" />;
-      case 'PROMO': return <Ionicons name="pricetag" size={24} color="#EAB308" />;
-      case 'SYSTEM': return <Ionicons name="settings" size={24} color="#66736B" />;
-      case 'ALERT': return <Ionicons name="warning" size={24} color="#EF4444" />;
-      default: return <Ionicons name="notifications" size={24} color={PRIMARY} />;
+      case 'ORDER': return { color: '#3B82F6', bg: '#EFF6FF' };
+      case 'DELIVERY': return { color: '#00B140', bg: '#EAF8F0' };
+      case 'PROMOTION': return { color: '#FF8A00', bg: '#FFF1DF' };
+      case 'SYSTEM': return { color: '#66736B', bg: '#F1F5F9' };
+      default: return { color: PRIMARY, bg: '#EAF8F0' };
     }
   };
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
-  }
+  const getIconName = (type: string) => {
+    switch (type) {
+      case 'ORDER': return 'receipt';
+      case 'DELIVERY': return 'bicycle';
+      case 'PROMOTION': return 'pricetag';
+      case 'SYSTEM': return 'settings';
+      default: return 'notifications';
+    }
+  };
+
+  const RightAction = () => {
+    if (!notifications.some(n => !n.isRead)) return null;
+    return (
+      <PressableScale onPress={markAllAsRead} style={styles.clearBtn}>
+        <Text style={styles.clearText}>Mark All Read</Text>
+      </PressableScale>
+    );
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#122018" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Notifications</Text>
-        </View>
-        
-        {notifications.some(n => !n.isRead) && (
-          <TouchableOpacity onPress={markAllAsRead} style={styles.clearBtn}>
-            <Text style={styles.clearText}>Mark All Read</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {notifications.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="notifications-off-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>You're all caught up!</Text>
-            <Text style={styles.emptySub}>No new notifications right now.</Text>
+    <View style={styles.root}>
+      <Header 
+        title="Notifications" 
+        rightAction={
+          <View style={{ width: 120, alignItems: 'flex-end', paddingRight: 8 }}>
+            <RightAction />
           </View>
-        ) : (
-          notifications.map((notif) => (
-            <TouchableOpacity 
-              key={notif.id} 
-              style={[styles.card, !notif.isRead && styles.cardUnread]}
-              onPress={() => markAsRead(notif.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconBox, !notif.isRead && styles.iconBoxUnread]}>
-                {getIcon(notif.type)}
-              </View>
-              
-              <View style={styles.content}>
-                <Text style={[styles.notifTitle, !notif.isRead && styles.textUnread]}>{notif.title}</Text>
-                <Text style={styles.notifMessage} numberOfLines={3}>{notif.message}</Text>
-                
-                {notif.imageUrl && (
-                  <Image source={{ uri: notif.imageUrl }} style={styles.richImg} contentFit="cover" />
-                )}
+        } 
+      />
 
-                {notif.linkUrl ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Text style={[styles.time, { marginTop: 0 }]}>{new Date(notif.createdAt).toLocaleString()}</Text>
-                    <TouchableOpacity 
-                      onPress={() => {
-                        markAsRead(notif.id);
-                        router.push(notif.linkUrl as any);
-                      }}
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <Text style={{ color: PRIMARY, fontWeight: '700', fontSize: 13, marginRight: 2 }}>View Details</Text>
-                      <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <Text style={styles.time}>{new Date(notif.createdAt).toLocaleString()}</Text>
-                )}
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={PRIMARY} /></View>
+      ) : (
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 16) + 40 }]} showsVerticalScrollIndicator={false}>
+          {notifications.length === 0 ? (
+            <Animated.View entering={FadeInUp.springify().damping(18)} style={styles.emptyState}>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="notifications-outline" size={48} color="#00B140" />
               </View>
+              <Text style={styles.emptyText}>You're all caught up!</Text>
+              <Text style={styles.emptySub}>No new notifications right now.</Text>
+            </Animated.View>
+          ) : (
+            notifications.map((notif, index) => {
+              const typeStyle = getTypeStyle(notif.type || 'SYSTEM');
+              return (
+                <Animated.View key={notif.id} entering={FadeInDown.delay(index * 40).springify().damping(15)}>
+                  <PressableScale 
+                    style={[styles.card, !notif.isRead && styles.cardUnread]}
+                    onPress={() => {
+                      if (!notif.isRead) markAsRead(notif.id);
+                      if (notif.linkUrl) router.push(notif.linkUrl as any);
+                    }}
+                    scaleTo={0.96}
+                  >
+                    <View style={[styles.iconBox, { backgroundColor: typeStyle.bg }]}>
+                      <Ionicons name={getIconName(notif.type || 'SYSTEM')} size={22} color={typeStyle.color} />
+                    </View>
+                    
+                    <View style={styles.content}>
+                      <Text style={[styles.notifTitle, !notif.isRead && styles.textUnread]}>{notif.title}</Text>
+                      <Text style={styles.notifMessage} numberOfLines={3}>{notif.message}</Text>
+                      
+                      {notif.imageUrl && (
+                        <Image source={{ uri: notif.imageUrl }} style={styles.richImg} contentFit="cover" />
+                      )}
 
-              {!notif.isRead && <View style={styles.unreadDot} />}
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+                      <Text style={styles.time}>
+                        {new Date(notif.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+
+                    {!notif.isRead && <PulsingDot />}
+                  </PressableScale>
+                </Animated.View>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
-  container: { flex: 1, backgroundColor: '#F7FAF8' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFF',
-    borderBottomWidth: 1, borderColor: '#E5EBE7',
-  },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '800', color: '#122018', marginLeft: 4 },
-  clearBtn: { backgroundColor: '#EAF8F0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  clearText: { color: '#66736B', fontSize: 12, fontWeight: '700' },
+  root: { flex: 1, backgroundColor: '#F7FBF8' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   
-  scroll: { padding: 16, paddingBottom: 100 },
+  clearBtn: { backgroundColor: '#EAF8F0', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
+  clearText: { color: '#008F3C', fontSize: 13, fontWeight: '700' },
   
-  emptyState: { alignItems: 'center', marginTop: 100 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: '#122018', marginTop: 16 },
+  scroll: { padding: 16 },
+  
+  emptyState: { alignItems: 'center', marginTop: '40%' },
+  emptyIconWrap: { width: 96, height: 96, borderRadius: 32, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAF8F0', shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  emptyText: { fontSize: 20, fontWeight: '800', color: '#122018', marginTop: 16, letterSpacing: -0.2 },
   emptySub: { fontSize: 14, color: '#66736B', marginTop: 8 },
   
   card: {
     flexDirection: 'row', alignItems: 'flex-start',
-    backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: '#E5EBE7',
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.02, shadowRadius: 12, elevation: 2
   },
   cardUnread: { backgroundColor: '#F0FDF4', borderColor: '#EAF8F0' },
-  iconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
-  iconBoxUnread: { backgroundColor: '#FFF' },
+  iconBox: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, marginLeft: 16, paddingRight: 8 },
-  notifTitle: { fontSize: 15, fontWeight: '700', color: '#334155', marginBottom: 4 },
+  notifTitle: { fontSize: 15, fontWeight: '700', color: '#4B5563', marginBottom: 4 },
   textUnread: { color: '#122018', fontWeight: '800' },
-  notifMessage: { fontSize: 14, color: '#66736B', lineHeight: 20 },
-  time: { fontSize: 12, color: '#8B9690', marginTop: 8, fontWeight: '500' },
-  richImg: { width: '100%', height: 140, borderRadius: 12, marginTop: 12, backgroundColor: '#EAF8F0' },
-  unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: PRIMARY, marginTop: 6 },
+  notifMessage: { fontSize: 14, color: '#66736B', lineHeight: 22 },
+  time: { fontSize: 12, color: '#8B9690', marginTop: 10, fontWeight: '600' },
+  richImg: { width: '100%', height: 140, borderRadius: 12, marginTop: 12, backgroundColor: '#F7FBF8' },
+  unreadDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: PRIMARY, marginTop: 16 },
 });
