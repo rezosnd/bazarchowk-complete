@@ -111,11 +111,15 @@ export default function SearchScreen() {
         )}
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>{p.name}</Text>
-          {p.shop?.name && <Text style={styles.productShop} numberOfLines={1}>🏪 {p.shop.name}</Text>}
+          {p.shop?.name && (
+            <Text style={styles.productShop} numberOfLines={1}>
+              <Ionicons name="storefront-outline" size={12} color="#66736B" /> {p.shop.name}
+            </Text>
+          )}
           <View style={styles.priceRow}>
             <Text style={styles.price}>₹{price}</Text>
-            <View style={[styles.stockBadge, { backgroundColor: inStock ? '#DCFCE7' : '#FEE2E2' }]}>
-              <Text style={[styles.stockText, { color: inStock ? '#16A34A' : '#DC2626' }]}>
+            <View style={[styles.stockBadge, { backgroundColor: inStock ? '#EAF8F0' : '#FEE2E2' }]}>
+              <Text style={[styles.stockText, { color: inStock ? '#008F3C' : '#DC2626' }]}>
                 {inStock ? 'In Stock' : 'Out of Stock'}
               </Text>
             </View>
@@ -143,10 +147,10 @@ export default function SearchScreen() {
       )}
       <View style={styles.shopInfo}>
         <Text style={styles.shopName} numberOfLines={1}>{s.name}</Text>
-        {s.city && <Text style={styles.shopCity}><Ionicons name="location-outline" size={12} color="#64748B" /> {s.city}</Text>}
+        {s.city && <Text style={styles.shopCity}><Ionicons name="location-outline" size={12} color="#66736B" /> {s.city}</Text>}
         <View style={styles.shopTagRow}>
-          {s.hasProducts && <View style={styles.tagChip}><Text style={styles.tagChipText}>🛒 Delivery</Text></View>}
-          {s.hasServices && <View style={[styles.tagChip, { backgroundColor: '#EDE9FE' }]}><Text style={[styles.tagChipText, { color: '#7C3AED' }]}>✂️ Services</Text></View>}
+          {s.hasProducts && <View style={styles.tagChip}><Ionicons name="cart-outline" size={12} color="#008F3C" /><Text style={styles.tagChipText}> Delivery</Text></View>}
+          {s.hasServices && <View style={[styles.tagChip, { backgroundColor: '#F3E8FF' }]}><Ionicons name="cut-outline" size={12} color="#7C3AED" /><Text style={[styles.tagChipText, { color: '#7C3AED' }]}> Services</Text></View>}
         </View>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
@@ -185,7 +189,7 @@ export default function SearchScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={18} color={PRIMARY} />
@@ -193,7 +197,7 @@ export default function SearchScreen() {
             ref={inputRef}
             style={styles.searchInput}
             placeholder="Search products, shops..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#8B9690"
             value={query}
             onChangeText={handleChange}
             returnKeyType="search"
@@ -201,7 +205,7 @@ export default function SearchScreen() {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={clearSearch}>
-              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              <Ionicons name="close-circle" size={18} color="#8B9690" />
             </TouchableOpacity>
           )}
         </View>
@@ -231,26 +235,31 @@ export default function SearchScreen() {
       {!query.trim() ? (
         // Empty state — trending tags
         <View style={styles.emptyWrap}>
-          <Text style={styles.trendingTitle}>🔥 Trending Searches</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="trending-up" size={20} color={PRIMARY} />
+            <Text style={[styles.trendingTitle, { marginBottom: 0, marginLeft: 8 }]}>Trending Searches</Text>
+          </View>
           <View style={styles.tagsWrap}>
             {TRENDING.map(tag => (
               <TouchableOpacity key={tag} style={styles.trendTag} onPress={() => handleTrending(tag)}>
-                <Ionicons name="trending-up" size={12} color={PRIMARY} />
                 <Text style={styles.trendTagText}>{tag}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={[styles.trendingTitle, { marginTop: 28 }]}>🏪 Browse Categories</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 16 }}>
+            <Ionicons name="grid-outline" size={20} color={PRIMARY} />
+            <Text style={[styles.trendingTitle, { marginBottom: 0, marginLeft: 8 }]}>Browse Categories</Text>
+          </View>
           <View style={styles.catGrid}>
             {[
-              { name: 'Grocery', icon: '🛒', route: '/categories' },
-              { name: 'Salon', icon: '✂️', route: '/service-category?type=Salon' },
-              { name: 'Plumber', icon: '🔧', route: '/service-category?type=Plumber' },
-              { name: 'Electrician', icon: '⚡', route: '/service-category?type=Electrician' },
+              { name: 'Grocery', icon: 'cart-outline', route: '/categories' },
+              { name: 'Salon', icon: 'cut-outline', route: '/service-category?type=Salon' },
+              { name: 'Plumber', icon: 'build-outline', route: '/service-category?type=Plumber' },
+              { name: 'Electrician', icon: 'flash-outline', route: '/service-category?type=Electrician' },
             ].map(c => (
               <TouchableOpacity key={c.name} style={styles.catBtn} onPress={() => router.push(c.route as any)}>
-                <Text style={{ fontSize: 28 }}>{c.icon}</Text>
+                <Ionicons name={c.icon as any} size={28} color="#122018" />
                 <Text style={styles.catBtnText}>{c.name}</Text>
               </TouchableOpacity>
             ))}
@@ -263,7 +272,7 @@ export default function SearchScreen() {
         </View>
       ) : searched && totalResults === 0 ? (
         <View style={styles.noResults}>
-          <Text style={{ fontSize: 56 }}>🔍</Text>
+          <Ionicons name="search" size={56} color="#CBD5E1" />
           <Text style={styles.noResultsTitle}>No results for "{query}"</Text>
           <Text style={styles.noResultsSub}>Try different keywords or check spelling</Text>
           <View style={[styles.tagsWrap, { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', paddingHorizontal: 20 }]}>
@@ -297,63 +306,63 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#F1F5F9', gap: 12 },
-  backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 14, height: 46, borderWidth: 1, borderColor: '#E2E8F0', gap: 10 },
-  searchInput: { flex: 1, fontSize: 16, color: '#0F172A', fontWeight: '500' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderColor: '#E5EBE7', gap: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 16, height: 50, borderWidth: 1, borderColor: '#E5EBE7', gap: 10 },
+  searchInput: { flex: 1, fontSize: 16, color: '#122018', fontWeight: '500' },
 
-  tabBar: { flexDirection: 'row', backgroundColor: '#FFF', paddingHorizontal: 8, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  tab: { paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 2, borderColor: 'transparent' },
+  tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', paddingHorizontal: 8, borderBottomWidth: 1, borderColor: '#E5EBE7' },
+  tab: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 2, borderColor: 'transparent' },
   tabActive: { borderColor: PRIMARY },
-  tabText: { fontSize: 12, fontWeight: '600', color: '#94A3B8' },
-  tabTextActive: { color: PRIMARY, fontWeight: '800' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#66736B' },
+  tabTextActive: { color: PRIMARY, fontWeight: '700' },
 
   list: { padding: 16, paddingBottom: 80 },
-  sectionTitle: { fontSize: 16, fontWeight: '900', color: '#0F172A', marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 14, marginTop: 8 },
 
   // Product card
-  productCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 18, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  productImg: { width: 72, height: 72, borderRadius: 14 },
-  placeholder: { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  productInfo: { flex: 1, marginLeft: 14, justifyContent: 'center' },
-  productName: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 3 },
-  productShop: { fontSize: 12, color: '#64748B', fontWeight: '500', marginBottom: 8 },
+  productCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  productImg: { width: 76, height: 76, borderRadius: 16 },
+  placeholder: { backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  productInfo: { flex: 1, marginLeft: 16, justifyContent: 'center' },
+  productName: { fontSize: 15, fontWeight: '700', color: '#122018', marginBottom: 4 },
+  productShop: { fontSize: 13, color: '#66736B', fontWeight: '500', marginBottom: 10 },
   priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontSize: 17, fontWeight: '900', color: PRIMARY },
-  stockBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  price: { fontSize: 16, fontWeight: '700', color: PRIMARY },
+  stockBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   stockText: { fontSize: 11, fontWeight: '700' },
 
   // Shop card
-  shopCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  shopImg: { width: 52, height: 52, borderRadius: 14 },
+  shopCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E5EBE7', gap: 14, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  shopImg: { width: 56, height: 56, borderRadius: 16 },
   shopInfo: { flex: 1 },
-  shopName: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 3 },
-  shopCity: { fontSize: 12, color: '#64748B', marginBottom: 6 },
+  shopName: { fontSize: 16, fontWeight: '700', color: '#122018', marginBottom: 4 },
+  shopCity: { fontSize: 13, color: '#66736B', marginBottom: 8 },
   shopTagRow: { flexDirection: 'row', gap: 6 },
-  tagChip: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  tagChipText: { fontSize: 11, fontWeight: '700', color: '#16A34A' },
+  tagChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF8F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  tagChipText: { fontSize: 11, fontWeight: '700', color: '#008F3C' },
 
   // Service card
-  serviceCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', gap: 12 },
-  serviceIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  serviceName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
-  serviceShop: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  servicePrice: { fontSize: 16, fontWeight: '900', color: PRIMARY },
+  serviceCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E5EBE7', gap: 14, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  serviceIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' },
+  serviceName: { fontSize: 16, fontWeight: '700', color: '#122018' },
+  serviceShop: { fontSize: 13, color: '#66736B', marginTop: 4 },
+  servicePrice: { fontSize: 16, fontWeight: '700', color: PRIMARY },
 
   // States
-  emptyWrap: { flex: 1, padding: 20 },
-  trendingTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 14 },
-  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  trendTag: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: '#DCFCE7' },
-  trendTagText: { color: PRIMARY, fontWeight: '700', fontSize: 13 },
-  catGrid: { flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' },
-  catBtn: { flex: 1, minWidth: 80, backgroundColor: '#FFF', borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  catBtnText: { fontSize: 13, fontWeight: '700', color: '#334155', marginTop: 6 },
+  emptyWrap: { flex: 1, padding: 24 },
+  trendingTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 16 },
+  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  trendTag: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, borderColor: '#E5EBE7' },
+  trendTagText: { color: '#122018', fontWeight: '600', fontSize: 14 },
+  catGrid: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  catBtn: { flex: 1, minWidth: 80, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  catBtnText: { fontSize: 14, fontWeight: '700', color: '#122018', marginTop: 10 },
 
   centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadText: { marginTop: 12, fontSize: 15, color: '#64748B', fontWeight: '500' },
+  loadText: { marginTop: 16, fontSize: 15, color: '#66736B', fontWeight: '500' },
   noResults: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  noResultsTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A', marginTop: 16, textAlign: 'center' },
-  noResultsSub: { fontSize: 14, color: '#64748B', marginTop: 8, textAlign: 'center' },
+  noResultsTitle: { fontSize: 20, fontWeight: '700', color: '#122018', marginTop: 24, textAlign: 'center' },
+  noResultsSub: { fontSize: 15, color: '#66736B', marginTop: 8, textAlign: 'center' },
 });

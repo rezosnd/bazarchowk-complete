@@ -89,7 +89,7 @@ function ProductCard({ product, index }: { product: any; index: number }) {
                 contentFit="cover"
               />
             ) : (
-              <View style={[styles.img, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+              <View style={[styles.img, { backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' }]}>
                 <Ionicons name="cube-outline" size={32} color="#CBD5E1" />
               </View>
             )}
@@ -114,8 +114,8 @@ function ProductCard({ product, index }: { product: any; index: number }) {
 
             {/* Add to Cart button */}
             {isOutOfStock ? (
-              <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }]}>
-                <Text style={[styles.addBtnText, { color: '#94A3B8', fontSize: 11 }]}>OUT OF STOCK</Text>
+              <View style={[styles.addBtn, { backgroundColor: '#EAF8F0', borderColor: '#CBD5E1' }]}>
+                <Text style={[styles.addBtnText, { color: '#8B9690', fontSize: 11 }]}>OUT OF STOCK</Text>
               </View>
             ) : (
               <TouchableOpacity
@@ -202,16 +202,16 @@ export default function CategoryDetailScreen() {
   });
 
   return (
-    <View style={[styles.root, { backgroundColor: '#F8FAFC' }]}>
+    <View style={[styles.root, { backgroundColor: '#F7FAF8' }]}>
 
       {/* ── Header ── */}
       <LinearGradient colors={['#FFFFFF', '#FAFAFA']} style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{name || 'Category'}</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/cart')}>
-          <Ionicons name="cart-outline" size={22} color="#0F172A" />
+          <Ionicons name="cart-outline" size={22} color="#122018" />
           {itemsCount > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{itemsCount}</Text>
@@ -282,7 +282,7 @@ export default function CategoryDetailScreen() {
                 activeOpacity={0.9} 
                 onPress={() => router.push(`/services/${shop.id}`)}
               >
-                <View style={{ width: 90, height: 90, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F1F5F9' }}>
+                <View style={{ width: 90, height: 90, borderRadius: 12, overflow: 'hidden', backgroundColor: '#EAF8F0' }}>
                   {shop.bannerUrl || shop.logoUrl ? (
                     <Image source={{ uri: shop.bannerUrl || shop.logoUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                   ) : (
@@ -297,8 +297,8 @@ export default function CategoryDetailScreen() {
                   )}
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 }}>{shop.name}</Text>
-                  <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 6 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#122018', marginBottom: 4 }}>{shop.name}</Text>
+                  <Text style={{ fontSize: 13, color: '#66736B', fontWeight: '600', marginBottom: 6 }}>
                     <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
                   </Text>
                   <TouchableOpacity 
@@ -331,16 +331,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 14,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
+    borderBottomWidth: 1, borderBottomColor: '#EAF8F0',
   },
   iconBtn: {
     width: 42, height: 42, borderRadius: 21,
-    backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#F1F5F9',
+    backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#EAF8F0',
   },
   headerTitle: {
     flex: 1, textAlign: 'center', fontSize: 18,
-    fontWeight: '800', color: '#0F172A', marginHorizontal: 12,
+    fontWeight: '800', color: '#122018', marginHorizontal: 12,
   },
   cartBadge: {
     position: 'absolute', top: -4, right: -4,
@@ -352,16 +352,16 @@ const styles = StyleSheet.create({
   sortBar: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
     paddingVertical: 12, backgroundColor: '#FFF',
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9', gap: 12,
+    borderBottomWidth: 1, borderBottomColor: '#EAF8F0', gap: 12,
   },
-  resultCount: { fontSize: 13, fontWeight: '700', color: '#64748B', flexShrink: 0 },
+  resultCount: { fontSize: 13, fontWeight: '700', color: '#66736B', flexShrink: 0 },
   sortChip: {
     paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7',
+    backgroundColor: '#F7FAF8',
   },
   sortChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
-  sortChipText: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  sortChipText: { fontSize: 12, fontWeight: '700', color: '#66736B' },
   sortChipTextActive: { color: '#FFF' },
 
   scroll: { padding: 16, paddingBottom: 120 },
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   },
   imgWrap: {
     width: '100%', height: 150,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EAF8F0',
     position: 'relative',
   },
   img: { width: '100%', height: '100%' },
@@ -390,11 +390,11 @@ const styles = StyleSheet.create({
   vegDot: { width: 9, height: 9, borderRadius: 5 },
 
   info: { padding: 12 },
-  productName: { fontSize: 13, fontWeight: '700', color: '#0F172A', lineHeight: 18, marginBottom: 3 },
-  shopName: { fontSize: 11, color: '#94A3B8', fontWeight: '500', marginBottom: 6 },
+  productName: { fontSize: 13, fontWeight: '700', color: '#122018', lineHeight: 18, marginBottom: 3 },
+  shopName: { fontSize: 11, color: '#8B9690', fontWeight: '500', marginBottom: 6 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  price: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  mrp: { fontSize: 12, color: '#94A3B8', fontWeight: '500', textDecorationLine: 'line-through' },
+  price: { fontSize: 16, fontWeight: '800', color: '#122018' },
+  mrp: { fontSize: 12, color: '#8B9690', fontWeight: '500', textDecorationLine: 'line-through' },
 
   addBtn: {
     borderWidth: 1.5, borderColor: PRIMARY, borderRadius: 8,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
 
   // States
   centered: { flex: 1, alignItems: 'center', paddingTop: 80 },
-  loadingText: { marginTop: 12, color: '#64748B', fontWeight: '500' },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginTop: 16 },
-  emptyText: { fontSize: 14, color: '#94A3B8', fontWeight: '500', marginTop: 4 },
+  loadingText: { marginTop: 12, color: '#66736B', fontWeight: '500' },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#122018', marginTop: 16 },
+  emptyText: { fontSize: 14, color: '#8B9690', fontWeight: '500', marginTop: 4 },
 });

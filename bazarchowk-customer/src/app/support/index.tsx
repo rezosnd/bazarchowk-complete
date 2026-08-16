@@ -109,7 +109,7 @@ export default function SupportIndexScreen() {
         <Text style={styles.subtitle}>Get help with your orders and account</Text>
         
         <TouchableOpacity 
-          style={{ marginTop: 16, backgroundColor: '#DCFCE7', padding: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }} 
+          style={{ marginTop: 16, backgroundColor: '#EAF8F0', padding: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }} 
           onPress={() => Linking.openURL('tel:8709442363')}
         >
           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#BBF7D0', alignItems: 'center', justifyContent: 'center' }}>
@@ -165,27 +165,27 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FB' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { paddingHorizontal: 20, paddingBottom: 8 },
-  title: { fontSize: 28, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
-  subtitle: { color: '#64748B', fontSize: 14, fontWeight: '500', marginTop: 4 },
+  title: { fontSize: 28, fontWeight: '900', color: '#122018', letterSpacing: -0.5 },
+  subtitle: { color: '#66736B', fontSize: 14, fontWeight: '500', marginTop: 4 },
   
-  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20, elevation: 4, borderWidth: 1, borderColor: '#F1F5F9' },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20, elevation: 4, borderWidth: 1, borderColor: '#EAF8F0' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
-  ticketId: { color: '#94A3B8', fontWeight: 'bold', fontSize: 12 },
+  ticketId: { color: '#8B9690', fontWeight: 'bold', fontSize: 12 },
   
-  subject: { fontSize: 17, fontWeight: '900', color: '#0F172A', marginBottom: 16, lineHeight: 24 },
+  subject: { fontSize: 17, fontWeight: '900', color: '#122018', marginBottom: 16, lineHeight: 24 },
   
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#EAF8F0', paddingTop: 16 },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
-  catIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  categoryText: { color: '#475569', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  dateText: { color: '#94A3B8', fontSize: 12, fontWeight: '500' },
+  catIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  categoryText: { color: '#66736B', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  dateText: { color: '#8B9690', fontSize: 12, fontWeight: '500' },
   
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 },
   emptyIconWrap: { width: 96, height: 96, backgroundColor: '#FFF', borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 10 },
-  emptyTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5, textAlign: 'center' },
-  emptySubtitle: { color: '#64748B', textAlign: 'center', marginTop: 8, fontWeight: '500', lineHeight: 20 },
+  emptyTitle: { fontSize: 24, fontWeight: '900', color: '#122018', letterSpacing: -0.5, textAlign: 'center' },
+  emptySubtitle: { color: '#66736B', textAlign: 'center', marginTop: 8, fontWeight: '500', lineHeight: 20 },
   
   listContent: { padding: 20 },
   

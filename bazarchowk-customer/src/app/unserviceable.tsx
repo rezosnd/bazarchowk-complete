@@ -94,7 +94,7 @@ export default function UnserviceableScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Rahul Sharma"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#8B9690"
                 value={form.name}
                 onChangeText={(v) => setForm(f => ({ ...f, name: v }))}
               />
@@ -103,7 +103,7 @@ export default function UnserviceableScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. rahul@gmail.com"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#8B9690"
                 value={form.email}
                 onChangeText={(v) => setForm(f => ({ ...f, email: v }))}
                 keyboardType="email-address"
@@ -114,7 +114,7 @@ export default function UnserviceableScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Sector 15, Noida"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#8B9690"
                 value={form.location}
                 onChangeText={(v) => setForm(f => ({ ...f, location: v }))}
               />
@@ -123,7 +123,7 @@ export default function UnserviceableScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Bazar Chowk, Main Market"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#8B9690"
                 value={form.marketName}
                 onChangeText={(v) => setForm(f => ({ ...f, marketName: v }))}
               />
@@ -181,22 +181,22 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   handle: {
-    width: 40, height: 4, backgroundColor: '#E2E8F0',
+    width: 40, height: 4, backgroundColor: '#E5EBE7',
     borderRadius: 2, alignSelf: 'center', marginBottom: 20,
   },
-  sheetTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A', marginBottom: 6 },
-  sheetSub: { fontSize: 14, color: '#64748B', marginBottom: 24, lineHeight: 20 },
+  sheetTitle: { fontSize: 22, fontWeight: '900', color: '#122018', marginBottom: 6 },
+  sheetSub: { fontSize: 14, color: '#66736B', marginBottom: 24, lineHeight: 20 },
 
   label: { fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 6 },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7FAF8',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5EBE7',
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: '#0F172A',
+    color: '#122018',
     marginBottom: 16,
   },
   submitBtn: {
@@ -213,5 +213,5 @@ const styles = StyleSheet.create({
   },
   submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   cancelBtn: { alignItems: 'center', marginTop: 14 },
-  cancelBtnText: { fontSize: 14, color: '#94A3B8', fontWeight: '600' },
+  cancelBtnText: { fontSize: 14, color: '#8B9690', fontWeight: '600' },
 });

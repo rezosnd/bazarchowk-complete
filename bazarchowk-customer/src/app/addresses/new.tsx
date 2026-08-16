@@ -153,9 +153,9 @@ export default function AddAddressScreen() {
       {/* Absolute Map Layer */}
       <View style={[StyleSheet.absoluteFill, { height: H * 0.45 }]}>
         {Platform.OS === 'web' ? (
-           <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' }]}>
-             <Ionicons name="map-outline" size={48} color="#94A3B8" />
-             <Text style={{ color: '#64748B', marginTop: 12 }}>Map unavailable on web</Text>
+           <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EAF8F0' }]}>
+             <Ionicons name="map-outline" size={48} color="#8B9690" />
+             <Text style={{ color: '#66736B', marginTop: 12 }}>Map unavailable on web</Text>
            </View>
         ) : (
           <WebView
@@ -226,7 +226,7 @@ export default function AddAddressScreen() {
       {/* Header Overlay */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.title}>Confirm Location</Text>
       </View>
@@ -268,7 +268,7 @@ export default function AddAddressScreen() {
                     style={[styles.suggestionItem, index === mapSuggestions.length - 1 && { borderBottomWidth: 0 }]}
                     onPress={() => selectSuggestion(item)}
                   >
-                    <Ionicons name="location-outline" size={20} color="#64748B" />
+                    <Ionicons name="location-outline" size={20} color="#66736B" />
                     <View style={{ marginLeft: 12, flex: 1 }}>
                       <Text style={styles.suggestionTitle} numberOfLines={1}>{item.text}</Text>
                       <Text style={styles.suggestionSub} numberOfLines={1}>{item.place_name}</Text>
@@ -289,7 +289,7 @@ export default function AddAddressScreen() {
                   style={[styles.chip, title === type && styles.chipActive]}
                   onPress={() => setTitle(type)}
                 >
-                  <Ionicons name={type === 'Home' ? 'home' : type === 'Office' ? 'briefcase' : 'location'} size={14} color={title === type ? '#00B140' : '#64748B'} />
+                  <Ionicons name={type === 'Home' ? 'home' : type === 'Office' ? 'briefcase' : 'location'} size={14} color={title === type ? '#00B140' : '#66736B'} />
                   <Text style={[styles.chipText, title === type && styles.chipTextActive]}>{type}</Text>
                 </TouchableOpacity>
               ))}
@@ -314,7 +314,7 @@ export default function AddAddressScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom || 24 }]}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <Button
             title="Save Address"
             onPress={handleSave}
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  title: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  title: { fontSize: 18, fontWeight: '800', color: '#122018' },
   map: { flex: 1 },
   
   locateBtnWrap: {
@@ -361,31 +361,31 @@ const styles = StyleSheet.create({
   searchBoxContainer: {
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3,
   },
-  searchInput: { fontSize: 15, fontWeight: '500', color: '#0F172A' },
+  searchInput: { fontSize: 15, fontWeight: '500', color: '#122018' },
   suggestionsList: {
-    backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5EBE7',
     marginTop: 8, overflow: 'hidden',
     shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 6,
   },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  suggestionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2 },
-  suggestionSub: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '500' },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#EAF8F0' },
+  suggestionTitle: { fontSize: 16, fontWeight: '800', color: '#122018', letterSpacing: -0.2 },
+  suggestionSub: { fontSize: 13, color: '#66736B', marginTop: 4, fontWeight: '500' },
 
   formSection: { gap: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A', marginBottom: 16, letterSpacing: -0.3 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: '#122018', marginBottom: 16, letterSpacing: -0.3 },
   
   chipRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#F7FAF8', borderWidth: 1, borderColor: '#E5EBE7',
   },
   chipActive: { backgroundColor: '#F3FAF5', borderColor: '#00B140' },
-  chipText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  chipText: { fontSize: 14, fontWeight: '600', color: '#66736B' },
   chipTextActive: { color: '#00B140' },
 
   footer: {
     padding: 20, paddingTop: 16,
-    backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9',
+    backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EAF8F0',
   }
 });

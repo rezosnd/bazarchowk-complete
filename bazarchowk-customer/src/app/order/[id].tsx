@@ -64,7 +64,8 @@ export default function OrderTrackingScreen() {
               riderMarker.setLatLng([${data.latitude}, ${data.longitude}]);
               map.setView([${data.latitude}, ${data.longitude}]);
             } else {
-              var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🚲</span></div>', className: '' });
+              var riderSvg = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="18.5" cy="17.5" r="3.5"></circle><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"></path></svg>';
+              var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:6px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px">' + riderSvg + '</div>', className: '' });
               window.riderMarker = L.marker([${data.latitude}, ${data.longitude}], {icon: riderIcon}).addTo(map);
               map.setView([${data.latitude}, ${data.longitude}]);
             }
@@ -141,7 +142,7 @@ export default function OrderTrackingScreen() {
       {/* FULL SCREEN MAP */}
       {isTrackingActive ? (
         Platform.OS === 'web' ? (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F7FAF8', justifyContent: 'center', alignItems: 'center' }]}>
             <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
           </View>
         ) : (
@@ -168,20 +169,23 @@ export default function OrderTrackingScreen() {
                     var map = L.map('map', { zoomControl: false }).setView([${(order.shop.latitude + order.deliveryAddress.latitude) / 2}, ${(order.shop.longitude + order.deliveryAddress.longitude) / 2}], 13);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
                     
-                    var shopIcon = L.divIcon({ html: '<div style="background:#1E40AF;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏬</span></div>', className: '' });
-                    var homeIcon = L.divIcon({ html: '<div style="background:#DC2626;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🏠</span></div>', className: '' });
+                    var shopSvg = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
+                    var homeSvg = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>';
+                    var shopIcon = L.divIcon({ html: '<div style="background:#FF8A00;padding:6px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px">' + shopSvg + '</div>', className: '' });
+                    var homeIcon = L.divIcon({ html: '<div style="background:#122018;padding:6px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px">' + homeSvg + '</div>', className: '' });
                     
                     L.marker([${order.shop.latitude}, ${order.shop.longitude}], {icon: shopIcon}).addTo(map);
                     L.marker([${order.deliveryAddress.latitude}, ${order.deliveryAddress.longitude}], {icon: homeIcon}).addTo(map);
                     
                     ${routeCoords.length > 0 ? `
                       var route = ${JSON.stringify(routeCoords.map((c: any) => [c.latitude, c.longitude]))};
-                      L.polyline(route, {color: '#00B140', weight: 5}).addTo(map);
+                      L.polyline(route, {color: '#00B140', weight: 4}).addTo(map);
                       map.fitBounds(L.polyline(route).getBounds(), { padding: [50, 50] });
                     ` : ''}
 
                     ${riderLocation ? `
-                      var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:8px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px"><span style="color:#FFF;font-size:14px">🚲</span></div>', className: '' });
+                      var riderSvg = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="18.5" cy="17.5" r="3.5"></circle><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"></path></svg>';
+                      var riderIcon = L.divIcon({ html: '<div style="background:#00B140;padding:6px;border-radius:20px;border:3px solid #FFF;display:flex;align-items:center;justify-content:center;width:20px;height:20px">' + riderSvg + '</div>', className: '' });
                       window.riderMarker = L.marker([${riderLocation.lat}, ${riderLocation.lng}], {icon: riderIcon}).addTo(map);
                     ` : ''}
                   </script>
@@ -192,13 +196,13 @@ export default function OrderTrackingScreen() {
           />
         )
       ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F8FAFC' }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F7FAF8' }]} />
       )}
 
       {/* Floating Header */}
       <View style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtnFloat}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         {isTrackingActive && (
           <View style={styles.etaBadge}>
@@ -218,7 +222,7 @@ export default function OrderTrackingScreen() {
                 <Image source={{ uri: order.rider.avatarUrl }} style={styles.riderAvatar} />
               ) : (
                 <View style={[styles.riderAvatar, { alignItems: 'center', justifyContent: 'center' }]}>
-                  <Ionicons name="person" size={28} color="#94A3B8" />
+                  <Ionicons name="person" size={28} color="#8B9690" />
                 </View>
               )}
               <View style={styles.pulseDot} />
@@ -253,7 +257,7 @@ export default function OrderTrackingScreen() {
               <Text style={styles.rateTitle}>Rate {order.shop?.name}</Text>
               <Text style={styles.rateSub}>Share your experience with others</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            <Ionicons name="chevron-forward" size={20} color="#8B9690" />
           </TouchableOpacity>
         )}
 
@@ -267,7 +271,7 @@ export default function OrderTrackingScreen() {
                 <View key={step.id} style={styles.timelineItem}>
                   <View style={styles.timelineIconLine}>
                     <View style={[styles.timelineDot, isActive && styles.timelineDotActive, isCurrent && styles.timelineDotCurrent]}>
-                      <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : '#94A3B8'} />
+                      <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : '#8B9690'} />
                     </View>
                     {index < TIMELINE.length - 1 && (
                       <View style={[styles.timelineLine, isActive && styles.timelineLineActive]} />
@@ -288,8 +292,8 @@ export default function OrderTrackingScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  container: { flex: 1, backgroundColor: '#FFF' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   
   headerOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0,
@@ -297,62 +301,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, zIndex: 10,
   },
   backBtnFloat: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF',
+    width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
   },
   etaBadge: {
-    backgroundColor: '#FFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 30,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 30,
     alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
   },
-  etaLabel: { fontSize: 12, color: '#64748B', fontWeight: '600', textTransform: 'uppercase' },
-  etaTime: { fontSize: 18, color: PRIMARY, fontWeight: '900' },
-
-  shopMarker: { backgroundColor: '#1E40AF', padding: 8, borderRadius: 20, borderWidth: 3, borderColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
-  homeMarker: { backgroundColor: '#DC2626', padding: 8, borderRadius: 20, borderWidth: 3, borderColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
+  etaLabel: { fontSize: 12, color: '#66736B', fontWeight: '600', textTransform: 'uppercase' },
+  etaTime: { fontSize: 18, color: PRIMARY, fontWeight: '800' },
 
   bottomSheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
     paddingTop: 8, paddingHorizontal: 24,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 20,
+    shadowColor: '#00B140', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 20,
     maxHeight: height * 0.55,
   },
   riderCard: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderColor: '#F1F5F9',
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderColor: '#E5EBE7',
   },
   riderAvatarWrap: { position: 'relative', marginRight: 16 },
-  riderAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E2E8F0' },
-  pulseDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#FFF' },
+  riderAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F7FAF8' },
+  pulseDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#FFFFFF' },
   riderInfo: { flex: 1 },
-  riderName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  riderVehicle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
+  riderName: { fontSize: 16, fontWeight: '700', color: '#122018' },
+  riderVehicle: { fontSize: 13, color: '#66736B', fontWeight: '500', marginTop: 2 },
   riderActions: { flexDirection: 'row', gap: 12 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
   
   timelineScroll: { paddingTop: 20 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 20 },
+  sheetTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 20 },
   
   timeline: { paddingLeft: 10 },
   timelineItem: { flexDirection: 'row', marginBottom: 24 },
   timelineIconLine: { alignItems: 'center', marginRight: 16 },
-  timelineDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  timelineDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   timelineDotActive: { backgroundColor: PRIMARY },
   timelineDotCurrent: { backgroundColor: ACCENT, shadowColor: ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
-  timelineLine: { width: 2, height: '100%', backgroundColor: '#F1F5F9', position: 'absolute', top: 32, zIndex: 1 },
+  timelineLine: { width: 2, height: '100%', backgroundColor: '#E5EBE7', position: 'absolute', top: 32, zIndex: 1 },
   timelineLineActive: { backgroundColor: PRIMARY },
   
   timelineContent: { flex: 1, paddingTop: 4 },
-  timelineText: { fontSize: 15, fontWeight: '600', color: '#94A3B8' },
-  timelineTextActive: { color: '#0F172A', fontWeight: '800' },
-  timelineSubText: { fontSize: 13, color: '#64748B', marginTop: 4, lineHeight: 18 },
+  timelineText: { fontSize: 15, fontWeight: '600', color: '#8B9690' },
+  timelineTextActive: { color: '#122018', fontWeight: '700' },
+  timelineSubText: { fontSize: 13, color: '#66736B', marginTop: 4, lineHeight: 18 },
 
   rateBanner: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB',
-    padding: 16, borderRadius: 16, marginTop: 16, borderWidth: 1, borderColor: '#FEF3C7'
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF4E6',
+    padding: 16, borderRadius: 20, marginTop: 16, borderWidth: 1, borderColor: '#FFE4C4'
   },
-  rateIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
-  rateTitle: { fontSize: 15, fontWeight: '800', color: '#B45309' },
-  rateSub: { fontSize: 12, color: '#D97706', marginTop: 2 },
+  rateIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFE4C4', alignItems: 'center', justifyContent: 'center' },
+  rateTitle: { fontSize: 15, fontWeight: '700', color: '#D97706' },
+  rateSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
 });

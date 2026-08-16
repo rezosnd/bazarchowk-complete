@@ -36,7 +36,9 @@ export default function OrdersScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.center}>
-        <Ionicons name="receipt-outline" size={80} color="#CBD5E1" />
+        <View style={styles.emptyIconBg}>
+          <Ionicons name="receipt-outline" size={56} color="#8B9690" />
+        </View>
         <Text style={styles.emptyText}>You need to login first</Text>
       </View>
     );
@@ -54,10 +56,10 @@ export default function OrdersScreen() {
         {orders.length === 0 ? (
           <View style={styles.centerEmpty}>
             <View style={styles.emptyIconBg}>
-              <Ionicons name="receipt-outline" size={64} color={PRIMARY} />
+              <Ionicons name="receipt-outline" size={48} color={PRIMARY} />
             </View>
             <Text style={styles.emptyText}>No orders yet</Text>
-            <Text style={styles.emptySub}>You haven't placed any orders yet.</Text>
+            <Text style={styles.emptySub}>Your next local order will appear here.</Text>
           </View>
         ) : (
           orders.map((order) => (
@@ -68,38 +70,32 @@ export default function OrdersScreen() {
               onPress={() => router.push(`/order/${order.id}` as any)}
             >
               <View style={styles.orderHeader}>
-                <View>
-                  <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
-                  <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString()}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <View style={[
-                    styles.statusBadge, 
-                    order.status === 'DELIVERED' ? styles.statusSuccess : styles.statusPending
-                  ]}>
-                    <Text style={[
-                      styles.statusText,
-                      order.status === 'DELIVERED' ? styles.statusTextSuccess : styles.statusTextPending
-                    ]}>{order.status}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={styles.storeIconWrap}>
+                    <Ionicons name="storefront-outline" size={20} color="#56625B" />
                   </View>
-                  
-                  {order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'FAILED' && (
-                    <View style={[styles.statusBadge, { backgroundColor: '#FEE2E2' }]}>
-                      <Text style={[styles.statusText, { color: '#DC2626' }]}>Payment Failed</Text>
-                    </View>
-                  )}
-                  {order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING' && (
-                    <View style={[styles.statusBadge, { backgroundColor: '#F3F4F6' }]}>
-                      <Text style={[styles.statusText, { color: '#6B7280' }]}>Payment Pending</Text>
-                    </View>
-                  )}
+                  <View>
+                    <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
+                    <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString()} • {order.items?.length || 1} item{order.items?.length > 1 ? 's' : ''}</Text>
+                  </View>
+                </View>
+                <View style={[
+                  styles.statusBadge, 
+                  order.status === 'DELIVERED' ? styles.statusSuccess :
+                  order.status === 'CANCELLED' ? styles.statusCancelled : styles.statusPending
+                ]}>
+                  <Text style={[
+                    styles.statusText,
+                    order.status === 'DELIVERED' ? styles.statusTextSuccess :
+                    order.status === 'CANCELLED' ? styles.statusTextCancelled : styles.statusTextPending
+                  ]}>{order.status}</Text>
                 </View>
               </View>
 
               <View style={styles.divider} />
 
               <View style={styles.itemsRow}>
-                <Text style={styles.itemsText}>
+                <Text style={styles.itemsText} numberOfLines={2}>
                   {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.product?.name || 'Item'} (${item.productVariant?.name})`).join(', ')}
                 </Text>
               </View>
@@ -108,7 +104,10 @@ export default function OrdersScreen() {
 
               <View style={styles.orderFooter}>
                 <Text style={styles.totalText}>₹{order.totalAmount.toFixed(2)}</Text>
-                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={styles.viewDetailsText}>View Details</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#00B140" />
+                </View>
               </View>
             </TouchableOpacity>
           ))
@@ -119,32 +118,36 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
   centerEmpty: { alignItems: 'center', marginTop: 100 },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', paddingHorizontal: 20, paddingVertical: 12 },
-  emptyIconBg: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  emptyText: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
-  emptySub: { fontSize: 14, color: '#64748B' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#122018', paddingHorizontal: 20, paddingVertical: 12 },
+  emptyIconBg: { width: 80, height: 80, borderRadius: 24, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  emptyText: { fontSize: 20, fontWeight: '700', color: '#122018', marginBottom: 8 },
+  emptySub: { fontSize: 14, color: '#66736B' },
   
-  scroll: { padding: 16, paddingBottom: 100 },
+  scroll: { padding: 16, paddingBottom: 130 },
   
-  orderCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  orderCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  shopName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  orderDate: { fontSize: 12, color: '#64748B', marginTop: 4 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusSuccess: { backgroundColor: '#DCFCE7' },
-  statusPending: { backgroundColor: '#FEF9C3' },
+  storeIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  shopName: { fontSize: 16, fontWeight: '700', color: '#122018' },
+  orderDate: { fontSize: 13, color: '#66736B', marginTop: 4 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  statusSuccess: { backgroundColor: '#EAF8F0' },
+  statusPending: { backgroundColor: '#FFF1DF' },
+  statusCancelled: { backgroundColor: '#FEE2E2' },
   statusText: { fontSize: 10, fontWeight: '800' },
-  statusTextSuccess: { color: '#059669' },
-  statusTextPending: { color: '#A16207' },
+  statusTextSuccess: { color: '#008F3C' },
+  statusTextPending: { color: '#FF8A00' },
+  statusTextCancelled: { color: '#DC2626' },
   
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: '#E5EBE7', marginVertical: 14 },
   
   itemsRow: {},
-  itemsText: { fontSize: 14, color: '#475569', lineHeight: 20 },
+  itemsText: { fontSize: 14, color: '#66736B', lineHeight: 22 },
   
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  totalText: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  totalText: { fontSize: 18, fontWeight: '700', color: '#122018' },
+  viewDetailsText: { fontSize: 13, fontWeight: '600', color: '#00B140' }
 });

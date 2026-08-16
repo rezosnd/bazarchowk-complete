@@ -88,14 +88,14 @@ export default function ProductDetailScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <TouchableOpacity style={styles.backBtn}>
-            <Ionicons name="share-social-outline" size={24} color="#0F172A" />
+            <Ionicons name="share-social-outline" size={24} color="#122018" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/cart')}>
-            <Ionicons name="cart-outline" size={24} color="#0F172A" />
+            <Ionicons name="cart-outline" size={24} color="#122018" />
             {itemsCount > 0 && (
               <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: PRIMARY, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</Text>
@@ -111,7 +111,7 @@ export default function ProductDetailScreen() {
           {primaryImage ? (
             <Image source={{ uri: primaryImage }} style={styles.mainImage} contentFit="contain" />
           ) : (
-            <Ionicons name="cube" size={64} color="#94A3B8" />
+            <Ionicons name="cube" size={64} color="#8B9690" />
           )}
         </View>
 
@@ -211,13 +211,13 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 24 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <View style={styles.qtyControls}>
           <TouchableOpacity 
             style={styles.qtyBtn}
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
           >
-            <Ionicons name="remove" size={20} color="#0F172A" />
+            <Ionicons name="remove" size={20} color="#122018" />
           </TouchableOpacity>
           <Text style={styles.qtyText}>{quantity}</Text>
           <TouchableOpacity 
@@ -230,14 +230,14 @@ export default function ProductDetailScreen() {
               }
             }}
           >
-            <Ionicons name="add" size={20} color="#0F172A" />
+            <Ionicons name="add" size={20} color="#122018" />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
           style={[
             styles.addToCartBtn, 
-            (!selectedVariant || selectedVariant?.stock < 1 || addingToCart || addedSuccess) && { backgroundColor: addedSuccess ? '#16A34A' : '#F1F5F9', shadowOpacity: addedSuccess ? 0.3 : 0 }
+            (!selectedVariant || selectedVariant?.stock < 1 || addingToCart || addedSuccess) && { backgroundColor: addedSuccess ? '#008F3C' : '#EAF8F0', shadowOpacity: addedSuccess ? 0.3 : 0 }
           ]}
           disabled={!selectedVariant || selectedVariant?.stock < 1 || addingToCart || addedSuccess}
           onPress={handleAddToCart}
@@ -249,9 +249,9 @@ export default function ProductDetailScreen() {
                <Text style={styles.addToCartText}>Added to Cart</Text>
             </View>
           ) : addingToCart ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color="#122018" />
           ) : !selectedVariant || selectedVariant?.stock < 1 ? (
-            <Text style={[styles.addToCartText, { color: '#94A3B8' }]}>Out of Stock</Text>
+            <Text style={[styles.addToCartText, { color: '#8B9690' }]}>Out of Stock</Text>
           ) : (
             <Text style={styles.addToCartText}>Add to Cart</Text>
           )}
@@ -275,47 +275,47 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4,
   },
   imageContainer: {
-    width: '100%', height: 350, backgroundColor: '#F8FAFC',
+    width: '100%', height: 350, backgroundColor: '#F7FAF8',
     alignItems: 'center', justifyContent: 'center',
   },
   mainImage: { width: '80%', height: '80%' },
   infoContainer: { padding: 20 },
-  categoryBadge: { alignSelf: 'flex-start', backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
-  categoryText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
-  title: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  shopName: { fontSize: 14, color: '#64748B', marginBottom: 16 },
+  categoryBadge: { alignSelf: 'flex-start', backgroundColor: '#EAF8F0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
+  categoryText: { fontSize: 12, fontWeight: '600', color: '#66736B' },
+  title: { fontSize: 24, fontWeight: '800', color: '#122018', marginBottom: 4 },
+  shopName: { fontSize: 14, color: '#66736B', marginBottom: 16 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
   price: { fontSize: 28, fontWeight: '800', color: PRIMARY },
-  inStockBadge: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  inStockText: { color: '#059669', fontSize: 12, fontWeight: '700' },
+  inStockBadge: { backgroundColor: '#EAF8F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  inStockText: { color: '#008F3C', fontSize: 12, fontWeight: '700' },
   
   variantsContainer: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 12 },
-  variantBox: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, minWidth: 100, alignItems: 'center' },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 12 },
+  variantBox: { borderWidth: 1, borderColor: '#E5EBE7', borderRadius: 12, padding: 12, minWidth: 100, alignItems: 'center' },
   variantBoxActive: { borderColor: PRIMARY, backgroundColor: '#F3FAF5' },
-  variantText: { fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 4 },
+  variantText: { fontSize: 14, fontWeight: '600', color: '#66736B', marginBottom: 4 },
   variantTextActive: { color: PRIMARY },
-  variantPrice: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  variantPrice: { fontSize: 16, fontWeight: '700', color: '#122018' },
   variantPriceActive: { color: PRIMARY },
 
   descriptionContainer: { marginTop: 8 },
-  description: { fontSize: 15, lineHeight: 24, color: '#475569' },
+  description: { fontSize: 15, lineHeight: 24, color: '#66736B' },
 
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: '#FFF',
-    borderTopWidth: 1, borderTopColor: '#F1F5F9',
+    borderTopWidth: 1, borderTopColor: '#EAF8F0',
     paddingHorizontal: 20, paddingTop: 16,
     flexDirection: 'row', gap: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10,
   },
   qtyControls: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F8FAFC', borderRadius: 16,
+    backgroundColor: '#F7FAF8', borderRadius: 16,
     paddingHorizontal: 8,
   },
   qtyBtn: { padding: 12 },
-  qtyText: { fontSize: 18, fontWeight: '700', color: '#0F172A', minWidth: 24, textAlign: 'center' },
+  qtyText: { fontSize: 18, fontWeight: '700', color: '#122018', minWidth: 24, textAlign: 'center' },
   addToCartBtn: {
     flex: 1, backgroundColor: PRIMARY,
     borderRadius: 16, alignItems: 'center', justifyContent: 'center',
@@ -324,13 +324,13 @@ const styles = StyleSheet.create({
   addToCartText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
   reviewsContainer: { marginTop: 32 },
-  reviewCard: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
-  reviewAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
-  reviewName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  reviewDate: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
-  reviewComment: { fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 20 },
-  noReviewsBox: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#F8FAFC', borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', borderStyle: 'dashed' },
-  noReviewsText: { fontSize: 15, fontWeight: '700', color: '#64748B', marginTop: 12 },
-  noReviewsSub: { fontSize: 13, color: '#94A3B8', marginTop: 4 },
+  reviewCard: { backgroundColor: '#F7FAF8', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#EAF8F0' },
+  reviewAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5EBE7', alignItems: 'center', justifyContent: 'center' },
+  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: '#66736B' },
+  reviewName: { fontSize: 14, fontWeight: '700', color: '#122018' },
+  reviewDate: { fontSize: 12, color: '#8B9690', fontWeight: '500' },
+  reviewComment: { fontSize: 14, color: '#66736B', marginTop: 8, lineHeight: 20 },
+  noReviewsBox: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#F7FAF8', borderRadius: 16, borderWidth: 1, borderColor: '#EAF8F0', borderStyle: 'dashed' },
+  noReviewsText: { fontSize: 15, fontWeight: '700', color: '#66736B', marginTop: 12 },
+  noReviewsSub: { fontSize: 13, color: '#8B9690', marginTop: 4 },
 });

@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   backButton: { padding: 8, marginLeft: -8 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#111827', textAlign: 'center' },
   headerSubtitle: { fontSize: 12, color: '#6b7280', textAlign: 'center' },
-  callButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' },
+  callButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' },
   messageContainer: { flex: 1 },
   encryptionNotice: { textAlign: 'center', fontSize: 12, color: '#9ca3af', marginBottom: 16 },
   messageWrapper: { flexDirection: 'row', width: '100%' },

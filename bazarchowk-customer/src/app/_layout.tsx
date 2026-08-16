@@ -107,10 +107,10 @@ export default function RootLayout() {
           {/* Maintenance Overlay */}
           {backendDown && (
             <View style={StyleSheet.absoluteFill}>
-              <LinearGradient colors={['#F8FAFC', '#F1F5F9']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
+              <LinearGradient colors={['#F7FAF8', '#EAF8F0']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
                 <Ionicons name="construct" size={80} color="#00B140" />
-                <Text style={{ fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</Text>
-                <Text style={{ fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</Text>
+                <Text style={{ fontSize: 24, fontWeight: '800', color: '#122018', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</Text>
+                <Text style={{ fontSize: 16, color: '#66736B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</Text>
                 
                 <TouchableOpacity 
                   onPress={() => setBackendDown(false)}

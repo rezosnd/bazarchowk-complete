@@ -199,7 +199,7 @@ export default function ServiceCategoryScreen() {
                 <Text style={styles.modalShopName}>{selectedShop?.name}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowBookModal(false)}>
-                <Ionicons name="close-circle" size={28} color="#94A3B8" />
+                <Ionicons name="close-circle" size={28} color="#8B9690" />
               </TouchableOpacity>
             </View>
 
@@ -221,7 +221,7 @@ export default function ServiceCategoryScreen() {
               })}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}>
               {/* Step 1: Select Service */}
               {bookingStep === 'service' && (
                 <View>
@@ -284,7 +284,7 @@ export default function ServiceCategoryScreen() {
                   ))}
                   <View style={styles.navRow}>
                     <TouchableOpacity style={styles.backStep} onPress={() => setBookingStep('service')}>
-                      <Text style={{ color: '#64748B', fontWeight: '700' }}>← Back</Text>
+                      <Text style={{ color: '#66736B', fontWeight: '700' }}>← Back</Text>
                     </TouchableOpacity>
                     {selectedProvider && (
                       <TouchableOpacity style={[styles.nextBtn, { backgroundColor: meta.color, flex: 1, marginLeft: 12 }]} onPress={() => setBookingStep('slot')}>
@@ -312,7 +312,7 @@ export default function ServiceCategoryScreen() {
                       style={[styles.optionCard, selectedSlot?.id === slot.id && { borderColor: meta.color, backgroundColor: meta.gradient[0] }]}
                       onPress={() => setSelectedSlot(slot)}
                     >
-                      <Ionicons name="time-outline" size={20} color={selectedSlot?.id === slot.id ? meta.color : '#64748B'} />
+                      <Ionicons name="time-outline" size={20} color={selectedSlot?.id === slot.id ? meta.color : '#66736B'} />
                       <View style={{ flex: 1, marginLeft: 12 }}>
                         <Text style={styles.optionName}>{formatSlotDate(slot.startTime)}</Text>
                         <Text style={styles.optionSub}>{formatSlotTime(slot.startTime)} – {formatSlotTime(slot.endTime)}</Text>
@@ -328,7 +328,7 @@ export default function ServiceCategoryScreen() {
                       <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Service</Text><Text style={styles.summaryVal}>{selectedService?.name}</Text></View>
                       <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Staff</Text><Text style={styles.summaryVal}>{selectedProvider?.name}</Text></View>
                       <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Time</Text><Text style={styles.summaryVal}>{formatSlotDate(selectedSlot.startTime)} at {formatSlotTime(selectedSlot.startTime)}</Text></View>
-                      <View style={[styles.summaryRow, { borderTopWidth: 1, borderColor: '#E2E8F0', marginTop: 8, paddingTop: 8 }]}>
+                      <View style={[styles.summaryRow, { borderTopWidth: 1, borderColor: '#E5EBE7', marginTop: 8, paddingTop: 8 }]}>
                         <Text style={[styles.summaryLabel, { fontWeight: '800' }]}>Total</Text>
                         <Text style={[styles.summaryVal, { color: meta.color, fontSize: 18, fontWeight: '900' }]}>₹{selectedService?.price}</Text>
                       </View>
@@ -337,7 +337,7 @@ export default function ServiceCategoryScreen() {
 
                   <View style={styles.navRow}>
                     <TouchableOpacity style={styles.backStep} onPress={() => setBookingStep('provider')}>
-                      <Text style={{ color: '#64748B', fontWeight: '700' }}>← Back</Text>
+                      <Text style={{ color: '#66736B', fontWeight: '700' }}>← Back</Text>
                     </TouchableOpacity>
                     {selectedSlot && (
                       <TouchableOpacity
@@ -372,29 +372,29 @@ export default function ServiceCategoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
+  root: { flex: 1, backgroundColor: '#F7FAF8' },
   header: { paddingHorizontal: 16, paddingBottom: 20, paddingTop: 12 },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.8)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerEmoji: { fontSize: 40 },
   headerTitle: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, color: '#64748B', fontWeight: '600', marginTop: 2 },
+  headerSub: { fontSize: 13, color: '#66736B', fontWeight: '600', marginTop: 2 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  loadingText: { marginTop: 16, color: '#64748B', fontWeight: '600', fontSize: 15 },
-  emptyTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A', marginTop: 16 },
-  emptySub: { fontSize: 14, color: '#64748B', textAlign: 'center', marginTop: 8, lineHeight: 22 },
+  loadingText: { marginTop: 16, color: '#66736B', fontWeight: '600', fontSize: 15 },
+  emptyTitle: { fontSize: 22, fontWeight: '900', color: '#122018', marginTop: 16 },
+  emptySub: { fontSize: 14, color: '#66736B', textAlign: 'center', marginTop: 8, lineHeight: 22 },
   backHomeBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20 },
-  resultCount: { fontSize: 14, fontWeight: '600', color: '#64748B', marginBottom: 12 },
-  shopCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 20, padding: 16, marginBottom: 12, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
+  resultCount: { fontSize: 14, fontWeight: '600', color: '#66736B', marginBottom: 12 },
+  shopCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 20, padding: 16, marginBottom: 12, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: '#EAF8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   shopIconWrap: { width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  shopName: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
-  shopCity: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  shopName: { fontSize: 17, fontWeight: '800', color: '#122018' },
+  shopCity: { fontSize: 13, color: '#66736B', marginTop: 2 },
   tagsRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  openBadge: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  openBadgeText: { color: '#16A34A', fontSize: 11, fontWeight: '700' },
+  openBadge: { backgroundColor: '#EAF8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  openBadgeText: { color: '#008F3C', fontSize: 11, fontWeight: '700' },
   closedBadge: { backgroundColor: '#FEE2E2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   closedBadgeText: { color: '#DC2626', fontSize: 11, fontWeight: '700' },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, gap: 3 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, gap: 3 },
   verifiedBadgeText: { color: '#00B140', fontSize: 11, fontWeight: '700' },
   bookNowBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
   bookNowText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
@@ -402,30 +402,30 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 16, maxHeight: '90%' },
-  modalHandle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalHandle: { width: 40, height: 4, backgroundColor: '#E5EBE7', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A' },
-  modalShopName: { fontSize: 14, color: '#64748B', fontWeight: '600', marginTop: 2 },
-  steps: { flexDirection: 'row', marginBottom: 24, paddingBottom: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#E2E8F0' },
-  stepNum: { fontSize: 13, fontWeight: '800', color: '#94A3B8' },
-  stepLabel: { fontSize: 11, color: '#94A3B8', marginTop: 4, fontWeight: '600' },
-  stepTitle: { fontSize: 18, fontWeight: '900', color: '#0F172A', marginBottom: 16 },
-  optionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 2, borderColor: '#F1F5F9' },
-  optionName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  optionSub: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  modalTitle: { fontSize: 22, fontWeight: '900', color: '#122018' },
+  modalShopName: { fontSize: 14, color: '#66736B', fontWeight: '600', marginTop: 2 },
+  steps: { flexDirection: 'row', marginBottom: 24, paddingBottom: 20, borderBottomWidth: 1, borderColor: '#EAF8F0' },
+  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#E5EBE7' },
+  stepNum: { fontSize: 13, fontWeight: '800', color: '#8B9690' },
+  stepLabel: { fontSize: 11, color: '#8B9690', marginTop: 4, fontWeight: '600' },
+  stepTitle: { fontSize: 18, fontWeight: '900', color: '#122018', marginBottom: 16 },
+  optionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F7FAF8', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 2, borderColor: '#EAF8F0' },
+  optionName: { fontSize: 16, fontWeight: '800', color: '#122018' },
+  optionSub: { fontSize: 13, color: '#66736B', marginTop: 2 },
   optionPrice: { fontSize: 18, fontWeight: '900' },
   providerAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   nextBtn: { paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 16 },
   nextBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
   navRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
-  backStep: { paddingVertical: 16, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
-  summaryCard: { backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginTop: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  summaryTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  backStep: { paddingVertical: 16, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#EAF8F0', alignItems: 'center' },
+  summaryCard: { backgroundColor: '#F7FAF8', borderRadius: 16, padding: 16, marginTop: 16, borderWidth: 1, borderColor: '#E5EBE7' },
+  summaryTitle: { fontSize: 15, fontWeight: '800', color: '#122018', marginBottom: 12 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel: { fontSize: 14, color: '#64748B', fontWeight: '500' },
-  summaryVal: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  summaryLabel: { fontSize: 14, color: '#66736B', fontWeight: '500' },
+  summaryVal: { fontSize: 14, fontWeight: '700', color: '#122018' },
   emptyStep: { alignItems: 'center', paddingVertical: 32 },
   emptyStepIcon: { fontSize: 40, marginBottom: 12 },
-  emptyStepText: { fontSize: 15, color: '#64748B', textAlign: 'center', fontWeight: '500' },
+  emptyStepText: { fontSize: 15, color: '#66736B', textAlign: 'center', fontWeight: '500' },
 });

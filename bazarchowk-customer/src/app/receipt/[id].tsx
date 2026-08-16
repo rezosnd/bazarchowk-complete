@@ -11,13 +11,13 @@ import api from '@/services/api';
 const PRIMARY = '#00B140';
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  PLACED:           { label: 'Order Placed',       color: '#2563EB', bg: '#DBEAFE', icon: 'checkmark-circle' },
-  ACCEPTED:         { label: 'Accepted by Shop',   color: '#7C3AED', bg: '#EDE9FE', icon: 'storefront'       },
-  PREPARING:        { label: 'Preparing',          color: '#D97706', bg: '#FEF3C7', icon: 'fast-food'        },
-  READY:            { label: 'Ready',              color: '#059669', bg: '#D1FAE5', icon: 'bag-check'        },
-  READY_FOR_PICKUP: { label: 'Ready for Pickup',  color: '#059669', bg: '#D1FAE5', icon: 'bag-handle'       },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery',  color: '#0891B2', bg: '#CFFAFE', icon: 'bicycle'          },
-  DELIVERED:        { label: 'Delivered ✓',        color: '#16A34A', bg: '#DCFCE7', icon: 'home'            },
+  PLACED:           { label: 'Order Placed',       color: '#00B140', bg: '#EAF8F0', icon: 'checkmark-circle' },
+  ACCEPTED:         { label: 'Accepted by Shop',   color: '#00B140', bg: '#EAF8F0', icon: 'storefront'       },
+  PREPARING:        { label: 'Preparing',          color: '#FF8A00', bg: '#FFF4E6', icon: 'fast-food'        },
+  READY:            { label: 'Ready',              color: '#00B140', bg: '#EAF8F0', icon: 'bag-check'        },
+  READY_FOR_PICKUP: { label: 'Ready for Pickup',  color: '#00B140', bg: '#EAF8F0', icon: 'bag-handle'       },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery',  color: '#008F3C', bg: '#EAF8F0', icon: 'bicycle'          },
+  DELIVERED:        { label: 'Delivered ✓',        color: '#00B140', bg: '#EAF8F0', icon: 'checkmark-circle' },
   CANCELLED:        { label: 'Cancelled',          color: '#DC2626', bg: '#FEE2E2', icon: 'close-circle'    },
 };
 
@@ -63,7 +63,7 @@ export default function ReceiptScreen() {
   if (!order)  return <View style={s.center}><Text style={s.errText}>Order not found</Text></View>;
 
   const isSelfPickup = !order.deliveryAddressId;
-  const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: '#64748B', bg: '#F1F5F9', icon: 'information-circle' };
+  const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: '#66736B', bg: '#EAF8F0', icon: 'information-circle' };
   const date = new Date(order.createdAt);
 
   return (
@@ -71,7 +71,7 @@ export default function ReceiptScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.replace('/(tabs)/orders' as any)} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
         <Text style={s.headerTitle}>Receipt</Text>
         <TouchableOpacity onPress={handleShare} style={s.shareBtn}>
@@ -176,8 +176,8 @@ export default function ReceiptScreen() {
               </Text>
               <Text style={s.payStatus}>Status: {order.paymentStatus}</Text>
             </View>
-            <View style={[s.payStatusBadge, { backgroundColor: order.paymentStatus === 'PAID' ? '#DCFCE7' : '#FEF3C7' }]}>
-              <Text style={[s.payStatusText, { color: order.paymentStatus === 'PAID' ? '#16A34A' : '#D97706' }]}>
+            <View style={[s.payStatusBadge, { backgroundColor: order.paymentStatus === 'PAID' ? '#EAF8F0' : '#FEF3C7' }]}>
+              <Text style={[s.payStatusText, { color: order.paymentStatus === 'PAID' ? '#008F3C' : '#D97706' }]}>
                 {order.paymentStatus === 'PAID' ? '✓ PAID' : 'PENDING'}
               </Text>
             </View>
@@ -213,61 +213,61 @@ function BillRow({ label, value, color, isTotal }: { label: string; value: strin
 }
 
 const s = StyleSheet.create({
-  center:      { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  errText:     { fontSize: 16, color: '#64748B' },
-  container:   { flex: 1, backgroundColor: '#F8FAFC' },
-  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  shareBtn:    { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  scroll:      { padding: 16, paddingBottom: 60, gap: 14 },
+  center:      { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  errText:     { fontSize: 16, color: '#66736B' },
+  container:   { flex: 1, backgroundColor: '#F7FAF8' },
+  header:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderColor: '#E5EBE7' },
+  backBtn:     { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#122018' },
+  shareBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  scroll:      { padding: 16, paddingBottom: 60, gap: 16 },
 
-  successBanner: { borderRadius: 20, padding: 24, alignItems: 'center' },
-  successIcon:   { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  successStatus: { fontSize: 20, fontWeight: '900', marginBottom: 6 },
-  successOrderNum: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
-  successDate:   { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  successBanner: { borderRadius: 24, padding: 24, alignItems: 'center' },
+  successIcon:   { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  successStatus: { fontSize: 22, fontWeight: '800', marginBottom: 6 },
+  successOrderNum: { fontSize: 16, fontWeight: '700', color: '#122018', marginBottom: 4 },
+  successDate:   { fontSize: 14, color: '#66736B', fontWeight: '500' },
 
-  deliveryBadge: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1 },
+  deliveryBadge: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1 },
   deliveryBadgeText: { fontSize: 14, fontWeight: '700' },
 
-  card:      { backgroundColor: '#FFF', borderRadius: 18, padding: 18, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  cardTitle: { fontSize: 16, fontWeight: '900', color: '#0F172A', marginBottom: 14 },
+  card:      { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#E5EBE7', shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+  cardTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 16 },
 
   shopRow:     { flexDirection: 'row', alignItems: 'center' },
-  shopIconWrap:{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  shopName:    { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  shopAddr:    { fontSize: 12, color: '#64748B', marginTop: 2 },
-  trackBtn:    { backgroundColor: '#F0FDF4', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
-  trackBtnText:{ fontSize: 13, fontWeight: '800', color: PRIMARY },
+  shopIconWrap:{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  shopName:    { fontSize: 16, fontWeight: '700', color: '#122018' },
+  shopAddr:    { fontSize: 13, color: '#66736B', marginTop: 2 },
+  trackBtn:    { backgroundColor: '#EAF8F0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
+  trackBtnText:{ fontSize: 14, fontWeight: '700', color: PRIMARY },
 
-  itemRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  itemDivider: { borderBottomWidth: 1, borderColor: '#F8FAFC' },
-  itemQtyBadge:{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  itemQty:     { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  itemName:    { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  itemVariant: { fontSize: 12, color: '#64748B', marginTop: 1 },
-  itemUnit:    { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  itemTotal:   { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  itemRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  itemDivider: { borderBottomWidth: 1, borderColor: '#E5EBE7' },
+  itemQtyBadge:{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  itemQty:     { fontSize: 15, fontWeight: '700', color: '#122018' },
+  itemName:    { fontSize: 15, fontWeight: '700', color: '#122018' },
+  itemVariant: { fontSize: 13, color: '#66736B', marginTop: 2 },
+  itemUnit:    { fontSize: 13, color: '#8B9690', marginTop: 4 },
+  itemTotal:   { fontSize: 16, fontWeight: '700', color: '#122018' },
 
-  billRow:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  billLabel:      { fontSize: 14, color: '#64748B', fontWeight: '500' },
-  billValue:      { fontSize: 14, color: '#0F172A', fontWeight: '600' },
-  billLabelBold:  { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  billValueBold:  { fontSize: 18, fontWeight: '900', color: PRIMARY },
-  totalDivider:   { height: 1, backgroundColor: '#F1F5F9', marginBottom: 10 },
+  billRow:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  billLabel:      { fontSize: 15, color: '#66736B', fontWeight: '500' },
+  billValue:      { fontSize: 15, color: '#122018', fontWeight: '600' },
+  billLabelBold:  { fontSize: 16, fontWeight: '800', color: '#122018' },
+  billValueBold:  { fontSize: 18, fontWeight: '800', color: PRIMARY },
+  totalDivider:   { height: 1, backgroundColor: '#E5EBE7', marginBottom: 12 },
 
   payRow:        { flexDirection: 'row', alignItems: 'center' },
-  payIconWrap:   { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' },
-  payMethod:     { fontSize: 15, fontWeight: '700', color: '#0F172A' },
-  payStatus:     { fontSize: 12, color: '#64748B', marginTop: 2 },
-  payStatusBadge:{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  payIconWrap:   { width: 48, height: 48, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  payMethod:     { fontSize: 15, fontWeight: '700', color: '#122018' },
+  payStatus:     { fontSize: 13, color: '#66736B', marginTop: 2 },
+  payStatusBadge:{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
   payStatusText: { fontSize: 12, fontWeight: '800' },
 
-  pickupCard:     { backgroundColor: '#F5F3FF', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#DDD6FE' },
-  pickupCardTitle:{ fontSize: 15, fontWeight: '800', color: '#5B21B6', marginBottom: 8 },
-  pickupCardText: { fontSize: 14, color: '#6D28D9', lineHeight: 22 },
+  pickupCard:     { backgroundColor: '#FFF4E6', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#FFE4C4' },
+  pickupCardTitle:{ fontSize: 16, fontWeight: '800', color: '#D97706', marginBottom: 8 },
+  pickupCardText: { fontSize: 15, color: '#B45309', lineHeight: 24 },
 
-  footer:   { textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#64748B', marginTop: 8 },
-  footerId: { textAlign: 'center', fontSize: 11, color: '#CBD5E1', marginTop: 4 },
+  footer:   { textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#66736B', marginTop: 12 },
+  footerId: { textAlign: 'center', fontSize: 12, color: '#8B9690', marginTop: 6 },
 });

@@ -68,7 +68,7 @@ export default function NotificationsScreen() {
     switch (type) {
       case 'ORDER': return <Ionicons name="receipt" size={24} color="#3B82F6" />;
       case 'PROMO': return <Ionicons name="pricetag" size={24} color="#EAB308" />;
-      case 'SYSTEM': return <Ionicons name="settings" size={24} color="#64748B" />;
+      case 'SYSTEM': return <Ionicons name="settings" size={24} color="#66736B" />;
       case 'ALERT': return <Ionicons name="warning" size={24} color="#EF4444" />;
       default: return <Ionicons name="notifications" size={24} color={PRIMARY} />;
     }
@@ -83,7 +83,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+            <Ionicons name="arrow-back" size={24} color="#122018" />
           </TouchableOpacity>
           <Text style={styles.title}>Notifications</Text>
         </View>
@@ -151,38 +151,38 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFF',
-    borderBottomWidth: 1, borderColor: '#E2E8F0',
+    borderBottomWidth: 1, borderColor: '#E5EBE7',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginLeft: 4 },
-  clearBtn: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  clearText: { color: '#475569', fontSize: 12, fontWeight: '700' },
+  title: { fontSize: 20, fontWeight: '800', color: '#122018', marginLeft: 4 },
+  clearBtn: { backgroundColor: '#EAF8F0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  clearText: { color: '#66736B', fontSize: 12, fontWeight: '700' },
   
   scroll: { padding: 16, paddingBottom: 100 },
   
   emptyState: { alignItems: 'center', marginTop: 100 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginTop: 16 },
-  emptySub: { fontSize: 14, color: '#64748B', marginTop: 8 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#122018', marginTop: 16 },
+  emptySub: { fontSize: 14, color: '#66736B', marginTop: 8 },
   
   card: {
     flexDirection: 'row', alignItems: 'flex-start',
     backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: '#E2E8F0',
+    borderWidth: 1, borderColor: '#E5EBE7',
   },
-  cardUnread: { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' },
-  iconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' },
+  cardUnread: { backgroundColor: '#F0FDF4', borderColor: '#EAF8F0' },
+  iconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
   iconBoxUnread: { backgroundColor: '#FFF' },
   content: { flex: 1, marginLeft: 16, paddingRight: 8 },
   notifTitle: { fontSize: 15, fontWeight: '700', color: '#334155', marginBottom: 4 },
-  textUnread: { color: '#0F172A', fontWeight: '800' },
-  notifMessage: { fontSize: 14, color: '#475569', lineHeight: 20 },
-  time: { fontSize: 12, color: '#94A3B8', marginTop: 8, fontWeight: '500' },
-  richImg: { width: '100%', height: 140, borderRadius: 12, marginTop: 12, backgroundColor: '#F1F5F9' },
+  textUnread: { color: '#122018', fontWeight: '800' },
+  notifMessage: { fontSize: 14, color: '#66736B', lineHeight: 20 },
+  time: { fontSize: 12, color: '#8B9690', marginTop: 8, fontWeight: '500' },
+  richImg: { width: '100%', height: 140, borderRadius: 12, marginTop: 12, backgroundColor: '#EAF8F0' },
   unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: PRIMARY, marginTop: 6 },
 });

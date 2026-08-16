@@ -42,7 +42,7 @@ export default function OrdersScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DELIVERED': return '#059669';
+      case 'DELIVERED': return '#008F3C';
       case 'CANCELLED': case 'REFUNDED': return '#DC2626';
       case 'PICKED_UP': return '#2563EB';
       default: return '#D97706';
@@ -57,7 +57,7 @@ export default function OrdersScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.title}>My Orders</Text>
         <View style={{ width: 40 }} />
@@ -99,7 +99,7 @@ export default function OrdersScreen() {
                     <Image source={{ uri: image }} style={styles.itemImg} />
                   ) : (
                     <View style={[styles.itemImg, { alignItems: 'center', justifyContent: 'center' }]}>
-                      <Ionicons name="cube" size={20} color="#94A3B8" />
+                      <Ionicons name="cube" size={20} color="#8B9690" />
                     </View>
                   )}
                   <View style={styles.itemInfo}>
@@ -128,35 +128,35 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0',
+    padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E5EBE7',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: '#122018' },
   scroll: { padding: 16, paddingBottom: 100 },
   
   emptyState: { alignItems: 'center', marginTop: 80 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginTop: 16 },
-  emptySub: { fontSize: 14, color: '#64748B', marginTop: 8 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#122018', marginTop: 16 },
+  emptySub: { fontSize: 14, color: '#66736B', marginTop: 8 },
 
-  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E5EBE7' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  shopName: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
-  date: { fontSize: 12, color: '#64748B' },
+  shopName: { fontSize: 16, fontWeight: '700', color: '#122018', marginBottom: 4 },
+  date: { fontSize: 12, color: '#66736B' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { fontSize: 11, fontWeight: '800' },
   
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: '#EAF8F0', marginVertical: 12 },
   
   itemsRow: { flexDirection: 'row', alignItems: 'center' },
-  itemImg: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F1F5F9' },
+  itemImg: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#EAF8F0' },
   itemInfo: { flex: 1, marginLeft: 12 },
   itemsText: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 2 },
-  orderId: { fontSize: 12, color: '#94A3B8' },
-  price: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  orderId: { fontSize: 12, color: '#8B9690' },
+  price: { fontSize: 16, fontWeight: '800', color: '#122018' },
   
   trackBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', padding: 12, borderRadius: 12, marginTop: 16, gap: 8 },
   trackText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#1D4ED8' }

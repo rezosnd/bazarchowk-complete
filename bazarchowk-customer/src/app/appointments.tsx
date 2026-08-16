@@ -39,7 +39,7 @@ export default function AppointmentsTab() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'CONFIRMED': return { bg: '#DCFCE7', text: '#15803D', icon: 'check-circle' };
+      case 'CONFIRMED': return { bg: '#EAF8F0', text: '#15803D', icon: 'check-circle' };
       case 'PENDING': return { bg: '#FEF3C7', text: '#B45309', icon: 'clock' };
       case 'CANCELLED': return { bg: '#FEE2E2', text: '#B91C1C', icon: 'x-circle' };
       case 'COMPLETED': return { bg: '#DBEAFE', text: '#1D4ED8', icon: 'award' };
@@ -63,7 +63,7 @@ export default function AppointmentsTab() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>My Bookings</Text>
@@ -96,19 +96,19 @@ export default function AppointmentsTab() {
                         <Feather name={badge.icon as any} size={12} color={badge.text} />
                         <Text style={[styles.badgeText, { color: badge.text }]}>{app.status}</Text>
                       </View>
-                      <Text style={{ fontWeight: '900', fontSize: 17, color: '#0F172A' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
-                      <Text style={{ fontSize: 10, fontWeight: '800', color: app.paymentStatus === 'PAID' ? '#16A34A' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
+                      <Text style={{ fontWeight: '900', fontSize: 17, color: '#122018' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: app.paymentStatus === 'PAID' ? '#008F3C' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
                     </View>
                   </View>
 
                   {app.serviceAddress && (
                     <View style={styles.addressBox}>
                       <View style={styles.addressIcon}>
-                        <Feather name="map-pin" size={14} color="#64748B" />
+                        <Feather name="map-pin" size={14} color="#66736B" />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155' }}>Service Location</Text>
-                        <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }} numberOfLines={1}>
+                        <Text style={{ fontSize: 12, color: '#66736B', marginTop: 2 }} numberOfLines={1}>
                           {app.serviceAddress.streetAddress}, {app.serviceAddress.city}
                         </Text>
                       </View>
@@ -203,54 +203,54 @@ export default function AppointmentsTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' },
-  loadingText: { marginTop: 16, color: '#64748B', fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7FAF8' },
+  loadingText: { marginTop: 16, color: '#66736B', fontWeight: '600' },
   
   header: { paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 4, zIndex: 10 },
-  backBtn: { marginRight: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 26, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
-  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '500', marginTop: 2 },
+  backBtn: { marginRight: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 26, fontWeight: '900', color: '#122018', letterSpacing: -0.5 },
+  headerSubtitle: { color: '#66736B', fontSize: 13, fontWeight: '500', marginTop: 2 },
   
   scrollContent: { padding: 20, paddingBottom: 100 },
   section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#0F172A', marginBottom: 16, letterSpacing: -0.3 },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#122018', marginBottom: 16, letterSpacing: -0.3 },
   
-  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 6, borderWidth: 1, borderColor: '#F1F5F9' },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 6, borderWidth: 1, borderColor: '#EAF8F0' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   serviceInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 },
-  serviceIconWrap: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#DCFCE7' },
-  serviceName: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 4, letterSpacing: -0.2 },
-  providerName: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+  serviceIconWrap: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#EAF8F0' },
+  serviceName: { fontSize: 17, fontWeight: '800', color: '#122018', marginBottom: 4, letterSpacing: -0.2 },
+  providerName: { fontSize: 13, color: '#66736B', fontWeight: '600' },
   
   badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginLeft: 4, letterSpacing: 0.5 },
   
-  addressBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  addressBox: { backgroundColor: '#F7FAF8', padding: 12, borderRadius: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#EAF8F0' },
   addressIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', marginRight: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
 
-  dateTimeBox: { backgroundColor: '#F1F5F9', borderRadius: 16, padding: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dateTimeBox: { backgroundColor: '#EAF8F0', borderRadius: 16, padding: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dateCol: { flexDirection: 'row', alignItems: 'center' },
   dtIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  dtLabel: { fontSize: 11, color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-  dtValue: { fontSize: 14, color: '#0F172A', fontWeight: '800' },
+  dtLabel: { fontSize: 11, color: '#66736B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  dtValue: { fontSize: 14, color: '#122018', fontWeight: '800' },
   divider: { height: 40, width: 1, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
   
   cancelBtn: { backgroundColor: '#FEF2F2', paddingVertical: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FEE2E2' },
   cancelBtnText: { color: '#DC2626', fontWeight: '800', marginLeft: 8, fontSize: 15 },
   
-  pastCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
+  pastCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#EAF8F0', marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
   pastInfoRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  pastIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-  pastServiceName: { fontWeight: '800', color: '#0F172A', fontSize: 15, letterSpacing: -0.2 },
-  pastDateText: { color: '#64748B', fontSize: 12, marginTop: 4, fontWeight: '500' },
-  pastPrice: { fontWeight: '900', color: '#0F172A', fontSize: 15 },
+  pastIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  pastServiceName: { fontWeight: '800', color: '#122018', fontSize: 15, letterSpacing: -0.2 },
+  pastDateText: { color: '#66736B', fontSize: 12, marginTop: 4, fontWeight: '500' },
+  pastPrice: { fontWeight: '900', color: '#122018', fontSize: 15 },
   pastStatus: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 4 },
   
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, marginTop: 20 },
   emptyIconWrap: { width: 100, height: 100, backgroundColor: '#F0FDF4', borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  emptyTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
-  emptySubtitle: { color: '#64748B', textAlign: 'center', marginTop: 8, paddingHorizontal: 32, fontWeight: '500', lineHeight: 20, fontSize: 15 },
+  emptyTitle: { fontSize: 24, fontWeight: '900', color: '#122018', letterSpacing: -0.5 },
+  emptySubtitle: { color: '#66736B', textAlign: 'center', marginTop: 8, paddingHorizontal: 32, fontWeight: '500', lineHeight: 20, fontSize: 15 },
   exploreBtn: { marginTop: 32, backgroundColor: '#00B140', paddingHorizontal: 32, paddingVertical: 18, borderRadius: 30, shadowColor: '#00B140', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 8 },
   exploreBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16, letterSpacing: 0.3 }
 });

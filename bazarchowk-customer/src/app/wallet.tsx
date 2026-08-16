@@ -84,7 +84,7 @@ export default function WalletScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>BazarChowk Wallet</Text>
       </View>
@@ -145,7 +145,7 @@ export default function WalletScreen() {
                 <Ionicons 
                   name={tx.type === 'CREDIT' ? 'arrow-down' : 'arrow-up'} 
                   size={20} 
-                  color={tx.type === 'CREDIT' ? '#16A34A' : '#DC2626'} 
+                  color={tx.type === 'CREDIT' ? '#008F3C' : '#DC2626'} 
                 />
               </View>
               <View style={styles.txInfo}>
@@ -168,14 +168,14 @@ export default function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
   header: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 16,
-    backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E5EBE7',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#0F172A', marginLeft: 8 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#122018', marginLeft: 8 },
   
   scroll: { padding: 20, gap: 24, paddingBottom: 100 },
   
@@ -186,30 +186,30 @@ const styles = StyleSheet.create({
   balanceAmount: { color: '#FFF', fontSize: 40, fontWeight: '800' },
   bgIcon: { position: 'absolute', right: -10, bottom: -10 },
   
-  addMoneySection: { backgroundColor: '#FFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0' },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 8 },
-  currencySymbol: { fontSize: 24, fontWeight: '700', color: '#64748B', marginRight: 8 },
-  input: { flex: 1, fontSize: 24, fontWeight: '800', color: '#0F172A', height: 48 },
+  addMoneySection: { backgroundColor: '#FFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 8 },
+  currencySymbol: { fontSize: 24, fontWeight: '700', color: '#66736B', marginRight: 8 },
+  input: { flex: 1, fontSize: 24, fontWeight: '800', color: '#122018', height: 48 },
   addBtn: { backgroundColor: PRIMARY, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
   addText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
   quickAmounts: { flexDirection: 'row', gap: 12, marginTop: 16 },
   quickChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFF' },
-  quickText: { color: '#475569', fontWeight: '700' },
+  quickText: { color: '#66736B', fontWeight: '700' },
   
-  txCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  txCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5EBE7' },
   txIconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  bgGreen: { backgroundColor: '#DCFCE7' },
+  bgGreen: { backgroundColor: '#EAF8F0' },
   bgRed: { backgroundColor: '#FEE2E2' },
   txInfo: { flex: 1, marginLeft: 16 },
-  txReason: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
-  txDate: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  txReason: { fontSize: 16, fontWeight: '700', color: '#122018', marginBottom: 4 },
+  txDate: { fontSize: 13, color: '#66736B', fontWeight: '500' },
   txAmountBox: { alignItems: 'flex-end' },
   txAmount: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  textGreen: { color: '#16A34A' },
+  textGreen: { color: '#008F3C' },
   textRed: { color: '#DC2626' },
-  txBal: { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
+  txBal: { fontSize: 12, color: '#8B9690', fontWeight: '600' },
   
   emptyState: { alignItems: 'center', marginTop: 24 },
-  emptyText: { color: '#64748B', marginTop: 12, fontWeight: '600' }
+  emptyText: { color: '#66736B', marginTop: 12, fontWeight: '600' }
 });

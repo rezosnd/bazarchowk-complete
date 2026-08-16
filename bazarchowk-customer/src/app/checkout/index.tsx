@@ -161,7 +161,7 @@ export default function CheckoutScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
         <View style={{ width: 36 }} />
@@ -178,7 +178,7 @@ export default function CheckoutScreen() {
               onPress={() => setDeliveryType('DELIVERY')}
               activeOpacity={0.8}
             >
-              <Ionicons name="bicycle" size={22} color={deliveryType === 'DELIVERY' ? '#FFF' : '#64748B'} />
+              <Ionicons name="bicycle" size={22} color={deliveryType === 'DELIVERY' ? '#FFF' : '#66736B'} />
               <Text style={[styles.toggleText, deliveryType === 'DELIVERY' && styles.toggleTextActive]}>Home Delivery</Text>
               <Text style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.8)' }]}>Rider brings to you</Text>
             </TouchableOpacity>
@@ -187,7 +187,7 @@ export default function CheckoutScreen() {
               onPress={() => setDeliveryType('SELF_PICKUP')}
               activeOpacity={0.8}
             >
-              <Ionicons name="bag-handle" size={22} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#64748B'} />
+              <Ionicons name="bag-handle" size={22} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#66736B'} />
               <Text style={[styles.toggleText, deliveryType === 'SELF_PICKUP' && styles.toggleTextActive]}>Self Pickup</Text>
               <Text style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.8)' }]}>FREE · Pick from shop</Text>
             </TouchableOpacity>
@@ -197,7 +197,7 @@ export default function CheckoutScreen() {
         {/* ── SELF PICKUP INFO BANNER ── */}
         {isSelfPickup && (
           <View style={styles.pickupBanner}>
-            <Ionicons name="storefront" size={22} color="#0F172A" />
+            <Ionicons name="storefront" size={24} color="#D97706" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</Text>
               {shopInfo?.address && <Text style={styles.pickupAddr}>{shopInfo.address}</Text>}
@@ -231,7 +231,7 @@ export default function CheckoutScreen() {
                 </View>
                 <View style={styles.addressInfo}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name={addr.type === 'HOME' ? 'home' : 'briefcase'} size={14} color="#64748B" />
+                    <Ionicons name={addr.type === 'HOME' ? 'home' : 'briefcase'} size={14} color="#66736B" />
                     <Text style={styles.addressType}>{addr.type}</Text>
                   </View>
                   <Text style={styles.addressFull} numberOfLines={2}>
@@ -266,8 +266,8 @@ export default function CheckoutScreen() {
             style={[styles.paymentCard, paymentMethod === 'COD' && styles.paymentCardActive]}
             onPress={() => setPaymentMethod('COD')}
           >
-            <View style={[styles.payIcon, { backgroundColor: '#DCFCE7' }]}>
-              <Ionicons name="cash" size={20} color={PRIMARY} />
+            <View style={[styles.payIcon, { backgroundColor: '#EAF8F0' }]}>
+              <Ionicons name="cash" size={22} color={PRIMARY} />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>
@@ -285,8 +285,8 @@ export default function CheckoutScreen() {
             style={[styles.paymentCard, paymentMethod === 'RAZORPAY' && styles.paymentCardActive]}
             onPress={() => setPaymentMethod('RAZORPAY')}
           >
-            <View style={[styles.payIcon, { backgroundColor: '#DBEAFE' }]}>
-              <Ionicons name="card" size={20} color="#3B82F6" />
+            <View style={[styles.payIcon, { backgroundColor: '#EEF2FF' }]}>
+              <Ionicons name="card" size={22} color="#4F46E5" />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online</Text>
@@ -303,8 +303,8 @@ export default function CheckoutScreen() {
               style={[styles.paymentCard, useWallet && styles.paymentCardActive]}
               onPress={() => setUseWallet(!useWallet)}
             >
-              <View style={[styles.payIcon, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="wallet" size={20} color="#D97706" />
+              <View style={[styles.payIcon, { backgroundColor: '#FFF4E6' }]}>
+                <Ionicons name="wallet" size={22} color="#FF8A00" />
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={[styles.paymentText, useWallet && styles.paymentTextActive]}>BazarChowk Wallet</Text>
@@ -344,9 +344,9 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* ── BOTTOM BAR ── */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 24 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.bottomLabel}>{isSelfPickup ? '🏪 Self Pickup · FREE delivery' : '🛵 Home Delivery'}</Text>
+          <Text style={styles.bottomLabel}>{isSelfPickup ? 'Self Pickup · FREE delivery' : 'Home Delivery'}</Text>
           {fetchingBill ? (
             <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start' }} />
           ) : (
@@ -375,73 +375,73 @@ function BillRow({ label, value, valueColor, isTotal }: { label: string; value: 
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  scroll: { padding: 20, paddingBottom: 120, gap: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAF8' },
+  container: { flex: 1, backgroundColor: '#F7FAF8' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderColor: '#E5EBE7' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#122018' },
+  scroll: { padding: 20, paddingBottom: 130, gap: 20 },
   section: {},
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#122018', marginBottom: 12 },
   addText: { fontSize: 14, fontWeight: '700', color: PRIMARY },
 
   // Delivery type toggle
   toggleRow: { flexDirection: 'row', gap: 12 },
-  toggleBtn: { flex: 1, backgroundColor: '#FFF', borderRadius: 18, padding: 16, alignItems: 'center', gap: 6, borderWidth: 2, borderColor: '#E2E8F0' },
+  toggleBtn: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#E5EBE7' },
   toggleBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
-  toggleText: { fontSize: 14, fontWeight: '800', color: '#334155', textAlign: 'center' },
-  toggleTextActive: { color: '#FFF' },
-  toggleSub: { fontSize: 11, color: '#94A3B8', textAlign: 'center', fontWeight: '500' },
+  toggleText: { fontSize: 15, fontWeight: '700', color: '#122018', textAlign: 'center' },
+  toggleTextActive: { color: '#FFFFFF' },
+  toggleSub: { fontSize: 12, color: '#66736B', textAlign: 'center', fontWeight: '500' },
 
   // Self pickup banner
-  pickupBanner: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  pickupTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  pickupAddr: { fontSize: 13, color: '#334155', marginBottom: 4 },
-  pickupHint: { fontSize: 12, color: '#64748B', lineHeight: 18 },
+  pickupBanner: { flexDirection: 'row', backgroundColor: '#FFF4E6', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#FFE4C4' },
+  pickupTitle: { fontSize: 16, fontWeight: '700', color: '#D97706', marginBottom: 4 },
+  pickupAddr: { fontSize: 13, color: '#B45309', marginBottom: 4 },
+  pickupHint: { fontSize: 13, color: '#D97706', lineHeight: 20 },
 
   // Address
-  emptyCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
-  emptyText: { color: '#64748B', textAlign: 'center' },
-  addressCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#E2E8F0', marginBottom: 10 },
-  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#F0FDF4' },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  emptyCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E5EBE7', borderStyle: 'dashed' },
+  emptyText: { color: '#66736B', textAlign: 'center' },
+  addressCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 10 },
+  addressCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0' },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#8B9690', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   radioActive: { borderColor: PRIMARY },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: PRIMARY },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: PRIMARY },
   addressInfo: { flex: 1, marginLeft: 12 },
-  addressType: { fontSize: 12, fontWeight: '700', color: '#64748B' },
-  addressFull: { fontSize: 14, color: '#0F172A', marginTop: 4, lineHeight: 20 },
+  addressType: { fontSize: 13, fontWeight: '700', color: '#66736B' },
+  addressFull: { fontSize: 14, color: '#122018', marginTop: 4, lineHeight: 22 },
 
   // Error
-  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FECACA' },
-  errorTitle: { fontSize: 14, fontWeight: '800', color: '#991B1B', marginBottom: 4 },
-  errorDesc: { fontSize: 13, color: '#B91C1C', lineHeight: 18 },
-  switchPickupBtn: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  errorCard: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#FECACA' },
+  errorTitle: { fontSize: 15, fontWeight: '700', color: '#991B1B', marginBottom: 4 },
+  errorDesc: { fontSize: 14, color: '#B91C1C', lineHeight: 20 },
+  switchPickupBtn: { marginTop: 12, alignSelf: 'flex-start', backgroundColor: '#FEE2E2', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   switchPickupText: { color: '#DC2626', fontWeight: '700', fontSize: 13 },
 
   // Payment
-  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#E2E8F0', marginBottom: 10 },
-  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#F0FDF4' },
-  payIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  paymentText: { fontSize: 15, fontWeight: '700', color: '#334155' },
-  paymentTextActive: { color: '#0F172A', fontWeight: '800' },
-  paymentSub: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
+  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7', marginBottom: 12 },
+  paymentCardActive: { borderColor: PRIMARY, backgroundColor: '#EAF8F0' },
+  payIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  paymentText: { fontSize: 15, fontWeight: '700', color: '#122018' },
+  paymentTextActive: { color: '#008F3C', fontWeight: '700' },
+  paymentSub: { fontSize: 13, color: '#66736B', marginTop: 2 },
+  checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, borderColor: '#8B9690', alignItems: 'center', justifyContent: 'center' },
   checkboxActive: { borderColor: PRIMARY, backgroundColor: PRIMARY },
 
   // Bill
-  billCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9' },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  billLabel: { fontSize: 14, color: '#64748B', fontWeight: '500' },
-  billValue: { fontSize: 14, color: '#0F172A', fontWeight: '600' },
-  billLabelTotal: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  billValueTotal: { fontSize: 18, fontWeight: '900', color: PRIMARY },
-  totalDivider: { height: 1, backgroundColor: '#F1F5F9', marginBottom: 12 },
+  billCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#E5EBE7' },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
+  billLabel: { fontSize: 14, color: '#66736B', fontWeight: '500' },
+  billValue: { fontSize: 14, color: '#122018', fontWeight: '600' },
+  billLabelTotal: { fontSize: 16, fontWeight: '800', color: '#122018' },
+  billValueTotal: { fontSize: 18, fontWeight: '800', color: PRIMARY },
+  totalDivider: { height: 1, backgroundColor: '#E5EBE7', marginBottom: 14 },
 
   // Bottom bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10 },
-  bottomLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  bottomTotal: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
-  placeBtn: { flex: 1, backgroundColor: PRIMARY, height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10, elevation: 6 },
-  placeBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5EBE7', paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 16, shadowColor: '#00B140', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 16, elevation: 10 },
+  bottomLabel: { fontSize: 13, color: '#66736B', fontWeight: '600' },
+  bottomTotal: { fontSize: 22, fontWeight: '800', color: '#122018', marginTop: 2 },
+  placeBtn: { flex: 1, backgroundColor: PRIMARY, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  placeBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

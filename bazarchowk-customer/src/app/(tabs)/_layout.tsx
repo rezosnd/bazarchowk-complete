@@ -46,16 +46,15 @@ function GlobalAIOverlay() {
   const overlayOpacity = useSharedValue(0);
   const insets = useSafeAreaInsets();
   
-  const bottomPad = Platform.OS === 'ios' ? insets.bottom : 16;
-  const tabHeight = 65 + bottomPad;
+  const bottomPad = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : Math.max(insets.bottom, 12);
+  const tabHeight = 65;
+  const buttonCenterY = bottomPad + tabHeight;
   
   const r1 = useSharedValue(0);
   const r2 = useSharedValue(0);
   const r3 = useSharedValue(0);
   const r4 = useSharedValue(0);
   const r5 = useSharedValue(0);
-
-  const particleIds = Array.from({ length: 24 }).map((_, i) => i);
 
   useEffect(() => {
     if (isListening) {
@@ -78,7 +77,7 @@ function GlobalAIOverlay() {
 
   const rippleBase = {
     position: 'absolute' as const,
-    bottom: tabHeight - 500, // Perfectly centered on the mic button
+    bottom: buttonCenterY - 500, // Perfectly centered on the mic button
     alignSelf: 'center' as const,
     width: 1000,
     height: 1000,
@@ -122,7 +121,7 @@ function GlobalAIOverlay() {
       {/* Crisp Mic Button perfectly aligned over the blur */}
       <View style={{
         position: 'absolute',
-        bottom: tabHeight - 36,
+        bottom: buttonCenterY - 36,
         alignSelf: 'center',
         width: 72,
         height: 72,
@@ -251,8 +250,10 @@ function TabIcon({
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const bottomPad = Platform.OS === 'ios' ? insets.bottom : 16;
-  const tabHeight = 65 + bottomPad;
+  
+  // Strict Safe Area logic: bottom navigation floats ABOVE the system navigation
+  const bottomPad = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : Math.max(insets.bottom, 12);
+  const tabHeight = 65; 
 
   const aiActiveState = useSharedValue(0);
 
@@ -265,19 +266,6 @@ export default function TabsLayout() {
     }
   }, [isAuthenticated]);
 
-  const centerX = W / 2;
-  const notchRadius = 42; // Larger to fit 72px button
-  
-  const path = `
-    M 0 0
-    L ${centerX - notchRadius - 15} 0
-    C ${centerX - notchRadius} 0, ${centerX - notchRadius} ${notchRadius}, ${centerX} ${notchRadius}
-    C ${centerX + notchRadius} ${notchRadius}, ${centerX + notchRadius} 0, ${centerX + notchRadius + 15} 0
-    L ${W} 0
-    L ${W} ${tabHeight}
-    L 0 ${tabHeight} Z
-  `;
-
   return (
     <>
     <Tabs
@@ -285,15 +273,17 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: 'transparent',
           position: 'absolute',
-          borderTopWidth: 0,
-          elevation: 0,
+          bottom: bottomPad, // Strictly above system navigation
+          left: 16,
+          right: 16,
           height: tabHeight,
-          bottom: 0,
+          elevation: 0,
+          borderTopWidth: 0,
+          backgroundColor: 'transparent',
         },
         tabBarBackground: () => (
-          <View style={[StyleSheet.absoluteFill, styles.svgShadow]}>
+          <View style={styles.glassContainer}>
             <Image 
               source={require('@/assets/images/scooty.png')} 
               style={{
@@ -302,12 +292,17 @@ export default function TabsLayout() {
                 alignSelf: 'center',
                 width: 150,
                 height: 90,
+                zIndex: 10
               }}
               resizeMode="contain"
             />
-            <Svg width={W} height={tabHeight} viewBox={`0 0 ${W} ${tabHeight}`}>
-              <Path d={path} fill="#FFFFFF" />
-            </Svg>
+            <BlurView
+              intensity={30}
+              tint="light"
+              style={StyleSheet.absoluteFill}
+            />
+            {/* Base translucent color overlay */}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.85)' }]} />
           </View>
         ),
       }}
@@ -357,12 +352,17 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  svgShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
+  glassContainer: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 32,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.65)',
+    shadowColor: '#00B140',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   tabItem: {
     alignItems: 'center',

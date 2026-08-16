@@ -3,11 +3,15 @@
 export const BrandColors = {
   // Primary — Signature green
   primary: '#00B140',
-  primaryLight: '#33C068',
-  primaryDark: '#008F33',
-  primarySurface: '#E6F9ED',
+  primaryDark: '#008F3C',
+  primarySurface: '#EAF8F0',
 
-  // Secondary — Warm orange
+  // Semantic/Accents
+  softOrange: '#FFF1DF',
+  softBlue: '#EEF5FF',
+  softPink: '#FCEFF6',
+  
+  // Secondary — Warm orange (keeping existing for backward compatibility)
   secondary: '#FF8A00',
   secondaryLight: '#FFA333',
   secondaryDark: '#CC6E00',
@@ -15,7 +19,11 @@ export const BrandColors = {
 
   // Neutrals
   white: '#FFFFFF',
+  background: '#F7FAF8',
   black: '#0A0A0A',
+  textPrimary: '#122018',
+  textSecondary: '#66736B',
+  
   grey50: '#F8F9FA',
   grey100: '#F1F3F5',
   grey200: '#E9ECEF',
@@ -29,13 +37,13 @@ export const BrandColors = {
 
   // Semantic
   success: '#22C55E',
-  successSurface: '#DCFCE7',
+  successSurface: '#EAF8F0',
   warning: '#F59E0B',
   warningSurface: '#FEF3C7',
   error: '#EF4444',
   errorSurface: '#FEE2E2',
   info: '#3B82F6',
-  infoSurface: '#EFF6FF',
+  infoSurface: '#EEF5FF', // mapped to softBlue
 
   // Transparent
   overlay: 'rgba(0,0,0,0.5)',
@@ -46,27 +54,27 @@ export const BrandColors = {
 
 export const LightTheme = {
   // Backgrounds
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8F9FA',
+  background: BrandColors.background,
+  backgroundSecondary: '#FFFFFF',
   backgroundTertiary: '#F1F3F5',
   card: '#FFFFFF',
   cardBorder: '#E9ECEF',
 
   // Text
-  text: '#0A0A0A',
-  textSecondary: '#495057',
+  text: BrandColors.textPrimary,
+  textSecondary: BrandColors.textSecondary,
   textTertiary: '#ADB5BD',
   textInverse: '#FFFFFF',
 
   // Brand
   primary: BrandColors.primary,
-  primaryLight: BrandColors.primaryLight,
+  primaryLight: BrandColors.primary,
   primarySurface: BrandColors.primarySurface,
   secondary: BrandColors.secondary,
   secondarySurface: BrandColors.secondarySurface,
 
   // UI
-  border: '#E9ECEF',
+  border: '#E5EBE7',
   divider: '#F1F3F5',
   shadow: 'rgba(0,0,0,0.08)',
   placeholder: '#ADB5BD',
@@ -96,10 +104,10 @@ export const DarkTheme = {
   textInverse: '#0A0A0A',
 
   // Brand
-  primary: BrandColors.primaryLight,
-  primaryLight: BrandColors.primaryLight,
+  primary: BrandColors.primary,
+  primaryLight: BrandColors.primary,
   primarySurface: 'rgba(0,177,64,0.15)',
-  secondary: BrandColors.secondaryLight,
+  secondary: BrandColors.secondary,
   secondarySurface: 'rgba(255,138,0,0.15)',
 
   // UI
@@ -113,7 +121,7 @@ export const DarkTheme = {
   statusBar: 'light' as const,
 
   // Tab bar
-  tabActive: BrandColors.primaryLight,
+  tabActive: BrandColors.primary,
   tabInactive: '#6C757D',
   tabBackground: '#0D0D0D',
 } as const;

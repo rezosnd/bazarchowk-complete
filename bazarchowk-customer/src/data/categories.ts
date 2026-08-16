@@ -180,8 +180,8 @@ export const CATEGORIES: Category[] = [
     id: 'education',
     name: 'Education',
     icon: 'school-outline',
-    color: '#64748B', // Slate
-    bgColor: '#F1F5F9',
+    color: '#66736B', // Slate
+    bgColor: '#EAF8F0',
     subcategories: [
       { id: 'tutor', name: 'Tutor' },
       { id: 'coaching', name: 'Coaching Institute' },

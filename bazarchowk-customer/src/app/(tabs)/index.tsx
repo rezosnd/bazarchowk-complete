@@ -37,15 +37,15 @@ import { TextInput } from 'react-native-gesture-handler';
 const { width: W } = Dimensions.get('window');
 
 const EMERALD = '#00B140';
-const DARK_EMERALD = '#008F35';
+const DARK_EMERALD = '#008F3C';
 const DEEP_EMERALD = '#006B2A';
-const SOFT_GREEN = '#EAF8EF';
+const SOFT_GREEN = '#EAF8F0';
 const ORANGE = '#FF8A00';
 const YELLOW = '#FFC928';
 const BG = '#F7FAF8';
 const CARD_BG = '#FFFFFF';
-const TEXT_MAIN = '#17221B';
-const TEXT_MUTED = '#69736D';
+const TEXT_MAIN = '#122018';
+const TEXT_MUTED = '#66736B';
 const BORDER = '#E5EBE7';
 
 // ─── Asset ───────────────────────────────────────────────────────────────────
@@ -131,8 +131,8 @@ function HomeHeader() {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
-        <View style={styles.pinIcon}>
-          <Ionicons name="location" size={16} color={EMERALD} />
+        <View style={styles.logoWrapper}>
+          <Image source={LOGO_SRC} style={styles.headerLogo} contentFit="contain" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.deliveringTo} numberOfLines={1}>{t('header.deliveringTo')}</Text>
@@ -221,7 +221,7 @@ function AIHero() {
           {[
             { label: 'Fresh Vegetables', icon: 'basket-outline' },
             { label: 'Order Food', icon: 'restaurant-outline' },
-            { label: 'Find a Plumber', icon: 'build-outline' },
+            { label: 'Find a Service', icon: 'build-outline' },
             { label: 'More', icon: 'ellipsis-horizontal' },
           ].map((item, i) => (
             <TouchableOpacity key={i} style={styles.aiPill} activeOpacity={0.7}>
@@ -353,7 +353,7 @@ function NearbyShops({ lat, lng, city }: { lat?: number, lng?: number, city?: st
               {shop.bannerUrl || shop.logoUrl ? (
                 <Image source={{ uri: shop.bannerUrl || shop.logoUrl }} style={styles.shopImg} contentFit="cover" />
               ) : (
-                <View style={[styles.shopImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                <View style={[styles.shopImg, { backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' }]}>
                   <Ionicons name="storefront-outline" size={28} color="#CBD5E1" />
                 </View>
               )}
@@ -398,7 +398,7 @@ function NearbyServices({ lat, lng, city }: { lat?: number, lng?: number, city?:
               {svc.bannerUrl || svc.logoUrl ? (
                 <Image source={{ uri: svc.bannerUrl || svc.logoUrl }} style={styles.shopImg} contentFit="cover" />
               ) : (
-                <View style={[styles.shopImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                <View style={[styles.shopImg, { backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' }]}>
                   <Ionicons name="briefcase-outline" size={28} color="#CBD5E1" />
                 </View>
               )}
@@ -439,8 +439,8 @@ function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
             {m.imageUrl ? (
               <Image source={{ uri: m.imageUrl }} style={styles.marketImg} contentFit="cover" />
             ) : (
-              <View style={[styles.marketImg, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
-                <Ionicons name="business-outline" size={32} color="#94A3B8" />
+              <View style={[styles.marketImg, { backgroundColor: '#E5EBE7', alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="business-outline" size={32} color="#8B9690" />
               </View>
             )}
             <LinearGradient
@@ -559,7 +559,7 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
             {prod.images?.[0]?.imageUrl ? (
               <Image source={{ uri: prod.images[0].imageUrl }} style={styles.productImg} contentFit="cover" />
             ) : (
-              <View style={[styles.productImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+              <View style={[styles.productImg, { backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' }]}>
                 <Ionicons name="cube-outline" size={28} color="#CBD5E1" />
               </View>
             )}
@@ -567,8 +567,8 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
             <View style={styles.productPriceRow}>
               <Text style={styles.productPrice}>₹{prod.variants?.[0]?.price || prod.basePrice}</Text>
               {isOutOfStock ? (
-                <View style={[styles.addBtn, { backgroundColor: '#F1F5F9', borderColor: BORDER }]}>
-                  <Text style={[styles.addBtnText, { color: '#94A3B8', fontSize: 10 }]}>OUT OF STOCK</Text>
+                <View style={[styles.addBtn, { backgroundColor: '#EAF8F0', borderColor: BORDER }]}>
+                  <Text style={[styles.addBtnText, { color: '#8B9690', fontSize: 10 }]}>OUT OF STOCK</Text>
                 </View>
               ) : (
                 <TouchableOpacity style={styles.addBtn} onPress={() => router.push(`/product/${prod.id}`)}>
@@ -634,20 +634,88 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Animated.View style={animatedMainStyle}>
-        <View style={{ paddingTop: insets.top, backgroundColor: '#FFFFFF', paddingBottom: 16 }}>
+        
+        {/* PREMIUM GLASSMORPHISM TOP HEADER */}
+        <BlurView
+          intensity={25}
+          tint="light"
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            paddingTop: insets.top, 
+            paddingBottom: 12, 
+            zIndex: 50,
+            backgroundColor: 'rgba(255,255,255,0.80)',
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(255,255,255,0.55)',
+            borderBottomLeftRadius: 20,
+            borderBottomRightRadius: 20,
+            shadowColor: '#00B140',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.04,
+            shadowRadius: 12,
+            elevation: 2
+          }}
+        >
           <HomeHeader />
-        </View>
+        </BlurView>
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent, 
             { 
-              paddingTop: 16,
+              paddingTop: insets.top + 70, // offset for absolute glass header
               paddingBottom: 130 + insets.bottom 
             }
           ]}
         >
+          {/* Top Atmospheric Green Glow */}
+          <LinearGradient
+            colors={['rgba(234, 248, 239, 0.8)', 'rgba(248, 250, 249, 0)']}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 400, zIndex: 0 }}
+            pointerEvents="none"
+          />
+
+          {/* Middle Atmospheric Orange Glow (Around Deals/Food) */}
+          <LinearGradient
+            colors={['rgba(248, 250, 249, 0)', 'rgba(255, 243, 229, 0.8)', 'rgba(248, 250, 249, 0)']}
+            style={{ position: 'absolute', top: 850, left: 0, right: 0, height: 600, zIndex: 0 }}
+            pointerEvents="none"
+          />
+
+          {/* BIRD GIF */}
+          <View style={styles.birdContainer}>
+            <Image 
+              source={require('@/assets/images/bazarchowk_ultra_clean_cartoon_village.gif')} 
+              style={styles.birdGif} 
+              contentFit="cover" 
+            />
+            {/* Blending Gradients to mask the rectangular edges */}
+            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} style={styles.fadeTop} />
+            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} style={styles.fadeBottom} />
+            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeLeft} />
+            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeRight} />
+          </View>
+
           <AIHero />
+
+          {/* WELCOME GIF - Reduced vertical gap */}
+          <View style={styles.welcomeGifContainer}>
+            <Image 
+              source={require('@/assets/images/animation.gif')} 
+              style={styles.welcomeGif} 
+              contentFit="cover" 
+            />
+            {/* Blending Gradients to mask the rectangular edges */}
+            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} style={styles.fadeTop} />
+            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} style={styles.fadeBottom} />
+            <LinearGradient colors={['rgba(247, 250, 248, 1)', 'rgba(247, 250, 248, 0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeLeft} />
+            <LinearGradient colors={['rgba(247, 250, 248, 0)', 'rgba(247, 250, 248, 1)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fadeRight} />
+          </View>
+
           <GlobalSearch />
           <PromoCarousel lat={location?.lat} lng={location?.lng} />
           <ServiceDiscovery />
@@ -677,6 +745,49 @@ const styles = StyleSheet.create({
   scrollContent: {
     // paddingBottom is set dynamically inline to account for safe area and elevated button
   },
+  birdContainer: {
+    height: 100,
+    marginTop: 0, // removed margin to align tighter below header
+    marginBottom: -32, // Blend deeper into the AI card
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  birdGif: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.85,
+  },
+  welcomeGifContainer: {
+    height: 90, // Reduced height for tighter integration
+    marginTop: -4, // Reduced gap between AI Hero and this
+    marginBottom: -8, // Reduced gap between this and Search
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  welcomeGif: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.9,
+  },
+  fadeTop: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 32,
+  },
+  fadeBottom: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 32,
+  },
+  fadeLeft: {
+    position: 'absolute', top: 0, left: 0, bottom: 0, width: 32,
+  },
+  fadeRight: {
+    position: 'absolute', top: 0, right: 0, bottom: 0, width: 32,
+  },
 
   // Header
   header: {
@@ -694,15 +805,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 16,
   },
-  pinIcon: {
+  logoWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 8,
     backgroundColor: '#FFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#F3F4F6',
+  },
+  headerLogo: {
+    width: 24,
+    height: 24,
   },
   deliveringTo: {
     fontSize: 12,
@@ -796,6 +911,12 @@ const styles = StyleSheet.create({
   aiHeroWrapper: {
     marginHorizontal: 16,
     borderRadius: 24,
+    zIndex: 2, // Keep above the village environmental layer
+    shadowColor: EMERALD,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
   aiHero: {
     borderRadius: 24,
@@ -882,11 +1003,16 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: EMERALD,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: 'rgba(255,255,255,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   aiChatIconBadgeTopRight: {
     position: 'absolute',
@@ -932,7 +1058,7 @@ const styles = StyleSheet.create({
   voiceHandle: {
     width: 40,
     height: 5,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E5EBE7',
     borderRadius: 3,
     marginBottom: 24,
   },
@@ -960,7 +1086,7 @@ const styles = StyleSheet.create({
   voiceInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EAF8F0',
     borderRadius: 24,
     width: '100%',
     padding: 4,
@@ -985,7 +1111,7 @@ const styles = StyleSheet.create({
   // Search Bar
   searchWrapper: {
     paddingHorizontal: 16,
-    marginTop: 32, // increased spacing
+    marginTop: 24,
   },
   searchBar: {
     flexDirection: 'row',
@@ -995,10 +1121,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: SOFT_GREEN,
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.03, shadowRadius: 24 },
-      android: { elevation: 3 },
+      ios: { shadowColor: EMERALD, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16 },
+      android: { elevation: 2 },
     }),
   },
   searchPlaceholder: {
@@ -1231,13 +1357,13 @@ const styles = StyleSheet.create({
     width: 290,
     height: 150,
     borderRadius: 20,
-    backgroundColor: CARD_BG,
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: '#FFF3E5', // subtle orange border for deals
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
+      ios: { shadowColor: ORANGE, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16 },
       android: { elevation: 2 },
     }),
   },

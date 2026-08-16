@@ -46,7 +46,7 @@ export default function ProfileScreen() {
 
       {/* User Info Card */}
       <View style={[styles.userCardWrapper, { shadowColor: theme.primary }]}>
-        <LinearGradient colors={['#00B140', '#059669']} style={styles.userCardGradient}>
+        <LinearGradient colors={['#00B140', '#008F3C']} style={styles.userCardGradient}>
           {isAuthenticated && user ? (
             <View style={styles.userInfo}>
               <View style={styles.avatar}>
@@ -59,7 +59,7 @@ export default function ProfileScreen() {
                   <Text style={styles.userName}>
                     {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
                   </Text>
-                  <Ionicons name="checkmark-circle" size={16} color="#DCFCE7" />
+                  <Ionicons name="checkmark-circle" size={18} color="#FFF" />
                 </View>
                 {user?.phone && <Text style={styles.userPhone}>{user.phone}</Text>}
                 {user?.email && (
@@ -117,13 +117,13 @@ export default function ProfileScreen() {
               }}
             >
               <View style={styles.menuIconWrap}>
-                <Ionicons name={item.icon as any} size={22} color={theme.textSecondary} />
+                <Ionicons name={item.icon as any} size={22} color="#56625B" />
               </View>
-              <Text style={[styles.menuLabel, { color: theme.text }]}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={20} color={theme.border} />
+              <Text style={[styles.menuLabel, { color: '#122018' }]}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={20} color="#E5EBE7" />
             </TouchableOpacity>
             {index < MENU_ITEMS.length - 1 && (
-              <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+              <View style={styles.divider} />
             )}
           </View>
         ))}
@@ -150,13 +150,13 @@ export default function ProfileScreen() {
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: insets.bottom + 24 }}>
             <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Edit Profile</Text>
             
-            <Text style={{ color: '#64748B', marginBottom: 4 }}>First Name</Text>
+            <Text style={{ color: '#66736B', marginBottom: 4 }}>First Name</Text>
             <TextInput style={styles.input} value={editFirstName} onChangeText={setEditFirstName} />
             
-            <Text style={{ color: '#64748B', marginBottom: 4, marginTop: 12 }}>Last Name</Text>
+            <Text style={{ color: '#66736B', marginBottom: 4, marginTop: 12 }}>Last Name</Text>
             <TextInput style={styles.input} value={editLastName} onChangeText={setEditLastName} />
             
-            <Text style={{ color: '#64748B', marginBottom: 4, marginTop: 12 }}>Mobile Number</Text>
+            <Text style={{ color: '#66736B', marginBottom: 4, marginTop: 12 }}>Mobile Number</Text>
             <TextInput style={styles.input} value={editPhone} onChangeText={setEditPhone} keyboardType="phone-pad" />
             
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#DCFCE7',
+    borderColor: '#EAF8F0',
   },
   avatarText: { fontSize: FontSize['3xl'], fontWeight: '900', color: '#00B140' },
   userName: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
@@ -238,32 +238,33 @@ const styles = StyleSheet.create({
   guestLogo: { width: 72, height: 72, borderRadius: BorderRadius.xl },
   guestTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   guestSubtitle: { fontSize: FontSize.sm, textAlign: 'center', lineHeight: 20 },
-  menuCard: { margin: Spacing.base, padding: 0, overflow: 'hidden' },
+  menuCard: { margin: 16, padding: 0, overflow: 'hidden', borderRadius: 20, backgroundColor: '#FFFFFF', borderColor: '#E5EBE7', borderWidth: 1, shadowColor: '#00B140', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.base,
-    gap: Spacing.md,
+    paddingHorizontal: 16,
+    height: 68,
+    gap: 16,
   },
   menuIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#F7FAF8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuLabel: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.medium },
-  divider: { height: 1, marginLeft: Spacing.base + 22 + Spacing.md },
+  menuLabel: { flex: 1, fontSize: 16, fontWeight: '600' },
+  divider: { height: 1, marginLeft: 76, backgroundColor: '#E5EBE7' },
   logoutWrap: { paddingHorizontal: Spacing.base, marginBottom: Spacing.md },
   version: { textAlign: 'center', fontSize: FontSize.xs, marginTop: Spacing.sm },
   input: {
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5EBE7',
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
     fontSize: 16,
-    color: '#0F172A',
+    color: '#122018',
   }
 });

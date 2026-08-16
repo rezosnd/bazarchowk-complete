@@ -32,11 +32,11 @@ export default function MarketDetailScreen() {
   }, [id]);
 
   return (
-    <View style={[styles.root, { backgroundColor: '#F8FAFC' }]}>
+    <View style={[styles.root, { backgroundColor: '#F7FAF8' }]}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{market?.name || 'Market'}</Text>
         <View style={{ width: 42 }} />
@@ -57,8 +57,8 @@ export default function MarketDetailScreen() {
               {market.imageUrl ? (
                 <Image source={{ uri: market.imageUrl }} style={styles.marketBannerImg} contentFit="cover" />
               ) : (
-                <View style={[styles.marketBannerImg, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
-                  <Ionicons name="business-outline" size={48} color="#94A3B8" />
+                <View style={[styles.marketBannerImg, { backgroundColor: '#E5EBE7', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="business-outline" size={48} color="#8B9690" />
                 </View>
               )}
               <View style={styles.marketBannerOverlay}>
@@ -84,7 +84,7 @@ export default function MarketDetailScreen() {
                       {shop.bannerUrl || shop.logoUrl ? (
                         <Image source={{ uri: shop.bannerUrl || shop.logoUrl }} style={styles.shopImg} contentFit="cover" />
                       ) : (
-                        <View style={[styles.shopImg, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                        <View style={[styles.shopImg, { backgroundColor: '#EAF8F0', alignItems: 'center', justifyContent: 'center' }]}>
                           <Ionicons name="storefront-outline" size={28} color="#CBD5E1" />
                         </View>
                       )}
@@ -117,20 +117,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 14,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9', backgroundColor: '#FFF'
+    borderBottomWidth: 1, borderBottomColor: '#EAF8F0', backgroundColor: '#FFF'
   },
   iconBtn: {
     width: 42, height: 42, borderRadius: 21,
-    backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#F1F5F9',
+    backgroundColor: '#F7FAF8', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#EAF8F0',
   },
   headerTitle: {
     flex: 1, textAlign: 'center', fontSize: 18,
-    fontWeight: '800', color: '#0F172A', marginHorizontal: 12,
+    fontWeight: '800', color: '#122018', marginHorizontal: 12,
   },
   scroll: { paddingBottom: 120 },
   centered: { flex: 1, alignItems: 'center', paddingTop: 80 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginTop: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#122018', marginTop: 16 },
   
   marketBanner: { width: '100%', height: 220, position: 'relative' },
   marketBannerImg: { width: '100%', height: '100%' },
@@ -140,11 +140,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   marketBannerName: { color: '#FFF', fontSize: 24, fontWeight: '900' },
-  marketBannerSub: { color: '#E2E8F0', fontSize: 14, fontWeight: '600', marginTop: 4 },
+  marketBannerSub: { color: '#E5EBE7', fontSize: 14, fontWeight: '600', marginTop: 4 },
 
   shopSection: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
-  emptyText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#122018', marginBottom: 16 },
+  emptyText: { color: '#66736B', fontSize: 14, fontWeight: '500' },
 
   shopCard: {
     flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 16, marginBottom: 16,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   openBadgeTxt: { color: '#FFF', fontSize: 9, fontWeight: '800' },
   
   shopInfo: { flex: 1, justifyContent: 'center' },
-  shopName: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  shopMeta: { fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 6 },
-  shopDesc: { fontSize: 12, color: '#94A3B8', fontWeight: '500', lineHeight: 18 }
+  shopName: { fontSize: 16, fontWeight: '800', color: '#122018', marginBottom: 4 },
+  shopMeta: { fontSize: 13, color: '#66736B', fontWeight: '600', marginBottom: 6 },
+  shopDesc: { fontSize: 12, color: '#8B9690', fontWeight: '500', lineHeight: 18 }
 });
