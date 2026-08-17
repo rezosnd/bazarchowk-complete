@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import 'react-native-gesture-handler';
 import '@/i18n';
 
@@ -109,8 +110,8 @@ export default function RootLayout() {
             <View style={StyleSheet.absoluteFill}>
               <LinearGradient colors={['#F7FAF8', '#EAF8F0']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
                 <Ionicons name="construct" size={80} color="#00B140" />
-                <Text style={{ fontSize: 24, fontWeight: '800', color: '#122018', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</Text>
-                <Text style={{ fontSize: 16, color: '#66736B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</Text>
+                <AppText style={{ fontSize: 24, fontWeight: '800', color: '#122018', marginTop: 24, textAlign: 'center' }}>We'll Be Back Soon!</AppText>
+                <AppText style={{ fontSize: 16, color: '#66736B', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>We are currently upgrading our systems to make your experience even better. Please check back shortly.</AppText>
                 
                 <TouchableOpacity 
                   onPress={() => setBackendDown(false)}
@@ -127,7 +128,7 @@ export default function RootLayout() {
                     shadowRadius: 8
                   }}
                 >
-                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Try Again</Text>
+                  <AppText style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Try Again</AppText>
                 </TouchableOpacity>
               </LinearGradient>
             </View>

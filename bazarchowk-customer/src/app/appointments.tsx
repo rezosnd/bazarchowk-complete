@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,7 +60,7 @@ export default function AppointmentsTab() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00B140" />
-        <Text style={styles.loadingText}>Fetching your schedule...</Text>
+        <AppText style={styles.loadingText}>Fetching your schedule...</AppText>
       </View>
     );
   }
@@ -74,8 +75,8 @@ export default function AppointmentsTab() {
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>My Bookings</Text>
-          <Text style={styles.headerSubtitle}>Manage your service appointments</Text>
+          <AppText style={styles.headerTitle}>My Bookings</AppText>
+          <AppText style={styles.headerSubtitle}>Manage your service appointments</AppText>
         </View>
       </View>
 
@@ -83,7 +84,7 @@ export default function AppointmentsTab() {
 
         {upcoming.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Bookings</Text>
+            <AppText style={styles.sectionTitle}>Active Bookings</AppText>
             {upcoming.map((app: any) => {
               const badge = getStatusBadge(app.status);
               return (
@@ -94,12 +95,12 @@ export default function AppointmentsTab() {
                         <Ionicons name="briefcase-outline" size={24} color="#00B140" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.serviceName} numberOfLines={2}>{app.serviceOffering.name}</Text>
-                        <Text style={styles.providerName}>{app.provider.name} • {app.provider.specialty || 'Professional'}</Text>
+                        <AppText style={styles.serviceName} numberOfLines={2}>{app.serviceOffering.name}</AppText>
+                        <AppText style={styles.providerName}>{app.provider.name} • {app.provider.specialty || 'Professional'}</AppText>
                         {app.provider?.shop?.owner?.phone && (
                           <TouchableOpacity onPress={() => handleCall(app.provider.shop.owner.phone)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                             <Feather name="phone" size={12} color="#00B140" />
-                            <Text style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</Text>
+                            <AppText style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</AppText>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -108,10 +109,10 @@ export default function AppointmentsTab() {
                     <View style={{ alignItems: 'flex-end', minWidth: 80 }}>
                       <View style={[styles.badge, { backgroundColor: badge.bg, marginBottom: 6 }]}>
                         <Feather name={badge.icon as any} size={12} color={badge.text} />
-                        <Text style={[styles.badgeText, { color: badge.text }]}>{app.status}</Text>
+                        <AppText style={[styles.badgeText, { color: badge.text }]}>{app.status}</AppText>
                       </View>
-                      <Text style={{ fontWeight: '900', fontSize: 17, color: '#122018' }}>₹{app.totalAmount || app.serviceOffering.price}</Text>
-                      <Text style={{ fontSize: 10, fontWeight: '800', color: app.paymentStatus === 'PAID' ? '#008F3C' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</Text>
+                      <AppText style={{ fontWeight: '900', fontSize: 17, color: '#122018' }}>₹{app.totalAmount || app.serviceOffering.price}</AppText>
+                      <AppText style={{ fontSize: 10, fontWeight: '800', color: app.paymentStatus === 'PAID' ? '#008F3C' : '#D97706', marginTop: 2 }}>{app.paymentStatus === 'PAID' ? 'PAID ONLINE' : 'PAY AFTER SERVICE'}</AppText>
                     </View>
                   </View>
 
@@ -121,10 +122,10 @@ export default function AppointmentsTab() {
                         <Feather name="map-pin" size={14} color="#66736B" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155' }}>Service Location</Text>
-                        <Text style={{ fontSize: 12, color: '#66736B', marginTop: 2 }} numberOfLines={1}>
+                        <AppText style={{ fontSize: 12, fontWeight: '700', color: '#334155' }}>Service Location</AppText>
+                        <AppText style={{ fontSize: 12, color: '#66736B', marginTop: 2 }} numberOfLines={1}>
                           {app.serviceAddress.streetAddress}, {app.serviceAddress.city}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
                   )}
@@ -133,10 +134,10 @@ export default function AppointmentsTab() {
                     <View style={styles.dateCol}>
                       <View style={styles.dtIconWrap}><Feather name="calendar" size={16} color="#00B140" /></View>
                       <View style={{ marginLeft: 12 }}>
-                        <Text style={styles.dtLabel}>Date</Text>
-                        <Text style={styles.dtValue}>
+                        <AppText style={styles.dtLabel}>Date</AppText>
+                        <AppText style={styles.dtValue}>
                           {new Date(app.timeSlot.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
 
@@ -145,10 +146,10 @@ export default function AppointmentsTab() {
                     <View style={styles.dateCol}>
                       <View style={styles.dtIconWrap}><Feather name="clock" size={16} color="#F59E0B" /></View>
                       <View style={{ marginLeft: 12 }}>
-                        <Text style={styles.dtLabel}>Time</Text>
-                        <Text style={styles.dtValue}>
+                        <AppText style={styles.dtLabel}>Time</AppText>
+                        <AppText style={styles.dtValue}>
                           {new Date(app.timeSlot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
                   </View>
@@ -160,7 +161,7 @@ export default function AppointmentsTab() {
                     activeOpacity={0.7}
                   >
                     <Feather name="x-circle" size={16} color="#DC2626" />
-                    <Text style={styles.cancelBtnText}>Cancel Booking</Text>
+                    <AppText style={styles.cancelBtnText}>Cancel Booking</AppText>
                   </TouchableOpacity>
                 </View>
               );
@@ -170,7 +171,7 @@ export default function AppointmentsTab() {
 
         {past.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Past Bookings</Text>
+            <AppText style={styles.sectionTitle}>Past Bookings</AppText>
             {past.map((app: any) => {
               const badge = getStatusBadge(app.status);
               return (
@@ -180,22 +181,22 @@ export default function AppointmentsTab() {
                       <Ionicons name={app.status === 'COMPLETED' ? 'checkmark-circle' : 'close-circle'} size={24} color={badge.text} />
                     </View>
                     <View style={{ flex: 1, paddingRight: 10 }}>
-                      <Text style={styles.pastServiceName} numberOfLines={1}>{app.serviceOffering.name}</Text>
-                      <Text style={styles.pastDateText}>
+                      <AppText style={styles.pastServiceName} numberOfLines={1}>{app.serviceOffering.name}</AppText>
+                      <AppText style={styles.pastDateText}>
                         {new Date(app.timeSlot.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {app.provider.name}
-                      </Text>
+                      </AppText>
                       {app.provider?.shop?.owner?.phone && (
                         <TouchableOpacity onPress={() => handleCall(app.provider.shop.owner.phone)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                           <Feather name="phone" size={12} color="#00B140" />
-                          <Text style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</Text>
+                          <AppText style={{ fontSize: 12, color: '#00B140', fontWeight: '700', marginLeft: 4 }}>{app.provider.shop.owner.phone}</AppText>
                         </TouchableOpacity>
                       )}
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.pastPrice}>₹{app.totalAmount || app.serviceOffering.price}</Text>
+                    <AppText style={styles.pastPrice}>₹{app.totalAmount || app.serviceOffering.price}</AppText>
                     <View style={[styles.badge, { backgroundColor: badge.bg, marginTop: 4, paddingHorizontal: 6, paddingVertical: 2 }]}>
-                      <Text style={[styles.badgeText, { color: badge.text, fontSize: 9 }]}>{app.status}</Text>
+                      <AppText style={[styles.badgeText, { color: badge.text, fontSize: 9 }]}>{app.status}</AppText>
                     </View>
                   </View>
                 </View>
@@ -209,10 +210,10 @@ export default function AppointmentsTab() {
             <View style={styles.emptyIconWrap}>
               <Ionicons name="calendar-outline" size={48} color="#00B140" />
             </View>
-            <Text style={styles.emptyTitle}>No Bookings Yet</Text>
-            <Text style={styles.emptySubtitle}>Book a salon, electrician, or repair service instantly.</Text>
+            <AppText style={styles.emptyTitle}>No Bookings Yet</AppText>
+            <AppText style={styles.emptySubtitle}>Book a salon, electrician, or repair service instantly.</AppText>
             <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/')} activeOpacity={0.8}>
-              <Text style={styles.exploreBtnText}>Explore Services</Text>
+              <AppText style={styles.exploreBtnText}>Explore Services</AppText>
             </TouchableOpacity>
           </View>
         )}

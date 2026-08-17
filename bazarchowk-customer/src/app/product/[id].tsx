@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -111,7 +112,7 @@ export default function ProductDetailScreen() {
             <Ionicons name="cart-outline" size={24} color="#122018" />
             {itemsCount > 0 && (
               <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: PRIMARY, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</Text>
+                <AppText style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</AppText>
               </View>
             )}
           </TouchableOpacity>
@@ -131,23 +132,23 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View style={styles.infoContainer}>
           <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{product.category?.name || 'Category'}</Text>
+            <AppText style={styles.categoryText}>{product.category?.name || 'Category'}</AppText>
           </View>
           
-          <Text style={styles.title}>{product.name}</Text>
+          <AppText style={styles.title}>{product.name}</AppText>
           <TouchableOpacity onPress={() => router.push(`/shop/${product.shop?.id}`)}>
-            <Text style={styles.shopName}>Sold by: <Text style={{ color: PRIMARY, textDecorationLine: 'underline' }}>{product.shop?.name}</Text></Text>
+            <AppText style={styles.shopName}>Sold by: <AppText style={{ color: PRIMARY, textDecorationLine: 'underline' }}>{product.shop?.name}</AppText></AppText>
           </TouchableOpacity>
           
           <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{selectedVariant?.price || product.basePrice}</Text>
+            <AppText style={styles.price}>₹{selectedVariant?.price || product.basePrice}</AppText>
             {selectedVariant?.stock > 0 ? (
               <View style={styles.inStockBadge}>
-                <Text style={styles.inStockText}>In Stock</Text>
+                <AppText style={styles.inStockText}>In Stock</AppText>
               </View>
             ) : (
               <View style={[styles.inStockBadge, { backgroundColor: '#FEE2E2' }]}>
-                <Text style={[styles.inStockText, { color: '#DC2626' }]}>Out of Stock</Text>
+                <AppText style={[styles.inStockText, { color: '#DC2626' }]}>Out of Stock</AppText>
               </View>
             )}
           </View>
@@ -155,7 +156,7 @@ export default function ProductDetailScreen() {
           {/* Variants */}
           {product.variants && product.variants.length > 1 && (
             <View style={styles.variantsContainer}>
-              <Text style={styles.sectionTitle}>Select Variant</Text>
+              <AppText style={styles.sectionTitle}>Select Variant</AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                 {product.variants.map((variant: any) => (
                   <TouchableOpacity 
@@ -163,12 +164,12 @@ export default function ProductDetailScreen() {
                     style={[styles.variantBox, selectedVariant?.id === variant.id && styles.variantBoxActive]}
                     onPress={() => setSelectedVariant(variant)}
                   >
-                    <Text style={[styles.variantText, selectedVariant?.id === variant.id && styles.variantTextActive]}>
+                    <AppText style={[styles.variantText, selectedVariant?.id === variant.id && styles.variantTextActive]}>
                       {variant.name}
-                    </Text>
-                    <Text style={[styles.variantPrice, selectedVariant?.id === variant.id && styles.variantPriceActive]}>
+                    </AppText>
+                    <AppText style={[styles.variantPrice, selectedVariant?.id === variant.id && styles.variantPriceActive]}>
                       ₹{variant.price}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -177,16 +178,16 @@ export default function ProductDetailScreen() {
 
           {/* Description */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>{product.description}</Text>
+            <AppText style={styles.sectionTitle}>Description</AppText>
+            <AppText style={styles.description}>{product.description}</AppText>
           </View>
 
           {/* Reviews Section */}
           <View style={styles.reviewsContainer}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+              <AppText style={styles.sectionTitle}>Ratings & Reviews</AppText>
               <TouchableOpacity onPress={() => router.push(`/product/${id}/reviews`)}>
-                <Text style={{ color: PRIMARY, fontWeight: '700' }}>See All</Text>
+                <AppText style={{ color: PRIMARY, fontWeight: '700' }}>See All</AppText>
               </TouchableOpacity>
             </View>
             
@@ -195,28 +196,28 @@ export default function ProductDetailScreen() {
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <View style={styles.reviewAvatar}>
-                      <Text style={styles.reviewAvatarText}>{review.user?.firstName?.[0] || 'A'}</Text>
+                      <AppText style={styles.reviewAvatarText}>{review.user?.firstName?.[0] || 'A'}</AppText>
                     </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.reviewName}>{review.user?.firstName} {review.user?.lastName}</Text>
+                      <AppText style={styles.reviewName}>{review.user?.firstName} {review.user?.lastName}</AppText>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                         {[...Array(5)].map((_, i) => (
                           <Ionicons key={i} name={i < review.rating ? "star" : "star-outline"} size={14} color="#F59E0B" />
                         ))}
                       </View>
                     </View>
-                    <Text style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                    <AppText style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</AppText>
                   </View>
                   {review.comment && (
-                    <Text style={styles.reviewComment}>{review.comment}</Text>
+                    <AppText style={styles.reviewComment}>{review.comment}</AppText>
                   )}
                 </View>
               ))
             ) : (
               <View style={styles.noReviewsBox}>
                 <Ionicons name="chatbubble-ellipses-outline" size={32} color="#CBD5E1" />
-                <Text style={styles.noReviewsText}>No reviews yet.</Text>
-                <Text style={styles.noReviewsSub}>Be the first to review this product after purchase!</Text>
+                <AppText style={styles.noReviewsText}>No reviews yet.</AppText>
+                <AppText style={styles.noReviewsSub}>Be the first to review this product after purchase!</AppText>
               </View>
             )}
           </View>
@@ -232,7 +233,7 @@ export default function ProductDetailScreen() {
           >
             <Ionicons name="remove" size={20} color="#122018" />
           </TouchableOpacity>
-          <Text style={styles.qtyText}>{quantity}</Text>
+          <AppText style={styles.qtyText}>{quantity}</AppText>
           <TouchableOpacity 
             style={styles.qtyBtn}
             onPress={() => {
@@ -259,14 +260,14 @@ export default function ProductDetailScreen() {
           {addedSuccess ? (
             <View style={{flexDirection: 'row', alignItems:'center', gap: 6}}>
                <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-               <Text style={styles.addToCartText}>Added to Cart</Text>
+               <AppText style={styles.addToCartText}>Added to Cart</AppText>
             </View>
           ) : addingToCart ? (
             <ActivityIndicator color="#122018" />
           ) : !selectedVariant || selectedVariant?.stock < 1 ? (
-            <Text style={[styles.addToCartText, { color: '#8B9690' }]}>Out of Stock</Text>
+            <AppText style={[styles.addToCartText, { color: '#8B9690' }]}>Out of Stock</AppText>
           ) : (
-            <Text style={styles.addToCartText}>Add to Cart</Text>
+            <AppText style={styles.addToCartText}>Add to Cart</AppText>
           )}
         </TouchableOpacity>
       </View>

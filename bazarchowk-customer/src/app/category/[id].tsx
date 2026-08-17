@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -101,21 +102,21 @@ function ProductCard({ product, index }: { product: any; index: number }) {
 
           {/* Info */}
           <View style={styles.info}>
-            <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+            <AppText style={styles.productName} numberOfLines={2}>{product.name}</AppText>
             {product.shop?.name && (
-              <Text style={styles.shopName} numberOfLines={1}>{product.shop.name}</Text>
+              <AppText style={styles.shopName} numberOfLines={1}>{product.shop.name}</AppText>
             )}
             <View style={styles.priceRow}>
-              <Text style={styles.price}>₹{price}</Text>
+              <AppText style={styles.price}>₹{price}</AppText>
               {product.mrp && product.mrp > price && (
-                <Text style={styles.mrp}>₹{product.mrp}</Text>
+                <AppText style={styles.mrp}>₹{product.mrp}</AppText>
               )}
             </View>
 
             {/* Add to Cart button */}
             {isOutOfStock ? (
               <View style={[styles.addBtn, { backgroundColor: '#EAF8F0', borderColor: '#CBD5E1' }]}>
-                <Text style={[styles.addBtnText, { color: '#8B9690', fontSize: 11 }]}>OUT OF STOCK</Text>
+                <AppText style={[styles.addBtnText, { color: '#8B9690', fontSize: 11 }]}>OUT OF STOCK</AppText>
               </View>
             ) : (
               <TouchableOpacity
@@ -127,9 +128,9 @@ function ProductCard({ product, index }: { product: any; index: number }) {
                 {adding ? (
                   <ActivityIndicator size="small" color={cartQty > 0 ? '#FFF' : PRIMARY} />
                 ) : cartQty > 0 ? (
-                  <Text style={[styles.addBtnText, { color: '#FFF' }]}>+ Add ({cartQty})</Text>
+                  <AppText style={[styles.addBtnText, { color: '#FFF' }]}>+ Add ({cartQty})</AppText>
                 ) : (
-                  <Text style={styles.addBtnText}>+ ADD</Text>
+                  <AppText style={styles.addBtnText}>+ ADD</AppText>
                 )}
               </TouchableOpacity>
             )}
@@ -209,12 +210,12 @@ export default function CategoryDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
           <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{name || 'Category'}</Text>
+        <AppText style={styles.headerTitle} numberOfLines={1}>{name || 'Category'}</AppText>
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/cart')}>
           <Ionicons name="cart-outline" size={22} color="#122018" />
           {itemsCount > 0 && (
             <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{itemsCount}</Text>
+              <AppText style={styles.cartBadgeText}>{itemsCount}</AppText>
             </View>
           )}
         </TouchableOpacity>
@@ -223,7 +224,7 @@ export default function CategoryDetailScreen() {
       {/* ── Sort Bar ── */}
       {!loading && products.length > 0 && !id.startsWith('dyn-') && (
         <View style={styles.sortBar}>
-          <Text style={styles.resultCount}>{products.length} items</Text>
+          <AppText style={styles.resultCount}>{products.length} items</AppText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {[
               { key: 'default', label: '⭐ Relevance' },
@@ -235,9 +236,9 @@ export default function CategoryDetailScreen() {
                 style={[styles.sortChip, sortBy === opt.key && styles.sortChipActive]}
                 onPress={() => setSortBy(opt.key as any)}
               >
-                <Text style={[styles.sortChipText, sortBy === opt.key && styles.sortChipTextActive]}>
+                <AppText style={[styles.sortChipText, sortBy === opt.key && styles.sortChipTextActive]}>
                   {opt.label}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -252,22 +253,22 @@ export default function CategoryDetailScreen() {
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={styles.loadingText}>Loading...</Text>
+            <AppText style={styles.loadingText}>Loading...</AppText>
           </View>
         ) : sorted.length === 0 ? (
           <View style={styles.centered}>
             <Ionicons name="location-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyTitle}>No options near you</Text>
-            <Text style={styles.emptyText}>
+            <AppText style={styles.emptyTitle}>No options near you</AppText>
+            <AppText style={styles.emptyText}>
               {location?.city
                 ? `No providers in ${location.city} found.`
                 : 'No options available in this category right now.'}
-            </Text>
+            </AppText>
             <TouchableOpacity
               onPress={fetchProducts}
               style={{ marginTop: 16, backgroundColor: '#00B140', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 }}
             >
-              <Text style={{ color: '#FFF', fontWeight: '700' }}>Retry</Text>
+              <AppText style={{ color: '#FFF', fontWeight: '700' }}>Retry</AppText>
             </TouchableOpacity>
           </View>
         ) : id.startsWith('dyn-') ? (
@@ -292,20 +293,20 @@ export default function CategoryDetailScreen() {
                   )}
                   {shop.status?.isOpen && (
                     <View style={{ position: 'absolute', bottom: 6, left: 6, backgroundColor: PRIMARY, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                      <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>OPEN</Text>
+                      <AppText style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>OPEN</AppText>
                     </View>
                   )}
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#122018', marginBottom: 4 }}>{shop.name}</Text>
-                  <Text style={{ fontSize: 13, color: '#66736B', fontWeight: '600', marginBottom: 6 }}>
+                  <AppText style={{ fontSize: 16, fontWeight: '800', color: '#122018', marginBottom: 4 }}>{shop.name}</AppText>
+                  <AppText style={{ fontSize: 13, color: '#66736B', fontWeight: '600', marginBottom: 6 }}>
                     <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
-                  </Text>
+                  </AppText>
                   <TouchableOpacity 
                     style={{ alignSelf: 'flex-start', backgroundColor: '#EA580C', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
                     onPress={() => router.push(`/services/${shop.id}`)}
                   >
-                    <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Book Appointment</Text>
+                    <AppText style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Book Appointment</AppText>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>

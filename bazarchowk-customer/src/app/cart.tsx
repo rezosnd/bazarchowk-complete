@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,9 +58,9 @@ export default function CartScreen() {
           <View style={styles.emptyIconBg}>
             <Ionicons name="cart-outline" size={56} color="#8B9690" />
           </View>
-          <Text style={styles.emptyText}>You need to login first</Text>
+          <AppText style={styles.emptyText}>You need to login first</AppText>
           <PressableScale style={styles.loginBtn} onPress={() => router.push('/(auth)/login')}>
-            <Text style={styles.loginBtnText}>Login to View Cart</Text>
+            <AppText style={styles.loginBtnText}>Login to View Cart</AppText>
           </PressableScale>
         </View>
       </View>
@@ -87,10 +88,10 @@ export default function CartScreen() {
           <View style={styles.emptyIconBg}>
             <Ionicons name="basket-outline" size={48} color={PRIMARY} />
           </View>
-          <Text style={styles.emptyText}>Your cart is empty</Text>
-          <Text style={styles.emptySub}>Looks like you haven't added anything yet.</Text>
+          <AppText style={styles.emptyText}>Your cart is empty</AppText>
+          <AppText style={styles.emptySub}>Looks like you haven't added anything yet.</AppText>
           <PressableScale style={styles.browseBtn} onPress={() => router.push('/')}>
-            <Text style={styles.browseBtnText}>Browse Products</Text>
+            <AppText style={styles.browseBtnText}>Browse Products</AppText>
           </PressableScale>
         </Animated.View>
       </View>
@@ -108,7 +109,7 @@ export default function CartScreen() {
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 24) + 100 }]} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.springify().damping(15)} style={styles.shopHeader}>
           <Ionicons name="storefront" size={20} color="#122018" />
-          <Text style={styles.shopName}>Items from {items[0]?.productVariant?.product?.shop?.name || 'Shop'}</Text>
+          <AppText style={styles.shopName}>Items from {items[0]?.productVariant?.product?.shop?.name || 'Shop'}</AppText>
         </Animated.View>
 
         {items.map((item: any, index: number) => {
@@ -127,9 +128,9 @@ export default function CartScreen() {
                   </View>
                 )}
                 <View style={styles.itemInfo}>
-                  <Text style={styles.itemName} numberOfLines={2}>{product.name}</Text>
-                  <Text style={styles.itemVariant}>{variant.name}</Text>
-                  <Text style={styles.itemPrice}>₹{variant.price}</Text>
+                  <AppText style={styles.itemName} numberOfLines={2}>{product.name}</AppText>
+                  <AppText style={styles.itemVariant}>{variant.name}</AppText>
+                  <AppText style={styles.itemPrice}>₹{variant.price}</AppText>
                 </View>
                 
                 <View style={styles.qtyBox}>
@@ -140,7 +141,7 @@ export default function CartScreen() {
                       <PressableScale onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)} style={styles.qtyBtn} scaleTo={0.8}>
                         <Ionicons name="remove" size={18} color="#00B140" />
                       </PressableScale>
-                      <Text style={styles.qtyText}>{item.quantity}</Text>
+                      <AppText style={styles.qtyText}>{item.quantity}</AppText>
                       <PressableScale onPress={() => {
                         if (item.quantity >= item.productVariant.stock) {
                           Alert.alert('Stock Limit', `Only ${item.productVariant.stock} items available in stock.`);
@@ -159,18 +160,18 @@ export default function CartScreen() {
         })}
 
         <Animated.View entering={FadeInDown.delay(items.length * 40).springify().damping(15)} style={styles.billCard}>
-          <Text style={styles.billTitle}>Bill Details</Text>
+          <AppText style={styles.billTitle}>Bill Details</AppText>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+            <AppText style={styles.billLabel}>Item Total</AppText>
+            <AppText style={styles.billValue}>₹{subtotal.toFixed(2)}</AppText>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Taxes & Delivery</Text>
-            <Text style={styles.billValue}>Calculated at checkout</Text>
+            <AppText style={styles.billLabel}>Taxes & Delivery</AppText>
+            <AppText style={styles.billValue}>Calculated at checkout</AppText>
           </View>
           <View style={[styles.billRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
+            <AppText style={styles.totalLabel}>Subtotal</AppText>
+            <AppText style={styles.totalValue}>₹{total.toFixed(2)}</AppText>
           </View>
         </Animated.View>
       </ScrollView>
@@ -178,14 +179,14 @@ export default function CartScreen() {
       {/* Checkout Bar */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={styles.payInfo}>
-          <Text style={styles.payLabel}>Subtotal</Text>
-          <Text style={styles.payAmount}>₹{total.toFixed(2)}</Text>
+          <AppText style={styles.payLabel}>Subtotal</AppText>
+          <AppText style={styles.payAmount}>₹{total.toFixed(2)}</AppText>
         </View>
         <PressableScale 
           style={styles.checkoutBtn} 
           onPress={() => router.push({ pathname: '/checkout', params: { shopId } })}
         >
-          <Text style={styles.checkoutText}>Proceed</Text>
+          <AppText style={styles.checkoutText}>Proceed</AppText>
           <Ionicons name="arrow-forward" size={20} color="#FFF" />
         </PressableScale>
       </View>

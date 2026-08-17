@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, Modal, ScrollView, Platform, Dimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,9 @@ const LANGUAGES = [
   { code: 'mr', name: 'Marathi', native: 'मराठी' },
   { code: 'ur', name: 'Urdu', native: 'اردو' },
   { code: 'or', name: 'Odia', native: 'ଓଡ଼ିଆ' },
+  { code: 'bho', name: 'Bhojpuri', native: 'भोजपुरी' },
+  { code: 'mai', name: 'Maithili', native: 'मैथिली' },
+  { code: 'as', name: 'Assamese', native: 'অসমীয়া' },
 ];
 
 function LanguageCard({ lang, isSelected, onPress }: { lang: typeof LANGUAGES[0], isSelected: boolean, onPress: () => void }) {
@@ -82,12 +86,12 @@ function LanguageCard({ lang, isSelected, onPress }: { lang: typeof LANGUAGES[0]
     >
       <Animated.View style={[styles.langCard, animatedStyle]}>
         <View style={styles.langCardTop}>
-          <Text style={[styles.langNative, isSelected && { color: EMERALD }]}>{lang.native}</Text>
+          <AppText style={[styles.langNative, isSelected && { color: EMERALD }]}>{lang.native}</AppText>
           <View style={[styles.radioCircle, isSelected && { borderColor: EMERALD }]}>
             <Animated.View style={[styles.radioFill, indicatorStyle]} />
           </View>
         </View>
-        <Text style={styles.langName}>{lang.name}</Text>
+        <AppText style={styles.langName}>{lang.name}</AppText>
       </Animated.View>
     </Pressable>
   );
@@ -169,7 +173,7 @@ export function LanguageSelector() {
         <View style={styles.langIconWrapper}>
           <Ionicons name="language" size={14} color={EMERALD} />
         </View>
-        <Text style={styles.langChipText}>{i18n.language ? i18n.language.toUpperCase() : 'EN'}</Text>
+        <AppText style={styles.langChipText}>{i18n.language ? i18n.language.toUpperCase() : 'EN'}</AppText>
         <Ionicons name="chevron-down" size={12} color={TEXT_MAIN} />
       </TouchableOpacity>
 
@@ -188,8 +192,8 @@ export function LanguageSelector() {
                 <Ionicons name="language" size={24} color={EMERALD} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sheetTitle}>App Language</Text>
-                <Text style={styles.sheetSubtitle}>Choose your preferred language</Text>
+                <AppText style={styles.sheetTitle}>App Language</AppText>
+                <AppText style={styles.sheetSubtitle}>Choose your preferred language</AppText>
               </View>
             </View>
             
@@ -211,7 +215,7 @@ export function LanguageSelector() {
                 onPress={confirmSelection}
               >
                 <Animated.View style={[styles.confirmBtn, btnAnimatedStyle]}>
-                  <Text style={styles.confirmBtnText}>Continue</Text>
+                  <AppText style={styles.confirmBtnText}>Continue</AppText>
                 </Animated.View>
               </Pressable>
             </View>

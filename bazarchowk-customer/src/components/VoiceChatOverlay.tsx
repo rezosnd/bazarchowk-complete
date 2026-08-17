@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -256,9 +257,9 @@ export function VoiceChatOverlay() {
         
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
           
-          <Text style={{ fontSize: 24, fontWeight: '600', color: '#111827', textAlign: 'center', marginBottom: 60, paddingHorizontal: 20, minHeight: 60 }}>
+          <AppText style={{ fontSize: 24, fontWeight: '600', color: '#111827', textAlign: 'center', marginBottom: 60, paddingHorizontal: 20, minHeight: 60 }}>
             {aiResponse}
-          </Text>
+          </AppText>
 
           <View style={{ justifyContent: 'center', alignItems: 'center' }}>
             <Animated.View style={[animatedRipple1, { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(59, 130, 246, 0.4)' }]} />

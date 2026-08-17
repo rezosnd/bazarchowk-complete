@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -128,29 +129,29 @@ export default function LoginScreen() {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.headerTitle}>BazarChowk</Text>
-          <Text style={styles.headerSubtitle}>India's Premier Super App</Text>
+          <AppText style={styles.headerTitle}>BazarChowk</AppText>
+          <AppText style={styles.headerSubtitle}>India's Premier Super App</AppText>
         </LinearGradient>
 
         <View style={[styles.form, { backgroundColor: theme.background }]}>
-          <Text style={[styles.formTitle, { color: theme.text }]}>Welcome Back</Text>
-          <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
+          <AppText style={[styles.formTitle, { color: theme.text }]}>Welcome Back</AppText>
+          <AppText style={[styles.formSubtitle, { color: theme.textSecondary }]}>
             Login to your account
-          </Text>
+          </AppText>
 
           <TouchableOpacity style={styles.googleBtn} activeOpacity={0.7} onPress={handleGoogleLogin}>
             <Ionicons name="logo-google" size={24} color="#DB4437" />
-            <Text style={styles.googleBtnText}>Continue with Google</Text>
+            <AppText style={styles.googleBtnText}>Continue with Google</AppText>
           </TouchableOpacity>
 
           <View style={styles.footerSpacer} />
 
-          <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+          <AppText style={[styles.termsText, { color: theme.textSecondary }]}>
             By continuing, you agree to BazarChowk's{' '}
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>Terms of Service</Text>{' '}
+            <AppText style={{ color: theme.primary, fontWeight: '600' }}>Terms of Service</AppText>{' '}
             and{' '}
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>Privacy Policy</Text>
-          </Text>
+            <AppText style={{ color: theme.primary, fontWeight: '600' }}>Privacy Policy</AppText>
+          </AppText>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

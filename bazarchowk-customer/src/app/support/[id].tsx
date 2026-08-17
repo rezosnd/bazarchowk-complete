@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -137,12 +138,12 @@ export default function TicketDetailScreen() {
     if (isSystem) {
       return (
         <View style={styles.systemMessageWrap}>
-          <Text style={[styles.systemMessage, { color: theme.textSecondary }]}>
+          <AppText style={[styles.systemMessage, { color: theme.textSecondary }]}>
             {item.content}
-          </Text>
-          <Text style={[styles.messageTime, { color: theme.textTertiary, textAlign: 'center' }]}>
+          </AppText>
+          <AppText style={[styles.messageTime, { color: theme.textTertiary, textAlign: 'center' }]}>
             {new Date(item.createdAt).toLocaleString()}
-          </Text>
+          </AppText>
         </View>
       );
     }
@@ -159,12 +160,12 @@ export default function TicketDetailScreen() {
           styles.messageBubble, 
           isMe ? { backgroundColor: theme.primary } : { backgroundColor: theme.card }
         ]}>
-          <Text style={[styles.messageText, isMe ? { color: '#fff' } : { color: theme.text }]}>
+          <AppText style={[styles.messageText, isMe ? { color: '#fff' } : { color: theme.text }]}>
             {item.content}
-          </Text>
-          <Text style={[styles.messageTime, isMe ? { color: 'rgba(255,255,255,0.7)' } : { color: theme.textTertiary }]}>
+          </AppText>
+          <AppText style={[styles.messageTime, isMe ? { color: 'rgba(255,255,255,0.7)' } : { color: theme.textTertiary }]}>
             {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          </AppText>
         </View>
       </View>
     );
@@ -181,7 +182,7 @@ export default function TicketDetailScreen() {
   if (!ticket) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
-        <Text style={{ color: theme.text }}>Ticket not found</Text>
+        <AppText style={{ color: theme.text }}>Ticket not found</AppText>
       </View>
     );
   }
@@ -206,12 +207,12 @@ export default function TicketDetailScreen() {
       />
 
       <View style={[styles.headerBanner, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Text style={[styles.subjectText, { color: theme.text }]} numberOfLines={1}>
+        <AppText style={[styles.subjectText, { color: theme.text }]} numberOfLines={1}>
           {ticket.subject}
-        </Text>
-        <Text style={[styles.statusText, { color: theme.textSecondary }]}>
+        </AppText>
+        <AppText style={[styles.statusText, { color: theme.textSecondary }]}>
           Status: {ticket.status}
-        </Text>
+        </AppText>
       </View>
 
       <FlatList
@@ -226,9 +227,9 @@ export default function TicketDetailScreen() {
 
       {isClosed ? (
         <View style={[styles.closedBanner, { paddingBottom: insets.bottom + Spacing.base, backgroundColor: theme.card, borderTopColor: theme.border }]}>
-          <Text style={[styles.closedText, { color: theme.textSecondary }]}>
+          <AppText style={[styles.closedText, { color: theme.textSecondary }]}>
             This ticket has been marked as {ticket.status.toLowerCase()}. You cannot reply to it anymore.
-          </Text>
+          </AppText>
         </View>
       ) : (
         <View style={[styles.inputContainer, { paddingBottom: insets.bottom || Spacing.sm, backgroundColor: theme.card, borderTopColor: theme.border }]}>

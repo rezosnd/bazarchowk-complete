@@ -65,6 +65,9 @@ i18n
       pa: { translation: pa },
       ta: { translation: ta },
       te: { translation: te },
+      bho: { translation: {} },
+      mai: { translation: {} },
+      as: { translation: {} },
     },
 
     interpolation: {

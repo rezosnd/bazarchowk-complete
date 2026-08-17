@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -55,12 +56,12 @@ export default function ShopDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{shop?.name || 'Shop'}</Text>
+        <AppText style={styles.headerTitle} numberOfLines={1}>{shop?.name || 'Shop'}</AppText>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/cart')}>
           <Ionicons name="cart-outline" size={24} color="#122018" />
           {itemsCount > 0 && (
             <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: PRIMARY, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</Text>
+              <AppText style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{itemsCount}</AppText>
             </View>
           )}
         </TouchableOpacity>
@@ -76,21 +77,21 @@ export default function ShopDetailScreen() {
               <Ionicons name="storefront" size={40} color="#8B9690" />
             </View>
           )}
-          <Text style={styles.shopName}>{shop.name}</Text>
-          <Text style={styles.shopDescription}>{shop.description || 'Welcome to our shop!'}</Text>
+          <AppText style={styles.shopName}>{shop.name}</AppText>
+          <AppText style={styles.shopDescription}>{shop.description || 'Welcome to our shop!'}</AppText>
           
           <View style={styles.statusRow}>
             <View style={[styles.statusBadge, { backgroundColor: shop.isOpen ? '#EAF8F0' : '#FEE2E2' }]}>
-              <Text style={[styles.statusText, { color: shop.isOpen ? '#008F3C' : '#DC2626' }]}>
+              <AppText style={[styles.statusText, { color: shop.isOpen ? '#008F3C' : '#DC2626' }]}>
                 {shop.isOpen ? 'OPEN NOW' : 'CLOSED'}
-              </Text>
+              </AppText>
             </View>
-            {shop.reason && <Text style={styles.reasonText}>({shop.reason})</Text>}
+            {shop.reason && <AppText style={styles.reasonText}>({shop.reason})</AppText>}
           </View>
 
           <TouchableOpacity style={styles.reviewBtn} onPress={() => router.push(`/shop/${id}/reviews` as any)}>
             <Ionicons name="star" size={16} color="#F59E0B" />
-            <Text style={styles.reviewBtnText}>Ratings & Reviews</Text>
+            <AppText style={styles.reviewBtnText}>Ratings & Reviews</AppText>
           </TouchableOpacity>
         </View>
 
@@ -118,8 +119,8 @@ export default function ShopDetailScreen() {
                   <Ionicons name="calendar" size={24} color="#FFF" />
                 </View>
                 <View>
-                  <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Book Appointment</Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>View services & timeslots</Text>
+                  <AppText style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Book Appointment</AppText>
+                  <AppText style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>View services & timeslots</AppText>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#FFF" />
@@ -130,12 +131,12 @@ export default function ShopDetailScreen() {
         {/* Products Grid */}
         {(shop.hasProducts || products.length > 0) && (
           <View style={styles.productsContainer}>
-            <Text style={styles.sectionTitle}>Products</Text>
+            <AppText style={styles.sectionTitle}>Products</AppText>
             
             {products.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Ionicons name="cube-outline" size={48} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No products available yet.</Text>
+                <AppText style={styles.emptyText}>No products available yet.</AppText>
               </View>
             ) : (
               <View style={styles.grid}>
@@ -157,8 +158,8 @@ export default function ShopDetailScreen() {
                         )}
                       </View>
                       <View style={styles.productInfo}>
-                        <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                        <Text style={styles.productPrice}>₹{product.basePrice}</Text>
+                        <AppText style={styles.productName} numberOfLines={2}>{product.name}</AppText>
+                        <AppText style={styles.productPrice}>₹{product.basePrice}</AppText>
                       </View>
                     </TouchableOpacity>
                   );

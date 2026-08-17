@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -96,8 +97,8 @@ export default function WalletScreen() {
           <Animated.View entering={FadeInUp.springify().damping(18)} style={styles.balanceCardWrapper}>
             <LinearGradient colors={['#008F3C', '#00B140']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={styles.balanceCard}>
               <View style={styles.balanceContent}>
-                <Text style={styles.balanceLabel}>Available Balance</Text>
-                <Text style={styles.balanceAmount}>₹{wallet?.balance?.toFixed(2) || '0.00'}</Text>
+                <AppText style={styles.balanceLabel}>Available Balance</AppText>
+                <AppText style={styles.balanceAmount}>₹{wallet?.balance?.toFixed(2) || '0.00'}</AppText>
               </View>
               <Ionicons name="wallet" size={100} color="rgba(255,255,255,0.15)" style={styles.bgIcon} />
             </LinearGradient>
@@ -105,9 +106,9 @@ export default function WalletScreen() {
 
           {/* Add Money Section */}
           <Animated.View entering={FadeInUp.delay(100).springify().damping(18)} style={styles.addMoneySection}>
-            <Text style={styles.sectionTitle}>Add Money</Text>
+            <AppText style={styles.sectionTitle}>Add Money</AppText>
             <View style={styles.inputRow}>
-              <Text style={styles.currencySymbol}>₹</Text>
+              <AppText style={styles.currencySymbol}>₹</AppText>
               <TextInput
                 style={styles.input}
                 placeholder="0.00"
@@ -121,7 +122,7 @@ export default function WalletScreen() {
                 disabled={!isValidAmount || adding}
                 onPress={handleAddMoney}
               >
-                {adding ? <ActivityIndicator color="#FFF" /> : <Text style={styles.addText}>Add</Text>}
+                {adding ? <ActivityIndicator color="#FFF" /> : <AppText style={styles.addText}>Add</AppText>}
               </PressableScale>
             </View>
             <View style={styles.quickAmounts}>
@@ -131,21 +132,21 @@ export default function WalletScreen() {
                   style={[styles.quickChip, addAmount === amt.toString() && styles.quickChipActive]} 
                   onPress={() => setAddAmount(amt.toString())}
                 >
-                  <Text style={[styles.quickText, addAmount === amt.toString() && styles.quickTextActive]}>+₹{amt}</Text>
+                  <AppText style={[styles.quickText, addAmount === amt.toString() && styles.quickTextActive]}>+₹{amt}</AppText>
                 </PressableScale>
               ))}
             </View>
           </Animated.View>
 
           {/* Recent Transactions */}
-          <Text style={[styles.sectionTitle, { marginTop: 12, paddingHorizontal: 4 }]}>Recent Transactions</Text>
+          <AppText style={[styles.sectionTitle, { marginTop: 12, paddingHorizontal: 4 }]}>Recent Transactions</AppText>
           
           {wallet?.transactions?.length === 0 ? (
             <Animated.View entering={FadeInDown.springify()} style={styles.emptyState}>
               <View style={styles.emptyIconWrap}>
                 <Ionicons name="receipt-outline" size={40} color="#00B140" />
               </View>
-              <Text style={styles.emptyText}>No transactions yet</Text>
+              <AppText style={styles.emptyText}>No transactions yet</AppText>
             </Animated.View>
           ) : (
             wallet?.transactions?.map((tx: any, index: number) => (
@@ -158,14 +159,14 @@ export default function WalletScreen() {
                   />
                 </View>
                 <View style={styles.txInfo}>
-                  <Text style={styles.txReason}>{tx.type === 'CREDIT' ? 'DEPOSIT' : 'PURCHASE'}</Text>
-                  <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
+                  <AppText style={styles.txReason}>{tx.type === 'CREDIT' ? 'DEPOSIT' : 'PURCHASE'}</AppText>
+                  <AppText style={styles.txDate}>{new Date(tx.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</AppText>
                 </View>
                 <View style={styles.txAmountBox}>
-                  <Text style={[styles.txAmount, tx.type === 'CREDIT' ? styles.textGreen : styles.textRed]}>
+                  <AppText style={[styles.txAmount, tx.type === 'CREDIT' ? styles.textGreen : styles.textRed]}>
                     {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount?.toFixed(2)}
-                  </Text>
-                  <Text style={styles.txBal}>Bal: ₹{tx.balanceAfter?.toFixed(2)}</Text>
+                  </AppText>
+                  <AppText style={styles.txBal}>Bal: ₹{tx.balanceAfter?.toFixed(2)}</AppText>
                 </View>
               </Animated.View>
             ))

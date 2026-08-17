@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -90,7 +91,7 @@ export default function ShopServicesScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={PRIMARY} />
-        <Text style={{ marginTop: 12 }}>Loading Services...</Text>
+        <AppText style={{ marginTop: 12 }}>Loading Services...</AppText>
       </View>
     );
   }
@@ -101,14 +102,14 @@ export default function ShopServicesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Feather name="arrow-left" size={24} color="#1f2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Book Appointment</Text>
+        <AppText style={styles.headerTitle}>Book Appointment</AppText>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         {/* Step 1: Select Service */}
         {!selectedServiceId ? (
           <View style={styles.sectionContainer}>
-            <Text style={styles.stepTitle}>1. Select Service</Text>
+            <AppText style={styles.stepTitle}>1. Select Service</AppText>
             {services?.map((s: any) => {
               const isSelected = selectedServiceId === s.id;
               return (
@@ -121,23 +122,23 @@ export default function ShopServicesScreen() {
                   style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
                 >
                   <View>
-                    <Text style={styles.serviceName}>{s.name}</Text>
-                    <Text style={styles.serviceDuration}>{s.durationMin} mins</Text>
+                    <AppText style={styles.serviceName}>{s.name}</AppText>
+                    <AppText style={styles.serviceDuration}>{s.durationMin} mins</AppText>
                   </View>
-                  <Text style={styles.servicePrice}>₹{s.price}</Text>
+                  <AppText style={styles.servicePrice}>₹{s.price}</AppText>
                 </TouchableOpacity>
               );
             })}
-            {(!services || services.length === 0) && <Text style={styles.emptyText}>No services available</Text>}
+            {(!services || services.length === 0) && <AppText style={styles.emptyText}>No services available</AppText>}
           </View>
         ) : (
           <View style={styles.collapsedCard}>
             <View>
-              <Text style={styles.collapsedLabel}>Selected Service</Text>
-              <Text style={styles.collapsedValue}>{services?.find((s:any) => s.id === selectedServiceId)?.name}</Text>
+              <AppText style={styles.collapsedLabel}>Selected Service</AppText>
+              <AppText style={styles.collapsedValue}>{services?.find((s:any) => s.id === selectedServiceId)?.name}</AppText>
             </View>
             <TouchableOpacity onPress={() => { setSelectedServiceId(null); setSelectedProviderId(null); }}>
-              <Text style={styles.changeBtn}>Change</Text>
+              <AppText style={styles.changeBtn}>Change</AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -145,7 +146,7 @@ export default function ShopServicesScreen() {
         {/* Step 2: Select Provider */}
         {selectedServiceId && !selectedProviderId && (
           <>
-            <Text style={styles.stepTitle}>2. Select Professional</Text>
+            <AppText style={styles.stepTitle}>2. Select Professional</AppText>
             <View style={styles.providerGrid}>
               {providers?.map((p: any) => {
                 const isSelected = selectedProviderId === p.id;
@@ -158,8 +159,8 @@ export default function ShopServicesScreen() {
                     <View style={styles.providerAvatar}>
                       <Feather name="user" size={20} color={isSelected ? PRIMARY : "#6b7280"} />
                     </View>
-                    <Text style={[styles.providerName, isSelected && { color: PRIMARY }]}>{p.name}</Text>
-                    <Text style={styles.providerSpecialty}>{p.specialty || 'Staff'}</Text>
+                    <AppText style={[styles.providerName, isSelected && { color: PRIMARY }]}>{p.name}</AppText>
+                    <AppText style={styles.providerSpecialty}>{p.specialty || 'Staff'}</AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -170,11 +171,11 @@ export default function ShopServicesScreen() {
         {selectedProviderId && (
           <View style={styles.collapsedCard}>
             <View>
-              <Text style={styles.collapsedLabel}>Selected Professional</Text>
-              <Text style={styles.collapsedValue}>{providers?.find((p:any) => p.id === selectedProviderId)?.name}</Text>
+              <AppText style={styles.collapsedLabel}>Selected Professional</AppText>
+              <AppText style={styles.collapsedValue}>{providers?.find((p:any) => p.id === selectedProviderId)?.name}</AppText>
             </View>
             <TouchableOpacity onPress={() => setSelectedProviderId(null)}>
-              <Text style={styles.changeBtn}>Change</Text>
+              <AppText style={styles.changeBtn}>Change</AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -182,9 +183,9 @@ export default function ShopServicesScreen() {
         {/* Step 3: Select Date & Time & Book */}
         {selectedProviderId && (
           <>
-            <Text style={styles.stepTitle}>3. Select Date & Time</Text>
+            <AppText style={styles.stepTitle}>3. Select Date & Time</AppText>
             {loadingSlots ? (
-               <Text style={styles.emptyText}>Loading schedule...</Text>
+               <AppText style={styles.emptyText}>Loading schedule...</AppText>
             ) : (
               <View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
@@ -204,9 +205,9 @@ export default function ShopServicesScreen() {
                         onPress={() => setSelectedDate(dateStr)}
                         style={[styles.dateChip, isSelected && styles.dateChipSelected]}
                       >
-                        <Text style={[styles.dateChipText, isSelected && styles.dateChipTextSelected]}>
+                        <AppText style={[styles.dateChipText, isSelected && styles.dateChipTextSelected]}>
                           {displayDate}
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     );
                   })}
@@ -222,19 +223,19 @@ export default function ShopServicesScreen() {
                         onPress={() => bookMutation.mutate(slot.id)}
                         style={[styles.slotCard, isFull && styles.slotCardFull]}
                       >
-                        <Text style={[styles.slotText, isFull && styles.slotTextFull]}>
+                        <AppText style={[styles.slotText, isFull && styles.slotTextFull]}>
                           {new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
+                        </AppText>
                         {slot.maxCapacity > 1 && (
-                          <Text style={styles.slotCapacityText}>
+                          <AppText style={styles.slotCapacityText}>
                             {slot.availableSpots} left
-                          </Text>
+                          </AppText>
                         )}
                       </TouchableOpacity>
                     );
                   })}
                   {(!timeSlots || timeSlots.length === 0) && (
-                    <Text style={styles.emptyText}>No time slots available for this professional.</Text>
+                    <AppText style={styles.emptyText}>No time slots available for this professional.</AppText>
                   )}
                 </View>
               </View>

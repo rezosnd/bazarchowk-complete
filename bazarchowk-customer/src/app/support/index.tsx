@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { Stack, router } from 'expo-router';
@@ -64,29 +65,29 @@ export default function SupportIndexScreen() {
         <View style={styles.cardHeader}>
           <View style={[styles.badge, { backgroundColor: status.bg }]}>
             <Feather name={status.icon as any} size={12} color={status.text} />
-            <Text style={[styles.badgeText, { color: status.text }]}>
+            <AppText style={[styles.badgeText, { color: status.text }]}>
               {item.status.replace('_', ' ')}
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.ticketId}>#{item.ticketNumber}</Text>
+          <AppText style={styles.ticketId}>#{item.ticketNumber}</AppText>
         </View>
         
-        <Text style={styles.subject} numberOfLines={2}>
+        <AppText style={styles.subject} numberOfLines={2}>
           {item.subject}
-        </Text>
+        </AppText>
         
         <View style={styles.cardFooter}>
           <View style={styles.categoryRow}>
             <View style={styles.catIconWrap}>
               <Feather name={catIcon as any} size={14} color="#6B7280" />
             </View>
-            <Text style={styles.categoryText}>
+            <AppText style={styles.categoryText}>
               {item.category.replace('_', ' ')}
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.dateText}>
+          <AppText style={styles.dateText}>
             {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </Text>
+          </AppText>
         </View>
       </TouchableOpacity>
     );
@@ -105,8 +106,8 @@ export default function SupportIndexScreen() {
       />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Support</Text>
-        <Text style={styles.subtitle}>Get help with your orders and account</Text>
+        <AppText style={styles.title}>Support</AppText>
+        <AppText style={styles.subtitle}>Get help with your orders and account</AppText>
         
         <TouchableOpacity 
           style={{ marginTop: 16, backgroundColor: '#EAF8F0', padding: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }} 
@@ -116,8 +117,8 @@ export default function SupportIndexScreen() {
             <Ionicons name="call" size={20} color="#166534" />
           </View>
           <View style={{ marginLeft: 12 }}>
-            <Text style={{ color: '#166534', fontWeight: 'bold', fontSize: 16 }}>Call Support Team</Text>
-            <Text style={{ color: '#15803D', fontWeight: '500', fontSize: 13, marginTop: 2 }}>+91 8709442363</Text>
+            <AppText style={{ color: '#166534', fontWeight: 'bold', fontSize: 16 }}>Call Support Team</AppText>
+            <AppText style={{ color: '#15803D', fontWeight: '500', fontSize: 13, marginTop: 2 }}>+91 8709442363</AppText>
           </View>
         </TouchableOpacity>
       </View>
@@ -131,10 +132,10 @@ export default function SupportIndexScreen() {
           <View style={styles.emptyIconWrap}>
             <Ionicons name="chatbubbles-outline" size={40} color="#00B140" />
           </View>
-          <Text style={styles.emptyTitle}>How can we help?</Text>
-          <Text style={styles.emptySubtitle}>
+          <AppText style={styles.emptyTitle}>How can we help?</AppText>
+          <AppText style={styles.emptySubtitle}>
             You don't have any active support tickets. If you need help, feel free to start a conversation.
-          </Text>
+          </AppText>
         </View>
       ) : (
         <FlatList
@@ -154,7 +155,7 @@ export default function SupportIndexScreen() {
           style={styles.fabBtn}
         >
           <Ionicons name="add-circle" size={20} color="#fff" />
-          <Text style={styles.fabText}>Start New Ticket</Text>
+          <AppText style={styles.fabText}>Start New Ticket</AppText>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React from 'react';
 import { StyleSheet, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks';
@@ -44,9 +45,9 @@ export function Badge({ label, color = '#FFFFFF', bgColor, style, textStyle }: B
     <View
       style={[styles.badge, { backgroundColor: bgColor ?? theme.primarySurface }, style]}
     >
-      <Text style={[styles.badgeText, { color: color ?? theme.primary }, textStyle]}>
+      <AppText style={[styles.badgeText, { color: color ?? theme.primary }, textStyle]}>
         {label}
-      </Text>
+      </AppText>
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Dimensions, Modal,
@@ -85,12 +86,12 @@ export default function UnserviceableScreen() {
               {/* Handle */}
               <View style={styles.handle} />
 
-              <Text style={styles.sheetTitle}>Notify Me 🔔</Text>
-              <Text style={styles.sheetSub}>
+              <AppText style={styles.sheetTitle}>Notify Me 🔔</AppText>
+              <AppText style={styles.sheetSub}>
                 We'll send you an email the moment BazarChowk launches in your area!
-              </Text>
+              </AppText>
 
-              <Text style={styles.label}>Your Name <Text style={{ color: '#EF4444' }}>*</Text></Text>
+              <AppText style={styles.label}>Your Name <AppText style={{ color: '#EF4444' }}>*</AppText></AppText>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Rahul Sharma"
@@ -99,7 +100,7 @@ export default function UnserviceableScreen() {
                 onChangeText={(v) => setForm(f => ({ ...f, name: v }))}
               />
 
-              <Text style={styles.label}>Email Address <Text style={{ color: '#EF4444' }}>*</Text></Text>
+              <AppText style={styles.label}>Email Address <AppText style={{ color: '#EF4444' }}>*</AppText></AppText>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. rahul@gmail.com"
@@ -110,7 +111,7 @@ export default function UnserviceableScreen() {
                 autoCapitalize="none"
               />
 
-              <Text style={styles.label}>Your Location / Area <Text style={{ color: '#EF4444' }}>*</Text></Text>
+              <AppText style={styles.label}>Your Location / Area <AppText style={{ color: '#EF4444' }}>*</AppText></AppText>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Sector 15, Noida"
@@ -119,7 +120,7 @@ export default function UnserviceableScreen() {
                 onChangeText={(v) => setForm(f => ({ ...f, location: v }))}
               />
 
-              <Text style={styles.label}>Nearest Market Name</Text>
+              <AppText style={styles.label}>Nearest Market Name</AppText>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Bazar Chowk, Main Market"
@@ -135,12 +136,12 @@ export default function UnserviceableScreen() {
               >
                 {submitting
                   ? <ActivityIndicator color="#FFF" />
-                  : <Text style={styles.submitBtnText}>Send Notification Request</Text>
+                  : <AppText style={styles.submitBtnText}>Send Notification Request</AppText>
                 }
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowModal(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <AppText style={styles.cancelBtnText}>Cancel</AppText>
               </TouchableOpacity>
             </View>
           </View>

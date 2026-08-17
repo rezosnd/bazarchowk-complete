@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
@@ -69,7 +70,7 @@ export default function NewTicketScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Card style={styles.card} shadow="sm">
-          <Text style={[styles.label, { color: theme.text }]}>Subject <Text style={{ color: 'red' }}>*</Text></Text>
+          <AppText style={[styles.label, { color: theme.text }]}>Subject <AppText style={{ color: 'red' }}>*</AppText></AppText>
           <TextInput
             style={[styles.input, { borderColor: theme.border, color: theme.text }]}
             placeholder="e.g., Order not delivered"
@@ -78,7 +79,7 @@ export default function NewTicketScreen() {
             onChangeText={setSubject}
           />
 
-          <Text style={[styles.label, { color: theme.text, marginTop: Spacing.md }]}>Category <Text style={{ color: 'red' }}>*</Text></Text>
+          <AppText style={[styles.label, { color: theme.text, marginTop: Spacing.md }]}>Category <AppText style={{ color: 'red' }}>*</AppText></AppText>
           <View style={styles.categoryContainer}>
             {CATEGORIES.map((cat) => {
               const isSelected = category === cat.id;
@@ -94,7 +95,7 @@ export default function NewTicketScreen() {
             })}
           </View>
 
-          <Text style={[styles.label, { color: theme.text, marginTop: Spacing.md }]}>Message (Optional)</Text>
+          <AppText style={[styles.label, { color: theme.text, marginTop: Spacing.md }]}>Message (Optional)</AppText>
           <TextInput
             style={[styles.input, styles.textArea, { borderColor: theme.border, color: theme.text }]}
             placeholder="Describe your issue in detail..."

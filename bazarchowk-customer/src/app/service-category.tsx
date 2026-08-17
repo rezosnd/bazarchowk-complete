@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -126,10 +127,10 @@ export default function ServiceCategoryScreen() {
           <Ionicons name="arrow-back" size={22} color={meta.color} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerEmoji}>{meta.emoji}</Text>
+          <AppText style={styles.headerEmoji}>{meta.emoji}</AppText>
           <View>
-            <Text style={[styles.headerTitle, { color: meta.color }]}>{type} Services</Text>
-            <Text style={styles.headerSub}>Find & book verified professionals</Text>
+            <AppText style={[styles.headerTitle, { color: meta.color }]}>{type} Services</AppText>
+            <AppText style={styles.headerSub}>Find & book verified professionals</AppText>
           </View>
         </View>
       </LinearGradient>
@@ -137,15 +138,15 @@ export default function ServiceCategoryScreen() {
       {isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={meta.color} />
-          <Text style={styles.loadingText}>Finding {type} professionals near you...</Text>
+          <AppText style={styles.loadingText}>Finding {type} professionals near you...</AppText>
         </View>
       ) : !shops || shops.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={{ fontSize: 60 }}>{meta.emoji}</Text>
-          <Text style={styles.emptyTitle}>No {type} Shops Yet</Text>
-          <Text style={styles.emptySub}>We're onboarding {type} professionals in your area. Check back soon!</Text>
+          <AppText style={{ fontSize: 60 }}>{meta.emoji}</AppText>
+          <AppText style={styles.emptyTitle}>No {type} Shops Yet</AppText>
+          <AppText style={styles.emptySub}>We're onboarding {type} professionals in your area. Check back soon!</AppText>
           <TouchableOpacity style={[styles.backHomeBtn, { backgroundColor: meta.color }]} onPress={() => router.back()}>
-            <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>← Back to Home</Text>
+            <AppText style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>← Back to Home</AppText>
           </TouchableOpacity>
         </View>
       ) : (
@@ -154,32 +155,32 @@ export default function ServiceCategoryScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           ListHeaderComponent={
-            <Text style={styles.resultCount}>{shops.length} Professionals Available</Text>
+            <AppText style={styles.resultCount}>{shops.length} Professionals Available</AppText>
           }
           renderItem={({ item: shop }) => (
             <TouchableOpacity style={styles.shopCard} onPress={() => handleShopPress(shop)} activeOpacity={0.8}>
               <LinearGradient colors={meta.gradient} style={styles.shopIconWrap}>
-                <Text style={{ fontSize: 28 }}>{meta.emoji}</Text>
+                <AppText style={{ fontSize: 28 }}>{meta.emoji}</AppText>
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={styles.shopName}>{shop.name}</Text>
-                <Text style={styles.shopCity}>{shop.city || 'Local Area'}</Text>
+                <AppText style={styles.shopName}>{shop.name}</AppText>
+                <AppText style={styles.shopCity}>{shop.city || 'Local Area'}</AppText>
                 <View style={styles.tagsRow}>
                   {shop.isOpen ? (
-                    <View style={styles.openBadge}><Text style={styles.openBadgeText}>● Open</Text></View>
+                    <View style={styles.openBadge}><AppText style={styles.openBadgeText}>● Open</AppText></View>
                   ) : (
-                    <View style={styles.closedBadge}><Text style={styles.closedBadgeText}>● Closed</Text></View>
+                    <View style={styles.closedBadge}><AppText style={styles.closedBadgeText}>● Closed</AppText></View>
                   )}
                   {shop.isVerified && (
                     <View style={styles.verifiedBadge}>
                       <Ionicons name="checkmark-circle" size={12} color="#00B140" />
-                      <Text style={styles.verifiedBadgeText}>Verified</Text>
+                      <AppText style={styles.verifiedBadgeText}>Verified</AppText>
                     </View>
                   )}
                 </View>
               </View>
               <View style={[styles.bookNowBtn, { backgroundColor: meta.color }]}>
-                <Text style={styles.bookNowText}>Book</Text>
+                <AppText style={styles.bookNowText}>Book</AppText>
               </View>
             </TouchableOpacity>
           )}
@@ -195,8 +196,8 @@ export default function ServiceCategoryScreen() {
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Book Appointment</Text>
-                <Text style={styles.modalShopName}>{selectedShop?.name}</Text>
+                <AppText style={styles.modalTitle}>Book Appointment</AppText>
+                <AppText style={styles.modalShopName}>{selectedShop?.name}</AppText>
               </View>
               <TouchableOpacity onPress={() => setShowBookModal(false)}>
                 <Ionicons name="close-circle" size={28} color="#8B9690" />
@@ -213,9 +214,9 @@ export default function ServiceCategoryScreen() {
                 return (
                   <View key={s} style={{ alignItems: 'center', flex: 1 }}>
                     <View style={[styles.stepDot, done && { backgroundColor: '#00B140' }, active && { backgroundColor: meta.color, borderColor: meta.color }]}>
-                      {done ? <Ionicons name="checkmark" size={14} color="#FFF" /> : <Text style={[styles.stepNum, active && { color: '#FFF' }]}>{i + 1}</Text>}
+                      {done ? <Ionicons name="checkmark" size={14} color="#FFF" /> : <AppText style={[styles.stepNum, active && { color: '#FFF' }]}>{i + 1}</AppText>}
                     </View>
-                    <Text style={[styles.stepLabel, active && { color: meta.color, fontWeight: '700' }]}>{s}</Text>
+                    <AppText style={[styles.stepLabel, active && { color: meta.color, fontWeight: '700' }]}>{s}</AppText>
                   </View>
                 );
               })}
@@ -225,13 +226,13 @@ export default function ServiceCategoryScreen() {
               {/* Step 1: Select Service */}
               {bookingStep === 'service' && (
                 <View>
-                  <Text style={styles.stepTitle}>Choose a Service</Text>
+                  <AppText style={styles.stepTitle}>Choose a Service</AppText>
                   {loadingServices ? (
                     <ActivityIndicator color={meta.color} style={{ marginTop: 24 }} />
                   ) : !services || services.length === 0 ? (
                     <View style={styles.emptyStep}>
-                      <Text style={styles.emptyStepIcon}>🔍</Text>
-                      <Text style={styles.emptyStepText}>No services listed yet by this shop.</Text>
+                      <AppText style={styles.emptyStepIcon}>🔍</AppText>
+                      <AppText style={styles.emptyStepText}>No services listed yet by this shop.</AppText>
                     </View>
                   ) : services.map((s: any) => (
                     <TouchableOpacity
@@ -240,16 +241,16 @@ export default function ServiceCategoryScreen() {
                       onPress={() => setSelectedService(s)}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.optionName}>{s.name}</Text>
-                        <Text style={styles.optionSub}>{s.durationMin} minutes</Text>
+                        <AppText style={styles.optionName}>{s.name}</AppText>
+                        <AppText style={styles.optionSub}>{s.durationMin} minutes</AppText>
                       </View>
-                      <Text style={[styles.optionPrice, { color: meta.color }]}>₹{s.price}</Text>
+                      <AppText style={[styles.optionPrice, { color: meta.color }]}>₹{s.price}</AppText>
                       {selectedService?.id === s.id && <Ionicons name="checkmark-circle" size={22} color={meta.color} style={{ marginLeft: 8 }} />}
                     </TouchableOpacity>
                   ))}
                   {selectedService && (
                     <TouchableOpacity style={[styles.nextBtn, { backgroundColor: meta.color }]} onPress={() => setBookingStep('provider')}>
-                      <Text style={styles.nextBtnText}>Next: Choose Staff →</Text>
+                      <AppText style={styles.nextBtnText}>Next: Choose Staff →</AppText>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -258,13 +259,13 @@ export default function ServiceCategoryScreen() {
               {/* Step 2: Select Provider */}
               {bookingStep === 'provider' && (
                 <View>
-                  <Text style={styles.stepTitle}>Choose a Professional</Text>
+                  <AppText style={styles.stepTitle}>Choose a Professional</AppText>
                   {loadingProviders ? (
                     <ActivityIndicator color={meta.color} style={{ marginTop: 24 }} />
                   ) : !providers || providers.length === 0 ? (
                     <View style={styles.emptyStep}>
-                      <Text style={styles.emptyStepIcon}>👤</Text>
-                      <Text style={styles.emptyStepText}>No staff members listed yet.</Text>
+                      <AppText style={styles.emptyStepIcon}>👤</AppText>
+                      <AppText style={styles.emptyStepText}>No staff members listed yet.</AppText>
                     </View>
                   ) : providers.map((p: any) => (
                     <TouchableOpacity
@@ -273,22 +274,22 @@ export default function ServiceCategoryScreen() {
                       onPress={() => setSelectedProvider(p)}
                     >
                       <View style={[styles.providerAvatar, { backgroundColor: meta.gradient[0] }]}>
-                        <Text style={{ fontSize: 20 }}>👤</Text>
+                        <AppText style={{ fontSize: 20 }}>👤</AppText>
                       </View>
                       <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={styles.optionName}>{p.name}</Text>
-                        <Text style={styles.optionSub}>{p.specialty || 'Professional'}</Text>
+                        <AppText style={styles.optionName}>{p.name}</AppText>
+                        <AppText style={styles.optionSub}>{p.specialty || 'Professional'}</AppText>
                       </View>
                       {selectedProvider?.id === p.id && <Ionicons name="checkmark-circle" size={22} color={meta.color} />}
                     </TouchableOpacity>
                   ))}
                   <View style={styles.navRow}>
                     <TouchableOpacity style={styles.backStep} onPress={() => setBookingStep('service')}>
-                      <Text style={{ color: '#66736B', fontWeight: '700' }}>← Back</Text>
+                      <AppText style={{ color: '#66736B', fontWeight: '700' }}>← Back</AppText>
                     </TouchableOpacity>
                     {selectedProvider && (
                       <TouchableOpacity style={[styles.nextBtn, { backgroundColor: meta.color, flex: 1, marginLeft: 12 }]} onPress={() => setBookingStep('slot')}>
-                        <Text style={styles.nextBtnText}>Next: Pick Time →</Text>
+                        <AppText style={styles.nextBtnText}>Next: Pick Time →</AppText>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -298,13 +299,13 @@ export default function ServiceCategoryScreen() {
               {/* Step 3: Select Time Slot */}
               {bookingStep === 'slot' && (
                 <View>
-                  <Text style={styles.stepTitle}>Pick a Time Slot</Text>
+                  <AppText style={styles.stepTitle}>Pick a Time Slot</AppText>
                   {loadingSlots ? (
                     <ActivityIndicator color={meta.color} style={{ marginTop: 24 }} />
                   ) : !slots || slots.length === 0 ? (
                     <View style={styles.emptyStep}>
-                      <Text style={styles.emptyStepIcon}>📅</Text>
-                      <Text style={styles.emptyStepText}>No available slots right now. Try another staff member.</Text>
+                      <AppText style={styles.emptyStepIcon}>📅</AppText>
+                      <AppText style={styles.emptyStepText}>No available slots right now. Try another staff member.</AppText>
                     </View>
                   ) : slots.map((slot: any) => (
                     <TouchableOpacity
@@ -314,8 +315,8 @@ export default function ServiceCategoryScreen() {
                     >
                       <Ionicons name="time-outline" size={20} color={selectedSlot?.id === slot.id ? meta.color : '#66736B'} />
                       <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={styles.optionName}>{formatSlotDate(slot.startTime)}</Text>
-                        <Text style={styles.optionSub}>{formatSlotTime(slot.startTime)} – {formatSlotTime(slot.endTime)}</Text>
+                        <AppText style={styles.optionName}>{formatSlotDate(slot.startTime)}</AppText>
+                        <AppText style={styles.optionSub}>{formatSlotTime(slot.startTime)} – {formatSlotTime(slot.endTime)}</AppText>
                       </View>
                       {selectedSlot?.id === slot.id && <Ionicons name="checkmark-circle" size={22} color={meta.color} />}
                     </TouchableOpacity>
@@ -324,20 +325,20 @@ export default function ServiceCategoryScreen() {
                   {/* Summary & Confirm */}
                   {selectedSlot && (
                     <View style={styles.summaryCard}>
-                      <Text style={styles.summaryTitle}>Booking Summary</Text>
-                      <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Service</Text><Text style={styles.summaryVal}>{selectedService?.name}</Text></View>
-                      <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Staff</Text><Text style={styles.summaryVal}>{selectedProvider?.name}</Text></View>
-                      <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Time</Text><Text style={styles.summaryVal}>{formatSlotDate(selectedSlot.startTime)} at {formatSlotTime(selectedSlot.startTime)}</Text></View>
+                      <AppText style={styles.summaryTitle}>Booking Summary</AppText>
+                      <View style={styles.summaryRow}><AppText style={styles.summaryLabel}>Service</AppText><AppText style={styles.summaryVal}>{selectedService?.name}</AppText></View>
+                      <View style={styles.summaryRow}><AppText style={styles.summaryLabel}>Staff</AppText><AppText style={styles.summaryVal}>{selectedProvider?.name}</AppText></View>
+                      <View style={styles.summaryRow}><AppText style={styles.summaryLabel}>Time</AppText><AppText style={styles.summaryVal}>{formatSlotDate(selectedSlot.startTime)} at {formatSlotTime(selectedSlot.startTime)}</AppText></View>
                       <View style={[styles.summaryRow, { borderTopWidth: 1, borderColor: '#E5EBE7', marginTop: 8, paddingTop: 8 }]}>
-                        <Text style={[styles.summaryLabel, { fontWeight: '800' }]}>Total</Text>
-                        <Text style={[styles.summaryVal, { color: meta.color, fontSize: 18, fontWeight: '900' }]}>₹{selectedService?.price}</Text>
+                        <AppText style={[styles.summaryLabel, { fontWeight: '800' }]}>Total</AppText>
+                        <AppText style={[styles.summaryVal, { color: meta.color, fontSize: 18, fontWeight: '900' }]}>₹{selectedService?.price}</AppText>
                       </View>
                     </View>
                   )}
 
                   <View style={styles.navRow}>
                     <TouchableOpacity style={styles.backStep} onPress={() => setBookingStep('provider')}>
-                      <Text style={{ color: '#66736B', fontWeight: '700' }}>← Back</Text>
+                      <AppText style={{ color: '#66736B', fontWeight: '700' }}>← Back</AppText>
                     </TouchableOpacity>
                     {selectedSlot && (
                       <TouchableOpacity
@@ -356,7 +357,7 @@ export default function ServiceCategoryScreen() {
                       >
                         {bookMutation.isPending
                           ? <ActivityIndicator color="#FFF" />
-                          : <Text style={styles.nextBtnText}>✅ Confirm Booking</Text>
+                          : <AppText style={styles.nextBtnText}>✅ Confirm Booking</AppText>
                         }
                       </TouchableOpacity>
                     )}

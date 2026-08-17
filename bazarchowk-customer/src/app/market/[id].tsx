@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -38,7 +39,7 @@ export default function MarketDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
           <Ionicons name="arrow-back" size={22} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{market?.name || 'Market'}</Text>
+        <AppText style={styles.headerTitle} numberOfLines={1}>{market?.name || 'Market'}</AppText>
         <View style={{ width: 42 }} />
       </View>
 
@@ -49,7 +50,7 @@ export default function MarketDetailScreen() {
           </View>
         ) : !market ? (
           <View style={styles.centered}>
-            <Text style={styles.emptyTitle}>Market not found</Text>
+            <AppText style={styles.emptyTitle}>Market not found</AppText>
           </View>
         ) : (
           <>
@@ -62,16 +63,16 @@ export default function MarketDetailScreen() {
                 </View>
               )}
               <View style={styles.marketBannerOverlay}>
-                <Text style={styles.marketBannerName}>{market.name}</Text>
-                <Text style={styles.marketBannerSub}>{market.shops?.length || 0} Shops Available</Text>
+                <AppText style={styles.marketBannerName}>{market.name}</AppText>
+                <AppText style={styles.marketBannerSub}>{market.shops?.length || 0} Shops Available</AppText>
               </View>
             </View>
 
             <View style={styles.shopSection}>
-              <Text style={styles.sectionTitle}>Shops in this Market</Text>
+              <AppText style={styles.sectionTitle}>Shops in this Market</AppText>
               
               {market.shops?.length === 0 ? (
-                <Text style={styles.emptyText}>No shops currently active in this market.</Text>
+                <AppText style={styles.emptyText}>No shops currently active in this market.</AppText>
               ) : (
                 market.shops?.map((shop: any) => (
                   <TouchableOpacity 
@@ -90,16 +91,16 @@ export default function MarketDetailScreen() {
                       )}
                       {shop.status?.isOpen && (
                         <View style={styles.openBadge}>
-                          <Text style={styles.openBadgeTxt}>OPEN</Text>
+                          <AppText style={styles.openBadgeTxt}>OPEN</AppText>
                         </View>
                       )}
                     </View>
                     <View style={styles.shopInfo}>
-                      <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-                      <Text style={styles.shopMeta}>
+                      <AppText style={styles.shopName} numberOfLines={1}>{shop.name}</AppText>
+                      <AppText style={styles.shopMeta}>
                         <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
-                      </Text>
-                      <Text style={styles.shopDesc} numberOfLines={2}>{shop.description || 'Visit us for best products.'}</Text>
+                      </AppText>
+                      <AppText style={styles.shopDesc} numberOfLines={2}>{shop.description || 'Visit us for best products.'}</AppText>
                     </View>
                   </TouchableOpacity>
                 ))

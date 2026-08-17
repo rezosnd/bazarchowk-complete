@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, Linking, Modal, TextInput } from 'react-native';
@@ -93,19 +94,19 @@ export default function ProfileScreen() {
             {isAuthenticated && user ? (
               <View style={styles.userInfo}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
+                  <AppText style={styles.avatarText}>
                     {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.userName}>
+                    <AppText style={styles.userName}>
                       {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
-                    </Text>
+                    </AppText>
                     <Ionicons name="checkmark-circle" size={18} color="#FFF" />
                   </View>
-                  {user?.phone && <Text style={styles.userPhone}>{user.phone}</Text>}
-                  {user?.email && <Text style={styles.userEmail}>{user.email}</Text>}
+                  {user?.phone && <AppText style={styles.userPhone}>{user.phone}</AppText>}
+                  {user?.email && <AppText style={styles.userEmail}>{user.email}</AppText>}
                 </View>
                 <PressableScale onPress={() => handleMenuPress('edit-profile')} style={styles.editIconBtn}>
                   <Ionicons name="pencil" size={18} color="#00B140" />
@@ -118,8 +119,8 @@ export default function ProfileScreen() {
                   style={styles.guestLogo}
                   contentFit="contain"
                 />
-                <Text style={styles.guestTitle}>{t('profile.join')}</Text>
-                <Text style={styles.guestSubtitle}>{t('profile.signInSubtitle')}</Text>
+                <AppText style={styles.guestTitle}>{t('profile.join')}</AppText>
+                <AppText style={styles.guestSubtitle}>{t('profile.signInSubtitle')}</AppText>
                 <Button
                   title={t('profile.signInButton')}
                   onPress={() => router.push('/(auth)/login')}
@@ -132,7 +133,7 @@ export default function ProfileScreen() {
 
         {SECTIONS.map((section, sIdx) => (
           <Animated.View key={section.title} entering={FadeInDown.delay(sIdx * 50).springify().damping(15)} style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <AppText style={styles.sectionTitle}>{section.title}</AppText>
             <View style={styles.menuCard}>
               {section.items.map((item, index) => (
                 <View key={item.id}>
@@ -143,7 +144,7 @@ export default function ProfileScreen() {
                     <View style={styles.menuIconWrap}>
                       <Ionicons name={item.icon as any} size={22} color="#122018" />
                     </View>
-                    <Text style={styles.menuLabel}>{item.label}</Text>
+                    <AppText style={styles.menuLabel}>{item.label}</AppText>
                     <Ionicons name="chevron-forward" size={20} color="#8B9690" />
                   </PressableScale>
                   {index < section.items.length - 1 && <View style={styles.divider} />}
@@ -157,25 +158,25 @@ export default function ProfileScreen() {
           <Animated.View entering={FadeInDown.delay(300).springify().damping(15)} style={styles.logoutWrap}>
             <PressableScale style={styles.logoutBtn} onPress={logout}>
               <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-              <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+              <AppText style={styles.logoutText}>{t('profile.logout')}</AppText>
             </PressableScale>
           </Animated.View>
         )}
 
-        <Text style={styles.version}>BazarChowk v1.0.0</Text>
+        <AppText style={styles.version}>BazarChowk v1.0.0</AppText>
 
         <Modal visible={isEditModalVisible} animationType="slide" transparent>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
             <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Math.max(insets.bottom, 24) }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', marginBottom: 16, color: '#122018' }}>Edit Profile</Text>
+              <AppText style={{ fontSize: 20, fontWeight: '800', marginBottom: 16, color: '#122018' }}>Edit Profile</AppText>
               
-              <Text style={styles.modalLabel}>First Name</Text>
+              <AppText style={styles.modalLabel}>First Name</AppText>
               <TextInput style={styles.input} value={editFirstName} onChangeText={setEditFirstName} />
               
-              <Text style={styles.modalLabel}>Last Name</Text>
+              <AppText style={styles.modalLabel}>Last Name</AppText>
               <TextInput style={styles.input} value={editLastName} onChangeText={setEditLastName} />
               
-              <Text style={styles.modalLabel}>Mobile Number</Text>
+              <AppText style={styles.modalLabel}>Mobile Number</AppText>
               <TextInput style={styles.input} value={editPhone} onChangeText={setEditPhone} keyboardType="phone-pad" />
               
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>

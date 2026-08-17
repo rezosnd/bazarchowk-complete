@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 /**
  * BazarChowk – Flagship Home Screen
  * 
@@ -136,9 +137,9 @@ export function HomeHeader() {
           <Image source={LOGO_SRC} style={styles.headerLogo} contentFit="contain" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.deliveringTo} numberOfLines={1}>{t('header.deliveringTo')}</Text>
+          <AppText style={styles.deliveringTo} numberOfLines={1}>{t('header.deliveringTo')}</AppText>
           <TouchableOpacity style={styles.locationRow} activeOpacity={0.7} onPress={() => router.push('/addresses')}>
-            <Text style={styles.locationText} numberOfLines={1}>{displayLocation}</Text>
+            <AppText style={styles.locationText} numberOfLines={1}>{displayLocation}</AppText>
             <Ionicons name="chevron-down" size={16} color={TEXT_MAIN} />
           </TouchableOpacity>
         </View>
@@ -149,7 +150,7 @@ export function HomeHeader() {
         <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={() => router.push('/notifications')}>
           <Ionicons name="notifications-outline" size={26} color={TEXT_MAIN} />
           {unreadCount > 0 && (
-            <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>
+            <View style={styles.badge}><AppText style={styles.badgeText}>{unreadCount}</AppText></View>
           )}
         </TouchableOpacity>
 
@@ -158,7 +159,7 @@ export function HomeHeader() {
             <Ionicons name="cart-outline" size={28} color={TEXT_MAIN} />
             {itemsCount > 0 && (
               <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{itemsCount}</Text>
+                <AppText style={styles.cartBadgeText}>{itemsCount}</AppText>
               </View>
             )}
           </Animated.View>
@@ -201,9 +202,9 @@ function AIHero() {
           <View style={styles.aiHeroContent}>
             <View style={styles.aiBrandRow}>
               <Ionicons name="sparkles" size={16} color="#FFF" />
-              <Text style={styles.aiTitle}>Bazar AI Assistant</Text>
+              <AppText style={styles.aiTitle}>Bazar AI Assistant</AppText>
             </View>
-            <Text style={styles.aiGreetingText}>{t('ai.greeting', { name: user?.firstName || 'there' })}</Text>
+            <AppText style={styles.aiGreetingText}>{t('ai.greeting', { name: user?.firstName || 'there' })}</AppText>
           </View>
 
           <View style={styles.aiMicContainerLarge}>
@@ -227,7 +228,7 @@ function AIHero() {
           ].map((item, i) => (
             <TouchableOpacity key={i} style={styles.aiPill} activeOpacity={0.7}>
               <Ionicons name={item.icon as any} size={14} color="#FFF" />
-              <Text style={styles.aiPillText}>{item.label}</Text>
+              <AppText style={styles.aiPillText}>{item.label}</AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -241,7 +242,7 @@ function GlobalSearch() {
     <View style={styles.searchWrapper}>
       <TouchableOpacity style={styles.searchBar} activeOpacity={0.9} onPress={() => router.push('/search')}>
         <Ionicons name="search" size={20} color={TEXT_MUTED} />
-        <Text style={styles.searchPlaceholder} numberOfLines={1}>Search groceries, food & more</Text>
+        <AppText style={styles.searchPlaceholder} numberOfLines={1}>Search groceries, food & more</AppText>
         <View style={styles.searchRight}>
           <Ionicons name="mic-outline" size={22} color={TEXT_MUTED} />
           <View style={styles.searchSparkle}>
@@ -264,7 +265,7 @@ function ServiceDiscovery() {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitleMain}>What are you looking for?</Text>
+      <AppText style={styles.sectionTitleMain}>What are you looking for?</AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
         {services.map((s) => (
           <TouchableOpacity 
@@ -276,7 +277,7 @@ function ServiceDiscovery() {
              <View style={[styles.serviceDiscIconWrap, { backgroundColor: s.bg }]}>
                 <Ionicons name={s.icon as any} size={28} color={s.color} />
              </View>
-             <Text style={styles.serviceDiscText}>{s.name}</Text>
+             <AppText style={styles.serviceDiscText}>{s.name}</AppText>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -310,7 +311,7 @@ function ShopByCategory() {
                 <Ionicons name="grid" size={24} color={TEXT_MUTED} />
               )}
             </View>
-            <Text style={styles.categoryLabel} numberOfLines={2}>{c.name}</Text>
+            <AppText style={styles.categoryLabel} numberOfLines={2}>{c.name}</AppText>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -322,10 +323,10 @@ function SectionHeader({ title, onPress }: { title: string, onPress?: () => void
   const { t } = useTranslation();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <AppText style={styles.sectionTitle}>{title}</AppText>
       {onPress && (
         <TouchableOpacity activeOpacity={0.7} style={styles.seeAllBtn} onPress={onPress}>
-          <Text style={styles.seeAllTxt}>{t('common.seeAll')}</Text>
+          <AppText style={styles.seeAllTxt}>{t('common.seeAll')}</AppText>
           <Ionicons name="chevron-forward" size={16} color={EMERALD} />
         </TouchableOpacity>
       )}
@@ -360,16 +361,16 @@ function NearbyShops({ lat, lng, city }: { lat?: number, lng?: number, city?: st
               )}
               {shop.status?.isOpen && (
                 <View style={styles.openBadge}>
-                  <Text style={styles.openBadgeTxt}>{t('shops.open')}</Text>
+                  <AppText style={styles.openBadgeTxt}>{t('shops.open')}</AppText>
                 </View>
               )}
             </View>
             <View style={styles.shopInfo}>
-              <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-              <Text style={styles.shopMeta}>
+              <AppText style={styles.shopName} numberOfLines={1}>{shop.name}</AppText>
+              <AppText style={styles.shopMeta}>
                 {shop.distanceKm ? `${shop.distanceKm.toFixed(1)} km` : 'Near you'} • <Ionicons name="star" size={12} color="#F59E0B" /> {shop.rating?.toFixed(1) || '4.5'}
-              </Text>
-              <Text style={styles.shopTime}>{shop.status?.reason || '15–20 min'}</Text>
+              </AppText>
+              <AppText style={styles.shopTime}>{shop.status?.reason || '15–20 min'}</AppText>
             </View>
           </TouchableOpacity>
         ))}
@@ -404,15 +405,15 @@ function NearbyServices({ lat, lng, city }: { lat?: number, lng?: number, city?:
                 </View>
               )}
               <View style={[styles.openBadge, { backgroundColor: '#EA580C' }]}>
-                <Text style={styles.openBadgeTxt}>BOOK</Text>
+                <AppText style={styles.openBadgeTxt}>BOOK</AppText>
               </View>
             </View>
             <View style={styles.shopInfo}>
-              <Text style={styles.shopName} numberOfLines={1}>{svc.name}</Text>
-              <Text style={styles.shopMeta}>
+              <AppText style={styles.shopName} numberOfLines={1}>{svc.name}</AppText>
+              <AppText style={styles.shopMeta}>
                 {svc.distanceKm ? `${svc.distanceKm.toFixed(1)} km` : 'Near you'} • {svc.partnerType?.replace('_', ' ')}
-              </Text>
-              <Text style={styles.shopTime} numberOfLines={1}>{svc.status?.reason || 'Book Now'}</Text>
+              </AppText>
+              <AppText style={styles.shopTime} numberOfLines={1}>{svc.status?.reason || 'Book Now'}</AppText>
             </View>
           </TouchableOpacity>
         ))}
@@ -448,11 +449,11 @@ function PopularMarkets({ lat, lng }: { lat?: number, lng?: number }) {
               colors={['transparent', 'rgba(0,0,0,0.8)']}
               style={styles.marketOverlay}
             >
-              <Text style={styles.marketName} numberOfLines={1}>{m.name}</Text>
-              <Text style={styles.marketShops}>{m.shops?.length || '10+'} Shops</Text>
+              <AppText style={styles.marketName} numberOfLines={1}>{m.name}</AppText>
+              <AppText style={styles.marketShops}>{m.shops?.length || '10+'} Shops</AppText>
               <View style={styles.marketMetaRow}>
-                <Text style={styles.marketDist}>1.0 km</Text>
-                <View style={styles.openNowBadge}><Text style={styles.openNowTxt}>{t('shops.open')} Now</Text></View>
+                <AppText style={styles.marketDist}>1.0 km</AppText>
+                <View style={styles.openNowBadge}><AppText style={styles.openNowTxt}>{t('shops.open')} Now</AppText></View>
                 <View style={{ flex: 1 }} />
                 <View style={styles.miniMapBadge}>
                   <Ionicons name="map-outline" size={14} color="#FFF" />
@@ -515,10 +516,10 @@ function TodaysBestDeals() {
           <View style={styles.dealContent}>
             <View style={[styles.dealBadge, { backgroundColor: '#FEF2F2' }]}>
               <Ionicons name="pricetag" size={12} color="#EF4444" />
-              <Text style={[styles.dealBadgeTxt, { color: '#EF4444' }]}>20% OFF</Text>
+              <AppText style={[styles.dealBadgeTxt, { color: '#EF4444' }]}>20% OFF</AppText>
             </View>
-            <Text style={styles.dealTitle}>Fresh Grocery</Text>
-            <Text style={styles.dealSub}>Discount on all fresh items</Text>
+            <AppText style={styles.dealTitle}>Fresh Grocery</AppText>
+            <AppText style={styles.dealSub}>Discount on all fresh items</AppText>
           </View>
           <Image source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=200&q=80' }} style={styles.dealImg} contentFit="cover" />
         </TouchableOpacity>
@@ -527,10 +528,10 @@ function TodaysBestDeals() {
           <View style={styles.dealContent}>
             <View style={[styles.dealBadge, { backgroundColor: '#FFFBEB' }]}>
               <Ionicons name="flash" size={12} color={ORANGE} />
-              <Text style={[styles.dealBadgeTxt, { color: ORANGE }]}>FREE DELIVERY</Text>
+              <AppText style={[styles.dealBadgeTxt, { color: ORANGE }]}>FREE DELIVERY</AppText>
             </View>
-            <Text style={styles.dealTitle}>On ₹199+</Text>
-            <Text style={styles.dealSub}>Get your order delivered free</Text>
+            <AppText style={styles.dealTitle}>On ₹199+</AppText>
+            <AppText style={styles.dealSub}>Get your order delivered free</AppText>
           </View>
           <Image source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80' }} style={styles.dealImg} contentFit="cover" />
         </TouchableOpacity>
@@ -564,17 +565,17 @@ function RecommendedSection({ lat, lng, city }: { lat?: number, lng?: number, ci
                 <Ionicons name="cube-outline" size={28} color="#CBD5E1" />
               </View>
             )}
-            <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
+            <AppText style={styles.productName} numberOfLines={1}>{prod.name}</AppText>
             <View style={styles.productPriceRow}>
-              <Text style={styles.productPrice}>₹{prod.variants?.[0]?.price || prod.basePrice}</Text>
+              <AppText style={styles.productPrice}>₹{prod.variants?.[0]?.price || prod.basePrice}</AppText>
               {isOutOfStock ? (
                 <View style={[styles.addBtn, { backgroundColor: '#EAF8F0', borderColor: BORDER }]}>
-                  <Text style={[styles.addBtnText, { color: '#8B9690', fontSize: 10 }]}>OUT OF STOCK</Text>
+                  <AppText style={[styles.addBtnText, { color: '#8B9690', fontSize: 10 }]}>OUT OF STOCK</AppText>
                 </View>
               ) : (
                 <TouchableOpacity style={styles.addBtn} onPress={() => router.push(`/product/${prod.id}`)}>
                   <Ionicons name="add" size={14} color={EMERALD} />
-                  <Text style={styles.addBtnText}>ADD</Text>
+                  <AppText style={styles.addBtnText}>ADD</AppText>
                 </TouchableOpacity>
               )}
             </View>

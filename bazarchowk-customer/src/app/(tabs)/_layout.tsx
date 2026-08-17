@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet, Text, View, Dimensions, Image, TouchableOpacity } from 'react-native';
@@ -197,7 +198,7 @@ function AIButton({ label, aiActiveState, onPress }: { label: string, aiActiveSt
 
       </View>
       <View pointerEvents="none" style={{ height: 24, width: 24 }} />
-      <Text pointerEvents="none" style={[styles.tabLabel, { color: '#9CA3AF' }]} numberOfLines={1}>{label}</Text>
+      <AppText pointerEvents="none" style={[styles.tabLabel, { color: '#9CA3AF' }]} numberOfLines={1}>{label}</AppText>
     </View>
   );
 }
@@ -240,9 +241,9 @@ function TabIcon({
   return (
     <Animated.View style={[styles.tabItem, { width: '100%' }, animatedStyle]}>
       <Ionicons name={name} size={24} color={color} />
-      <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
+      <AppText style={[styles.tabLabel, { color }]} numberOfLines={1}>
         {label}
-      </Text>
+      </AppText>
     </Animated.View>
   );
 }

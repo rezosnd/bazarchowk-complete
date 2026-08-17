@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,7 +60,7 @@ export default function OrdersScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.title}>My Orders</Text>
+        <AppText style={styles.title}>My Orders</AppText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -67,8 +68,8 @@ export default function OrdersScreen() {
         {orders.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="receipt-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No orders yet</Text>
-            <Text style={styles.emptySub}>You haven't placed any orders.</Text>
+            <AppText style={styles.emptyText}>No orders yet</AppText>
+            <AppText style={styles.emptySub}>You haven't placed any orders.</AppText>
           </View>
         ) : (
           orders.map((order: any) => {
@@ -84,11 +85,11 @@ export default function OrdersScreen() {
               >
                 <View style={styles.cardHeader}>
                   <View>
-                    <Text style={styles.shopName}>{order.shop?.name}</Text>
-                    <Text style={styles.date}>{new Date(order.createdAt).toLocaleString()}</Text>
+                    <AppText style={styles.shopName}>{order.shop?.name}</AppText>
+                    <AppText style={styles.date}>{new Date(order.createdAt).toLocaleString()}</AppText>
                   </View>
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '15' }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
+                    <AppText style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</AppText>
                   </View>
                 </View>
 
@@ -103,18 +104,18 @@ export default function OrdersScreen() {
                     </View>
                   )}
                   <View style={styles.itemInfo}>
-                    <Text style={styles.itemsText} numberOfLines={1}>
+                    <AppText style={styles.itemsText} numberOfLines={1}>
                       {firstItem?.productVariant?.product?.name} {order.items?.length > 1 ? `+ ${order.items.length - 1} more items` : ''}
-                    </Text>
-                    <Text style={styles.orderId}>Order #{order.orderNumber}</Text>
+                    </AppText>
+                    <AppText style={styles.orderId}>Order #{order.orderNumber}</AppText>
                   </View>
-                  <Text style={styles.price}>₹{order.totalAmount}</Text>
+                  <AppText style={styles.price}>₹{order.totalAmount}</AppText>
                 </View>
                 
                 {order.status === 'PICKED_UP' && (
                   <View style={styles.trackBanner}>
                     <Ionicons name="bicycle" size={20} color="#2563EB" />
-                    <Text style={styles.trackText}>Rider is on the way. Tap to track live.</Text>
+                    <AppText style={styles.trackText}>Rider is on the way. Tap to track live.</AppText>
                     <Ionicons name="chevron-forward" size={16} color="#2563EB" />
                   </View>
                 )}

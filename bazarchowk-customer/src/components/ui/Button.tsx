@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -108,7 +109,7 @@ export function Button({
         ) : (
           <>
             {leftIcon}
-            <Text
+            <AppText
               style={[
                 styles.text,
                 { color: variantStyle.text, fontSize: current.fontSize },
@@ -116,7 +117,7 @@ export function Button({
               ]}
             >
               {title}
-            </Text>
+            </AppText>
             {rightIcon}
           </>
         )}

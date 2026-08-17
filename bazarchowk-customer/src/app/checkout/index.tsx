@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -167,23 +168,23 @@ export default function CheckoutScreen() {
 
         {/* ── DELIVERY TYPE TOGGLE ── */}
         <Animated.View entering={FadeInDown.springify().damping(15)} style={styles.section}>
-          <Text style={styles.sectionTitle}>How do you want to receive it?</Text>
+          <AppText style={styles.sectionTitle}>How do you want to receive it?</AppText>
           <View style={styles.toggleRow}>
             <PressableScale
               style={[styles.toggleBtn, deliveryType === 'DELIVERY' && styles.toggleBtnActive]}
               onPress={() => setDeliveryType('DELIVERY')}
             >
               <Ionicons name="bicycle" size={24} color={deliveryType === 'DELIVERY' ? '#FFF' : '#66736B'} />
-              <Text style={[styles.toggleText, deliveryType === 'DELIVERY' && styles.toggleTextActive]}>Home Delivery</Text>
-              <Text style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.85)' }]}>Rider brings to you</Text>
+              <AppText style={[styles.toggleText, deliveryType === 'DELIVERY' && styles.toggleTextActive]}>Home Delivery</AppText>
+              <AppText style={[styles.toggleSub, deliveryType === 'DELIVERY' && { color: 'rgba(255,255,255,0.85)' }]}>Rider brings to you</AppText>
             </PressableScale>
             <PressableScale
               style={[styles.toggleBtn, deliveryType === 'SELF_PICKUP' && styles.toggleBtnActive]}
               onPress={() => setDeliveryType('SELF_PICKUP')}
             >
               <Ionicons name="bag-handle" size={24} color={deliveryType === 'SELF_PICKUP' ? '#FFF' : '#66736B'} />
-              <Text style={[styles.toggleText, deliveryType === 'SELF_PICKUP' && styles.toggleTextActive]}>Self Pickup</Text>
-              <Text style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.85)' }]}>FREE · Pick from shop</Text>
+              <AppText style={[styles.toggleText, deliveryType === 'SELF_PICKUP' && styles.toggleTextActive]}>Self Pickup</AppText>
+              <AppText style={[styles.toggleSub, deliveryType === 'SELF_PICKUP' && { color: 'rgba(255,255,255,0.85)' }]}>FREE · Pick from shop</AppText>
             </PressableScale>
           </View>
         </Animated.View>
@@ -195,9 +196,9 @@ export default function CheckoutScreen() {
               <Ionicons name="storefront" size={24} color="#D97706" />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</Text>
-              {shopInfo?.address && <Text style={styles.pickupAddr}>{shopInfo.address}</Text>}
-              <Text style={styles.pickupHint}>Bring your order ID to the counter.</Text>
+              <AppText style={styles.pickupTitle}>Pickup from: {shopInfo?.name || 'Shop'}</AppText>
+              {shopInfo?.address && <AppText style={styles.pickupAddr}>{shopInfo.address}</AppText>}
+              <AppText style={styles.pickupHint}>Bring your order ID to the counter.</AppText>
             </View>
           </Animated.View>
         )}
@@ -206,14 +207,14 @@ export default function CheckoutScreen() {
         {!isSelfPickup && (
           <Animated.View entering={FadeInUp.springify().damping(15)} style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Delivery Address</Text>
+              <AppText style={styles.sectionTitle}>Delivery Address</AppText>
               <PressableScale onPress={() => router.push('/addresses/new' as any)}>
-                <Text style={styles.addText}>+ Add New</Text>
+                <AppText style={styles.addText}>+ Add New</AppText>
               </PressableScale>
             </View>
             {addresses.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No addresses found. Add one to continue.</Text>
+                <AppText style={styles.emptyText}>No addresses found. Add one to continue.</AppText>
               </View>
             ) : addresses.map(addr => (
               <PressableScale
@@ -228,11 +229,11 @@ export default function CheckoutScreen() {
                 <View style={styles.addressInfo}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name={addr.type === 'HOME' ? 'home' : 'briefcase'} size={14} color="#66736B" />
-                    <Text style={styles.addressType}>{addr.type}</Text>
+                    <AppText style={styles.addressType}>{addr.type}</AppText>
                   </View>
-                  <Text style={styles.addressFull} numberOfLines={2}>
+                  <AppText style={styles.addressFull} numberOfLines={2}>
                     {addr.houseFlat}, {addr.street}, {addr.city}
-                  </Text>
+                  </AppText>
                 </View>
               </PressableScale>
             ))}
@@ -244,10 +245,10 @@ export default function CheckoutScreen() {
           <Animated.View entering={FadeInDown.springify()} style={styles.errorCard}>
             <Ionicons name="warning" size={24} color="#DC2626" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.errorTitle}>Out of Delivery Range</Text>
-              <Text style={styles.errorDesc}>{deliveryError}</Text>
+              <AppText style={styles.errorTitle}>Out of Delivery Range</AppText>
+              <AppText style={styles.errorDesc}>{deliveryError}</AppText>
               <PressableScale onPress={() => setDeliveryType('SELF_PICKUP')} style={styles.switchPickupBtn}>
-                <Text style={styles.switchPickupText}>Switch to Self Pickup →</Text>
+                <AppText style={styles.switchPickupText}>Switch to Self Pickup →</AppText>
               </PressableScale>
             </View>
           </Animated.View>
@@ -255,7 +256,7 @@ export default function CheckoutScreen() {
 
         {/* ── PAYMENT METHOD ── */}
         <Animated.View entering={FadeInDown.delay(100).springify().damping(15)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
+          <AppText style={styles.sectionTitle}>Payment Method</AppText>
 
           <PressableScale
             style={[styles.paymentCard, paymentMethod === 'COD' && styles.paymentCardActive]}
@@ -266,10 +267,10 @@ export default function CheckoutScreen() {
               <Ionicons name="cash" size={24} color={PRIMARY} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>
+              <AppText style={[styles.paymentText, paymentMethod === 'COD' && styles.paymentTextActive]}>
                 {isSelfPickup ? 'Pay at Shop' : 'Cash on Delivery'}
-              </Text>
-              <Text style={styles.paymentSub}>Pay when you {isSelfPickup ? 'collect' : 'receive'} order</Text>
+              </AppText>
+              <AppText style={styles.paymentSub}>Pay when you {isSelfPickup ? 'collect' : 'receive'} order</AppText>
             </View>
             <View style={[styles.radio, paymentMethod === 'COD' && styles.radioActive]}>
               {paymentMethod === 'COD' && <View style={styles.radioInner} />}
@@ -285,8 +286,8 @@ export default function CheckoutScreen() {
               <Ionicons name="card" size={24} color="#4F46E5" />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online</Text>
-              <Text style={styles.paymentSub}>Cards · UPI · Net Banking</Text>
+              <AppText style={[styles.paymentText, paymentMethod === 'RAZORPAY' && styles.paymentTextActive]}>Pay Online</AppText>
+              <AppText style={styles.paymentSub}>Cards · UPI · Net Banking</AppText>
             </View>
             <View style={[styles.radio, paymentMethod === 'RAZORPAY' && styles.radioActive]}>
               {paymentMethod === 'RAZORPAY' && <View style={styles.radioInner} />}
@@ -303,8 +304,8 @@ export default function CheckoutScreen() {
                 <Ionicons name="wallet" size={24} color="#FF8A00" />
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={[styles.paymentText, useWallet && styles.paymentTextActive]}>BazarChowk Wallet</Text>
-                <Text style={styles.paymentSub}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</Text>
+                <AppText style={[styles.paymentText, useWallet && styles.paymentTextActive]}>BazarChowk Wallet</AppText>
+                <AppText style={styles.paymentSub}>Balance: ₹{billDetails.walletBalance.toFixed(2)}</AppText>
               </View>
               <View style={[styles.checkbox, useWallet && styles.checkboxActive]}>
                 {useWallet && <Ionicons name="checkmark" size={16} color="#FFF" />}
@@ -316,7 +317,7 @@ export default function CheckoutScreen() {
         {/* ── BILL DETAILS ── */}
         {billDetails && (
           <Animated.View entering={FadeInDown.delay(200).springify().damping(15)} style={styles.section}>
-            <Text style={styles.sectionTitle}>Bill Details</Text>
+            <AppText style={styles.sectionTitle}>Bill Details</AppText>
             <View style={styles.billCard}>
               <BillRow label="Item Total" value={`₹${(billDetails.itemTotal ?? 0).toFixed(2)}`} />
               {(billDetails.platformFee ?? 0) > 0 && (
@@ -342,11 +343,11 @@ export default function CheckoutScreen() {
       {/* ── BOTTOM BAR ── */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.bottomLabel}>{isSelfPickup ? 'Self Pickup · FREE delivery' : 'Home Delivery'}</Text>
+          <AppText style={styles.bottomLabel}>{isSelfPickup ? 'Self Pickup · FREE delivery' : 'Home Delivery'}</AppText>
           {fetchingBill ? (
             <ActivityIndicator size="small" color={PRIMARY} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
           ) : (
-            <Text style={styles.bottomTotal}>₹{totalToPay.toFixed(2)}</Text>
+            <AppText style={styles.bottomTotal}>₹{totalToPay.toFixed(2)}</AppText>
           )}
         </View>
         <PressableScale
@@ -354,7 +355,7 @@ export default function CheckoutScreen() {
           disabled={!canPlaceOrder || placingOrder}
           onPress={handlePlaceOrder}
         >
-          {placingOrder ? <ActivityIndicator color="#FFF" /> : <Text style={styles.placeBtnText}>Place Order</Text>}
+          {placingOrder ? <ActivityIndicator color="#FFF" /> : <AppText style={styles.placeBtnText}>Place Order</AppText>}
         </PressableScale>
       </View>
     </View>
@@ -364,8 +365,8 @@ export default function CheckoutScreen() {
 function BillRow({ label, value, valueColor, isTotal }: { label: string; value: string; valueColor?: string; isTotal?: boolean }) {
   return (
     <View style={[styles.billRow, isTotal && { marginTop: 4 }]}>
-      <Text style={[styles.billLabel, isTotal && styles.billLabelTotal]}>{label}</Text>
-      <Text style={[styles.billValue, isTotal && styles.billValueTotal, valueColor ? { color: valueColor } : {}]}>{value}</Text>
+      <AppText style={[styles.billLabel, isTotal && styles.billLabelTotal]}>{label}</AppText>
+      <AppText style={[styles.billValue, isTotal && styles.billValueTotal, valueColor ? { color: valueColor } : {}]}>{value}</AppText>
     </View>
   );
 }

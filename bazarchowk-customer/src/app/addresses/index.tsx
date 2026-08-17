@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks';
@@ -32,7 +33,7 @@ export default function AddressesScreen() {
       <View style={styles.root}>
         <Header title="Saved Addresses" showBack={true} />
         <View style={styles.center}>
-          <Text style={{ color: '#EF4444' }}>Failed to load addresses</Text>
+          <AppText style={{ color: '#EF4444' }}>Failed to load addresses</AppText>
         </View>
       </View>
     );
@@ -48,8 +49,8 @@ export default function AddressesScreen() {
             <View style={styles.emptyIconBg}>
               <Ionicons name="location-outline" size={48} color="#00B140" />
             </View>
-            <Text style={styles.emptyText}>No saved addresses found.</Text>
-            <Text style={styles.emptySub}>Add a new address to get started.</Text>
+            <AppText style={styles.emptyText}>No saved addresses found.</AppText>
+            <AppText style={styles.emptySub}>Add a new address to get started.</AppText>
           </Animated.View>
         ) : (
           addresses?.map((address, index) => (
@@ -73,23 +74,23 @@ export default function AddressesScreen() {
                 <View style={styles.addressHeader}>
                   <View style={styles.titleRow}>
                     <Ionicons name={address.isDefault ? "checkmark-circle" : "location-outline"} size={22} color={address.isDefault ? '#00B140' : '#8B9690'} />
-                    <Text style={[styles.addressTitle, { color: address.isDefault ? '#00B140' : '#122018' }]}>{address.title}</Text>
+                    <AppText style={[styles.addressTitle, { color: address.isDefault ? '#00B140' : '#122018' }]}>{address.title}</AppText>
                     {address.isDefault && (
                       <View style={styles.defaultBadge}>
-                        <Text style={styles.defaultText}>Delivery Location</Text>
+                        <AppText style={styles.defaultText}>Delivery Location</AppText>
                       </View>
                     )}
                   </View>
                 </View>
 
                 <View style={styles.addressBody}>
-                  <Text style={styles.addressDetail}>
+                  <AppText style={styles.addressDetail}>
                     {address.addressLine1}
                     {address.addressLine2 ? `, ${address.addressLine2}` : ''}
-                  </Text>
-                  <Text style={styles.addressDetail}>
+                  </AppText>
+                  <AppText style={styles.addressDetail}>
                     {address.city}, {address.state} {address.pincode}
-                  </Text>
+                  </AppText>
                 </View>
 
                 <View style={styles.actionsRow}>
@@ -110,7 +111,7 @@ export default function AddressesScreen() {
       {/* Footer Add Button */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <PressableScale style={styles.addBtn} onPress={() => router.push('/addresses/new')}>
-          <Text style={styles.addBtnText}>+ Add New Address</Text>
+          <AppText style={styles.addBtnText}>+ Add New Address</AppText>
         </PressableScale>
       </View>
     </View>

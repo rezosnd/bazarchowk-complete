@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -35,7 +36,7 @@ export function Header({ title, rightAction, onBack, showBack = true }: HeaderPr
           <View style={styles.backBtnPlaceholder} />
         )}
 
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <AppText style={styles.title} numberOfLines={1}>{title}</AppText>
 
         <View style={styles.rightAction}>
           {rightAction}

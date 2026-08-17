@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -91,8 +92,8 @@ export default function ChatScreen() {
           <Ionicons name="arrow-back" size={24} color="#111827" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>{recipientName}</Text>
-          <Text style={styles.headerSubtitle}>{type === 'SUPPORT' ? 'BazarChowk Support' : 'Live Chat'}</Text>
+          <AppText style={styles.headerTitle}>{recipientName}</AppText>
+          <AppText style={styles.headerSubtitle}>{type === 'SUPPORT' ? 'BazarChowk Support' : 'Live Chat'}</AppText>
         </View>
         <TouchableOpacity style={styles.callButton}>
           <Ionicons name="call" size={20} color="#22c55e" />
@@ -106,16 +107,16 @@ export default function ChatScreen() {
         contentContainerStyle={{ padding: 16, gap: 12 }}
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
       >
-        <Text style={styles.encryptionNotice}>🔒 Messages are secured by end-to-end encryption</Text>
+        <AppText style={styles.encryptionNotice}>🔒 Messages are secured by end-to-end encryption</AppText>
         
         {messages.map((m, idx) => {
           const isMine = m.senderId === currentUserId; 
           return (
             <View key={idx} style={[styles.messageWrapper, isMine ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
               <View style={[styles.messageBubble, isMine ? styles.myBubble : styles.theirBubble]}>
-                <Text style={[styles.messageText, isMine ? styles.myMessageText : styles.theirMessageText]}>
+                <AppText style={[styles.messageText, isMine ? styles.myMessageText : styles.theirMessageText]}>
                   {m.content}
-                </Text>
+                </AppText>
               </View>
             </View>
           );

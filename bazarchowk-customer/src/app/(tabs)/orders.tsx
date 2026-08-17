@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,7 +58,7 @@ export default function OrdersScreen() {
           <View style={styles.emptyIconBg}>
             <Ionicons name="receipt-outline" size={56} color="#8B9690" />
           </View>
-          <Text style={styles.emptyText}>You need to login first</Text>
+          <AppText style={styles.emptyText}>You need to login first</AppText>
         </View>
       </View>
     );
@@ -81,8 +82,8 @@ export default function OrdersScreen() {
               <View style={styles.emptyIconBg}>
                 <Ionicons name="bag-handle-outline" size={48} color={PRIMARY} />
               </View>
-              <Text style={styles.emptyText}>No orders yet</Text>
-              <Text style={styles.emptySub}>Your next local order will appear here.</Text>
+              <AppText style={styles.emptyText}>No orders yet</AppText>
+              <AppText style={styles.emptySub}>Your next local order will appear here.</AppText>
             </Animated.View>
           ) : (
             orders.map((order, index) => {
@@ -99,29 +100,29 @@ export default function OrdersScreen() {
                           <Ionicons name="storefront" size={20} color="#122018" />
                         </View>
                         <View>
-                          <Text style={styles.shopName}>{order.shop?.name || 'Store'}</Text>
-                          <Text style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • {order.items?.length || 1} item{order.items?.length > 1 ? 's' : ''}</Text>
+                          <AppText style={styles.shopName}>{order.shop?.name || 'Store'}</AppText>
+                          <AppText style={styles.orderDate}>{new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • {order.items?.length || 1} item{order.items?.length > 1 ? 's' : ''}</AppText>
                         </View>
                       </View>
                       <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{order.status}</Text>
+                        <AppText style={[styles.statusText, { color: statusStyle.text }]}>{order.status}</AppText>
                       </View>
                     </View>
 
                     <View style={styles.divider} />
 
                     <View style={styles.itemsRow}>
-                      <Text style={styles.itemsText} numberOfLines={2}>
+                      <AppText style={styles.itemsText} numberOfLines={2}>
                         {order.items?.map((item: any) => `${item.quantity} x ${item.productVariant?.product?.name || 'Item'}`).join(', ')}
-                      </Text>
+                      </AppText>
                     </View>
 
                     <View style={styles.divider} />
 
                     <View style={styles.orderFooter}>
-                      <Text style={styles.totalText}>₹{order.totalAmount?.toFixed(2)}</Text>
+                      <AppText style={styles.totalText}>₹{order.totalAmount?.toFixed(2)}</AppText>
                       <View style={styles.viewDetailsWrap}>
-                        <Text style={styles.viewDetailsText}>View Details</Text>
+                        <AppText style={styles.viewDetailsText}>View Details</AppText>
                         <Ionicons name="arrow-forward" size={16} color="#00B140" />
                       </View>
                     </View>

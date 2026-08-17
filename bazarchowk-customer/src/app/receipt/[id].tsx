@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -63,7 +64,7 @@ export default function ReceiptScreen() {
   };
 
   if (loading) return <View style={s.center}><ActivityIndicator size="large" color={PRIMARY} /></View>;
-  if (!order)  return <View style={s.center}><Text style={s.errText}>Order not found</Text></View>;
+  if (!order)  return <View style={s.center}><AppText style={s.errText}>Order not found</AppText></View>;
 
   const isSelfPickup = !order.deliveryAddressId;
   const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: '#66736B', bg: '#EAF8F0', icon: 'information-circle' };
@@ -76,7 +77,7 @@ export default function ReceiptScreen() {
         <PressableScale onPress={() => router.replace('/(tabs)/orders' as any)} style={s.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </PressableScale>
-        <Text style={s.headerTitle}>Receipt</Text>
+        <AppText style={s.headerTitle}>Receipt</AppText>
         <PressableScale onPress={handleShare} style={s.shareBtn}>
           <Ionicons name="share-outline" size={24} color={PRIMARY} />
         </PressableScale>
@@ -89,17 +90,17 @@ export default function ReceiptScreen() {
           <View style={[s.successIcon, { backgroundColor: statusInfo.color }]}>
             <Ionicons name={statusInfo.icon as any} size={32} color="#FFF" />
           </View>
-          <Text style={[s.successStatus, { color: statusInfo.color }]}>{statusInfo.label}</Text>
-          <Text style={s.successOrderNum}>#{order.orderNumber}</Text>
-          <Text style={s.successDate}>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}  ·  {date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</Text>
+          <AppText style={[s.successStatus, { color: statusInfo.color }]}>{statusInfo.label}</AppText>
+          <AppText style={s.successOrderNum}>#{order.orderNumber}</AppText>
+          <AppText style={s.successDate}>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}  ·  {date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</AppText>
         </Animated.View>
 
         {/* ── DELIVERY TYPE BADGE ── */}
         <Animated.View entering={FadeInDown.delay(50).springify().damping(15)} style={[s.deliveryBadge, { backgroundColor: isSelfPickup ? '#F5F3FF' : '#F0FDF4', borderColor: isSelfPickup ? '#DDD6FE' : '#BBF7D0' }]}>
           <Ionicons name={isSelfPickup ? 'bag-handle' : 'bicycle'} size={20} color={isSelfPickup ? '#7C3AED' : PRIMARY} />
-          <Text style={[s.deliveryBadgeText, { color: isSelfPickup ? '#7C3AED' : PRIMARY }]}>
+          <AppText style={[s.deliveryBadgeText, { color: isSelfPickup ? '#7C3AED' : PRIMARY }]}>
             {isSelfPickup ? 'Self Pickup · Collect from shop' : `Home Delivery · ${order.deliveryAddress?.city || 'Your address'}`}
-          </Text>
+          </AppText>
         </Animated.View>
 
         {/* ── SHOP CARD ── */}
@@ -109,21 +110,21 @@ export default function ReceiptScreen() {
               <Ionicons name="storefront" size={24} color={PRIMARY} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={s.shopName}>{order.shop?.name}</Text>
-              {order.shop?.address && <Text style={s.shopAddr} numberOfLines={1}>{order.shop.address}</Text>}
+              <AppText style={s.shopName}>{order.shop?.name}</AppText>
+              {order.shop?.address && <AppText style={s.shopAddr} numberOfLines={1}>{order.shop.address}</AppText>}
             </View>
             <PressableScale
               style={s.trackBtn}
               onPress={() => router.push(`/order/${order.id}` as any)}
             >
-              <Text style={s.trackBtnText}>Track</Text>
+              <AppText style={s.trackBtnText}>Track</AppText>
             </PressableScale>
           </View>
         </Animated.View>
 
         {/* ── ORDER ITEMS ── */}
         <Animated.View entering={FadeInDown.delay(150).springify().damping(15)} style={s.card}>
-          <Text style={s.cardTitle}>Order Items</Text>
+          <AppText style={s.cardTitle}>Order Items</AppText>
           {(order.items || []).map((item: any, idx: number) => {
             const name = item.productVariant?.product?.name || item.productVariant?.name || 'Item';
             const varName = item.productVariant?.name;
@@ -132,14 +133,14 @@ export default function ReceiptScreen() {
             return (
               <View key={item.id || idx} style={[s.itemRow, idx < order.items.length - 1 && s.itemDivider]}>
                 <View style={s.itemQtyBadge}>
-                  <Text style={s.itemQty}>{item.quantity}</Text>
+                  <AppText style={s.itemQty}>{item.quantity}</AppText>
                 </View>
                 <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Text style={s.itemName} numberOfLines={1}>{name}</Text>
-                  {varName && varName !== name && <Text style={s.itemVariant}>{varName}</Text>}
-                  <Text style={s.itemUnit}>₹{unitPrice.toFixed(2)} each</Text>
+                  <AppText style={s.itemName} numberOfLines={1}>{name}</AppText>
+                  {varName && varName !== name && <AppText style={s.itemVariant}>{varName}</AppText>}
+                  <AppText style={s.itemUnit}>₹{unitPrice.toFixed(2)} each</AppText>
                 </View>
-                <Text style={s.itemTotal}>₹{total.toFixed(2)}</Text>
+                <AppText style={s.itemTotal}>₹{total.toFixed(2)}</AppText>
               </View>
             );
           })}
@@ -147,7 +148,7 @@ export default function ReceiptScreen() {
 
         {/* ── BILL BREAKDOWN ── */}
         <Animated.View entering={FadeInDown.delay(200).springify().damping(15)} style={s.card}>
-          <Text style={s.cardTitle}>Bill Details</Text>
+          <AppText style={s.cardTitle}>Bill Details</AppText>
           <BillRow label="Item Total"      value={`₹${(order.subtotal ?? 0).toFixed(2)}`} />
           <BillRow label="Taxes & GST"     value={`₹${(order.taxAmount ?? 0).toFixed(2)}`} />
           <BillRow
@@ -164,7 +165,7 @@ export default function ReceiptScreen() {
 
         {/* ── PAYMENT INFO ── */}
         <Animated.View entering={FadeInDown.delay(250).springify().damping(15)} style={s.card}>
-          <Text style={s.cardTitle}>Payment</Text>
+          <AppText style={s.cardTitle}>Payment</AppText>
           <View style={s.payRow}>
             <View style={s.payIconWrap}>
               <Ionicons
@@ -174,15 +175,15 @@ export default function ReceiptScreen() {
               />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={s.payMethod}>
+              <AppText style={s.payMethod}>
                 {order.paymentMethod === 'COD' ? (isSelfPickup ? 'Pay at Shop' : 'Cash on Delivery') : order.paymentMethod === 'RAZORPAY' ? 'Paid Online' : 'Wallet'}
-              </Text>
-              <Text style={s.payStatus}>Status: {order.paymentStatus}</Text>
+              </AppText>
+              <AppText style={s.payStatus}>Status: {order.paymentStatus}</AppText>
             </View>
             <View style={[s.payStatusBadge, { backgroundColor: order.paymentStatus === 'PAID' ? '#EAF8F0' : '#FEF3C7' }]}>
-              <Text style={[s.payStatusText, { color: order.paymentStatus === 'PAID' ? '#00B140' : '#D97706' }]}>
+              <AppText style={[s.payStatusText, { color: order.paymentStatus === 'PAID' ? '#00B140' : '#D97706' }]}>
                 {order.paymentStatus === 'PAID' ? '✓ PAID' : 'PENDING'}
-              </Text>
+              </AppText>
             </View>
           </View>
         </Animated.View>
@@ -190,10 +191,10 @@ export default function ReceiptScreen() {
         {/* ── SELF PICKUP INSTRUCTIONS ── */}
         {isSelfPickup && (
           <Animated.View entering={FadeInDown.delay(300).springify().damping(15)} style={s.pickupCard}>
-            <Text style={s.pickupCardTitle}>📍 Pickup Instructions</Text>
-            <Text style={s.pickupCardText}>
-              Show this receipt at the <Text style={{ fontWeight: '800' }}>{order.shop?.name}</Text> counter. Quote your order number <Text style={{ fontWeight: '800' }}>#{order.orderNumber}</Text> to collect your items.
-            </Text>
+            <AppText style={s.pickupCardTitle}>📍 Pickup Instructions</AppText>
+            <AppText style={s.pickupCardText}>
+              Show this receipt at the <AppText style={{ fontWeight: '800' }}>{order.shop?.name}</AppText> counter. Quote your order number <AppText style={{ fontWeight: '800' }}>#{order.orderNumber}</AppText> to collect your items.
+            </AppText>
           </Animated.View>
         )}
 
@@ -209,8 +210,8 @@ export default function ReceiptScreen() {
 function BillRow({ label, value, color, isTotal }: { label: string; value: string; color?: string; isTotal?: boolean }) {
   return (
     <View style={[s.billRow, isTotal && { marginTop: 2 }]}>
-      <Text style={[s.billLabel, isTotal && s.billLabelBold]}>{label}</Text>
-      <Text style={[s.billValue, isTotal && s.billValueBold, color ? { color } : {}]}>{value}</Text>
+      <AppText style={[s.billLabel, isTotal && s.billLabelBold]}>{label}</AppText>
+      <AppText style={[s.billValue, isTotal && s.billValueBold, color ? { color } : {}]}>{value}</AppText>
     </View>
   );
 }

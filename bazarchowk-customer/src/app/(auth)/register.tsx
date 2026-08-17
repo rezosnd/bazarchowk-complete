@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -90,21 +91,21 @@ export default function RegisterScreen() {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.headerTitle}>Complete Profile</Text>
-          <Text style={styles.headerSubtitle}>Just one more step to start shopping</Text>
+          <AppText style={styles.headerTitle}>Complete Profile</AppText>
+          <AppText style={styles.headerSubtitle}>Just one more step to start shopping</AppText>
         </LinearGradient>
 
         <View style={[styles.form, { backgroundColor: theme.background }]}>
           {errors.general && (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{errors.general}</Text>
+              <AppText style={styles.errorBannerText}>{errors.general}</AppText>
             </View>
           )}
 
-          <Text style={[styles.formTitle, { color: theme.text }]}>Almost there!</Text>
-          <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
+          <AppText style={[styles.formTitle, { color: theme.text }]}>Almost there!</AppText>
+          <AppText style={[styles.formSubtitle, { color: theme.textSecondary }]}>
             Please verify your details and enter your mobile number.
-          </Text>
+          </AppText>
 
           <View style={{ marginTop: 8 }}>
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -159,12 +160,12 @@ export default function RegisterScreen() {
 
           <View style={styles.footerSpacer} />
 
-          <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+          <AppText style={[styles.termsText, { color: theme.textSecondary }]}>
             By registering, you agree to BazarChowk's{' '}
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>Terms of Service</Text>{' '}
+            <AppText style={{ color: theme.primary, fontWeight: '600' }}>Terms of Service</AppText>{' '}
             and{' '}
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>Privacy Policy</Text>
-          </Text>
+            <AppText style={{ color: theme.primary, fontWeight: '600' }}>Privacy Policy</AppText>
+          </AppText>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

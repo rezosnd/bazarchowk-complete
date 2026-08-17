@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,7 +106,7 @@ export default function NotificationsScreen() {
     if (!notifications.some(n => !n.isRead)) return null;
     return (
       <PressableScale onPress={markAllAsRead} style={styles.clearBtn}>
-        <Text style={styles.clearText}>Mark All Read</Text>
+        <AppText style={styles.clearText}>Mark All Read</AppText>
       </PressableScale>
     );
   };
@@ -130,8 +131,8 @@ export default function NotificationsScreen() {
               <View style={styles.emptyIconWrap}>
                 <Ionicons name="notifications-outline" size={48} color="#00B140" />
               </View>
-              <Text style={styles.emptyText}>You're all caught up!</Text>
-              <Text style={styles.emptySub}>No new notifications right now.</Text>
+              <AppText style={styles.emptyText}>You're all caught up!</AppText>
+              <AppText style={styles.emptySub}>No new notifications right now.</AppText>
             </Animated.View>
           ) : (
             notifications.map((notif, index) => {
@@ -151,16 +152,16 @@ export default function NotificationsScreen() {
                     </View>
                     
                     <View style={styles.content}>
-                      <Text style={[styles.notifTitle, !notif.isRead && styles.textUnread]}>{notif.title}</Text>
-                      <Text style={styles.notifMessage} numberOfLines={3}>{notif.message}</Text>
+                      <AppText style={[styles.notifTitle, !notif.isRead && styles.textUnread]}>{notif.title}</AppText>
+                      <AppText style={styles.notifMessage} numberOfLines={3}>{notif.message}</AppText>
                       
                       {notif.imageUrl && (
                         <Image source={{ uri: notif.imageUrl }} style={styles.richImg} contentFit="cover" />
                       )}
 
-                      <Text style={styles.time}>
+                      <AppText style={styles.time}>
                         {new Date(notif.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </Text>
+                      </AppText>
                     </View>
 
                     {!notif.isRead && <PulsingDot />}

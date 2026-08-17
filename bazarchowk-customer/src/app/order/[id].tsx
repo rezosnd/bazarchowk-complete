@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, Platform, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -144,7 +145,7 @@ export default function OrderTrackingScreen() {
       {isTrackingActive ? (
         Platform.OS === 'web' ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F7FAF8', justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ color: '#6B7280' }}>Map unavailable on web</Text>
+            <AppText style={{ color: '#6B7280' }}>Map unavailable on web</AppText>
           </View>
         ) : (
           <WebView
@@ -207,8 +208,8 @@ export default function OrderTrackingScreen() {
         </TouchableOpacity>
         {isTrackingActive && (
           <View style={styles.etaBadge}>
-            <Text style={styles.etaLabel}>Arriving in</Text>
-            <Text style={styles.etaTime}>{eta}</Text>
+            <AppText style={styles.etaLabel}>Arriving in</AppText>
+            <AppText style={styles.etaTime}>{eta}</AppText>
           </View>
         )}
         <View style={{ width: 48 }} />
@@ -229,10 +230,10 @@ export default function OrderTrackingScreen() {
               <View style={styles.pulseDot} />
             </View>
             <View style={styles.riderInfo}>
-              <Text style={styles.riderName}>{order.rider?.firstName || 'Delivery Partner'}</Text>
-              <Text style={styles.riderVehicle}>{order.rider?.deliveryPartner?.vehicleType || 'Bike'} • {distance} away</Text>
+              <AppText style={styles.riderName}>{order.rider?.firstName || 'Delivery Partner'}</AppText>
+              <AppText style={styles.riderVehicle}>{order.rider?.deliveryPartner?.vehicleType || 'Bike'} • {distance} away</AppText>
               {order.rider?.phone && (
-                <Text style={{ fontSize: 13, color: '#334155', fontWeight: '600', marginTop: 4 }}>{order.rider.phone}</Text>
+                <AppText style={{ fontSize: 13, color: '#334155', fontWeight: '600', marginTop: 4 }}>{order.rider.phone}</AppText>
               )}
             </View>
             <View style={styles.riderActions}>
@@ -255,15 +256,15 @@ export default function OrderTrackingScreen() {
               <Ionicons name="star" size={24} color="#F59E0B" />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.rateTitle}>Rate {order.shop?.name}</Text>
-              <Text style={styles.rateSub}>Share your experience with others</Text>
+              <AppText style={styles.rateTitle}>Rate {order.shop?.name}</AppText>
+              <AppText style={styles.rateSub}>Share your experience with others</AppText>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#8B9690" />
           </TouchableOpacity>
         )}
 
         <ScrollView style={styles.timelineScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sheetTitle}>Track Order #{order.orderNumber}</Text>
+          <AppText style={styles.sheetTitle}>Track Order #{order.orderNumber}</AppText>
           <View style={styles.timeline}>
             {TIMELINE.map((step, index) => {
               const isActive = index <= currentStepIndex;
@@ -279,8 +280,8 @@ export default function OrderTrackingScreen() {
                     )}
                   </View>
                   <View style={styles.timelineContent}>
-                    <Text style={[styles.timelineText, isActive && styles.timelineTextActive]}>{step.label}</Text>
-                    {isCurrent && <Text style={styles.timelineSubText}>Your order is currently in this stage.</Text>}
+                    <AppText style={[styles.timelineText, isActive && styles.timelineTextActive]}>{step.label}</AppText>
+                    {isCurrent && <AppText style={styles.timelineSubText}>Your order is currently in this stage.</AppText>}
                   </View>
                 </View>
               );

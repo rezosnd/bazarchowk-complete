@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { forwardRef, useState } from 'react';
 import {
   StyleSheet,
@@ -38,10 +39,10 @@ export const Input = forwardRef<TextInput, InputProps>(
     return (
       <View style={[styles.container, containerStyle]}>
         {label && (
-          <Text style={[styles.label, { color: theme.text }]}>
+          <AppText style={[styles.label, { color: theme.text }]}>
             {label}
-            {required && <Text style={{ color: '#EF4444' }}> *</Text>}
-          </Text>
+            {required && <AppText style={{ color: '#EF4444' }}> *</AppText>}
+          </AppText>
         )}
 
         <View
@@ -76,8 +77,8 @@ export const Input = forwardRef<TextInput, InputProps>(
           {rightIcon && <TouchableOpacity style={styles.iconRight}>{rightIcon}</TouchableOpacity>}
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
-        {!error && hint && <Text style={[styles.hint, { color: theme.textTertiary }]}>{hint}</Text>}
+        {error && <AppText style={styles.error}>{error}</AppText>}
+        {!error && hint && <AppText style={[styles.hint, { color: theme.textTertiary }]}>{hint}</AppText>}
       </View>
     );
   }

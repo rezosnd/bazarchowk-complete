@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -155,7 +156,7 @@ export default function AddAddressScreen() {
         {Platform.OS === 'web' ? (
            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EAF8F0' }]}>
              <Ionicons name="map-outline" size={48} color="#8B9690" />
-             <Text style={{ color: '#66736B', marginTop: 12 }}>Map unavailable on web</Text>
+             <AppText style={{ color: '#66736B', marginTop: 12 }}>Map unavailable on web</AppText>
            </View>
         ) : (
           <WebView
@@ -228,7 +229,7 @@ export default function AddAddressScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.title}>Confirm Location</Text>
+        <AppText style={styles.title}>Confirm Location</AppText>
       </View>
 
       {/* Floating Locate Me Button */}
@@ -239,7 +240,7 @@ export default function AddAddressScreen() {
           ) : (
              <Ionicons name="locate" size={20} color="#00B140" />
           )}
-          <Text style={styles.locateText}>Use Current Location</Text>
+          <AppText style={styles.locateText}>Use Current Location</AppText>
         </TouchableOpacity>
       </View>
 
@@ -270,8 +271,8 @@ export default function AddAddressScreen() {
                   >
                     <Ionicons name="location-outline" size={20} color="#66736B" />
                     <View style={{ marginLeft: 12, flex: 1 }}>
-                      <Text style={styles.suggestionTitle} numberOfLines={1}>{item.text}</Text>
-                      <Text style={styles.suggestionSub} numberOfLines={1}>{item.place_name}</Text>
+                      <AppText style={styles.suggestionTitle} numberOfLines={1}>{item.text}</AppText>
+                      <AppText style={styles.suggestionSub} numberOfLines={1}>{item.place_name}</AppText>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -280,7 +281,7 @@ export default function AddAddressScreen() {
           </View>
 
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Address Details</Text>
+            <AppText style={styles.sectionTitle}>Address Details</AppText>
             
             <View style={styles.chipRow}>
               {['Home', 'Office', 'Other'].map(type => (
@@ -290,7 +291,7 @@ export default function AddAddressScreen() {
                   onPress={() => setTitle(type)}
                 >
                   <Ionicons name={type === 'Home' ? 'home' : type === 'Office' ? 'briefcase' : 'location'} size={14} color={title === type ? '#00B140' : '#66736B'} />
-                  <Text style={[styles.chipText, title === type && styles.chipTextActive]}>{type}</Text>
+                  <AppText style={[styles.chipText, title === type && styles.chipTextActive]}>{type}</AppText>
                 </TouchableOpacity>
               ))}
             </View>

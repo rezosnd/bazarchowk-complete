@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState } from 'react';
 import {
   ScrollView, StyleSheet, Text, View,
@@ -60,9 +61,9 @@ export default function CategoriesScreen() {
               transition={200}
             />
           </View>
-          <Text style={styles.categoryName} numberOfLines={2}>
+          <AppText style={styles.categoryName} numberOfLines={2}>
             {item.name}
-          </Text>
+          </AppText>
         </PressableScale>
       </Animated.View>
     );
@@ -101,13 +102,13 @@ export default function CategoriesScreen() {
         {isLoading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={styles.loadingText}>Loading fresh categories...</Text>
+            <AppText style={styles.loadingText}>Loading fresh categories...</AppText>
           </View>
         ) : filtered.length === 0 ? (
           <View style={styles.centered}>
             <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/7486/7486754.png' }} style={{ width: 100, height: 100, opacity: 0.5 }} />
-            <Text style={styles.emptyTitle}>No matching categories</Text>
-            <Text style={styles.emptyText}>Try searching for something else</Text>
+            <AppText style={styles.emptyTitle}>No matching categories</AppText>
+            <AppText style={styles.emptyText}>Try searching for something else</AppText>
           </View>
         ) : (
           <View style={styles.categoriesGrid}>

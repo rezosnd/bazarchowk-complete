@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,18 +59,18 @@ export default function CompleteProfileScreen() {
           <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center', marginBottom: 24, padding: 20 }}>
             <Ionicons name="call" size={40} color={EMERALD} />
           </View>
-          <Text style={{ fontSize: 28, fontWeight: '900', color: '#111827', textAlign: 'center' }}>
+          <AppText style={{ fontSize: 28, fontWeight: '900', color: '#111827', textAlign: 'center' }}>
             Action Required
-          </Text>
-          <Text style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>
+          </AppText>
+          <AppText style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', marginTop: 12, lineHeight: 24 }}>
             For security and delivery purposes, you must attach a verified mobile number to your account before entering BazarChowk.
-          </Text>
+          </AppText>
         </View>
 
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 8, marginLeft: 4 }}>
+          <AppText style={{ fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 8, marginLeft: 4 }}>
             Mobile Number
-          </Text>
+          </AppText>
           <View style={{ 
             flexDirection: 'row', 
             alignItems: 'center', 
@@ -80,7 +81,7 @@ export default function CompleteProfileScreen() {
             height: 60,
             backgroundColor: '#F9FAFB'
           }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#9CA3AF', marginRight: 12 }}>+91</Text>
+            <AppText style={{ fontSize: 18, fontWeight: '700', color: '#9CA3AF', marginRight: 12 }}>+91</AppText>
             <View style={{ width: 1, height: 24, backgroundColor: '#E5E7EB', marginRight: 12 }} />
             <TextInput
               style={{ flex: 1, fontSize: 18, fontWeight: '700', color: '#111827' }}
@@ -95,7 +96,7 @@ export default function CompleteProfileScreen() {
               }}
             />
           </View>
-          {error ? <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600', marginTop: 8, marginLeft: 4 }}>{error}</Text> : null}
+          {error ? <AppText style={{ color: '#EF4444', fontSize: 12, fontWeight: '600', marginTop: 8, marginLeft: 4 }}>{error}</AppText> : null}
         </View>
 
         <TouchableOpacity 
@@ -117,7 +118,7 @@ export default function CompleteProfileScreen() {
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Save & Continue</Text>
+            <AppText style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Save & Continue</AppText>
           )}
         </TouchableOpacity>
 

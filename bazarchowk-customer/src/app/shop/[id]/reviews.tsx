@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -77,32 +78,32 @@ export default function ShopReviewsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shop Ratings & Reviews</Text>
+        <AppText style={styles.headerTitle}>Shop Ratings & Reviews</AppText>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Summary */}
         <View style={styles.summaryBox}>
-          <Text style={styles.avgRating}>{data?.averageRating?.toFixed(1) || '0.0'}</Text>
+          <AppText style={styles.avgRating}>{data?.averageRating?.toFixed(1) || '0.0'}</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
             {[...Array(5)].map((_, i) => (
               <Ionicons key={i} name={i < Math.round(data?.averageRating || 0) ? "star" : "star-outline"} size={20} color="#F59E0B" />
             ))}
           </View>
-          <Text style={styles.totalReviews}>Based on {data?.totalReviews || 0} reviews</Text>
+          <AppText style={styles.totalReviews}>Based on {data?.totalReviews || 0} reviews</AppText>
         </View>
 
         {/* Post Review Form */}
         {submitted ? (
           <View style={[styles.formBox, { alignItems: 'center' }]}>
             <Ionicons name="checkmark-circle" size={48} color="#00B140" />
-            <Text style={[styles.formTitle, { marginTop: 12 }]}>Review Posted! 🎉</Text>
-            <Text style={{ color: '#66736B', textAlign: 'center' }}>Thank you for your feedback on this shop.</Text>
+            <AppText style={[styles.formTitle, { marginTop: 12 }]}>Review Posted! 🎉</AppText>
+            <AppText style={{ color: '#66736B', textAlign: 'center' }}>Thank you for your feedback on this shop.</AppText>
           </View>
         ) : (
           <View style={styles.formBox}>
-            <Text style={styles.formTitle}>Write a Review for this Shop</Text>
+            <AppText style={styles.formTitle}>Write a Review for this Shop</AppText>
             <View style={styles.starSelectRow}>
               {[1, 2, 3, 4, 5].map((num) => (
                 <TouchableOpacity key={num} onPress={() => setRating(num)} style={{ padding: 4 }}>
@@ -120,34 +121,34 @@ export default function ShopReviewsScreen() {
               onChangeText={setComment}
             />
             <TouchableOpacity style={styles.submitBtn} onPress={submitReview} disabled={submitting}>
-              {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Post Review</Text>}
+              {submitting ? <ActivityIndicator color="#FFF" /> : <AppText style={styles.submitBtnText}>Post Review</AppText>}
             </TouchableOpacity>
           </View>
         )}
 
         {/* Review List */}
-        <Text style={styles.listTitle}>All Shop Reviews</Text>
+        <AppText style={styles.listTitle}>All Shop Reviews</AppText>
         {data?.reviews?.length === 0 ? (
-          <Text style={{ color: '#66736B', textAlign: 'center', marginTop: 32 }}>No reviews yet for this shop.</Text>
+          <AppText style={{ color: '#66736B', textAlign: 'center', marginTop: 32 }}>No reviews yet for this shop.</AppText>
         ) : (
           data?.reviews?.map((review: any) => (
             <View key={review.id} style={styles.reviewCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <View style={styles.reviewAvatar}>
-                  <Text style={styles.reviewAvatarText}>{review.user?.firstName?.[0] || 'A'}</Text>
+                  <AppText style={styles.reviewAvatarText}>{review.user?.firstName?.[0] || 'A'}</AppText>
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.reviewName}>{review.user?.firstName} {review.user?.lastName}</Text>
+                  <AppText style={styles.reviewName}>{review.user?.firstName} {review.user?.lastName}</AppText>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                     {[...Array(5)].map((_, i) => (
                       <Ionicons key={i} name={i < review.rating ? "star" : "star-outline"} size={14} color="#F59E0B" />
                     ))}
                   </View>
                 </View>
-                <Text style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                <AppText style={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</AppText>
               </View>
               {review.comment && (
-                <Text style={styles.reviewComment}>{review.comment}</Text>
+                <AppText style={styles.reviewComment}>{review.comment}</AppText>
               )}
             </View>
           ))

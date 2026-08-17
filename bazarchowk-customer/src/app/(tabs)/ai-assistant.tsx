@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,8 +33,8 @@ export default function AIAssistant() {
         <Animated.View style={[styles.circle, { backgroundColor: theme.primarySurface, transform: [{ scale: pulseAnim }] }]}>
           <Ionicons name="sparkles" size={48} color={theme.primary} />
         </Animated.View>
-        <Text style={[styles.title, { color: theme.text }]}>BazarChowk AI</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>We are training our AI to serve you better. Coming soon!</Text>
+        <AppText style={[styles.title, { color: theme.text }]}>BazarChowk AI</AppText>
+        <AppText style={[styles.subtitle, { color: theme.textSecondary }]}>We are training our AI to serve you better. Coming soon!</AppText>
       </View>
     </View>
   );

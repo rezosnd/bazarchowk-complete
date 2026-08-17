@@ -1,3 +1,4 @@
+import { Text as AppText } from '@/components/TranslatedText';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,7 +39,7 @@ export default function MyReviewsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#122018" />
         </TouchableOpacity>
-        <Text style={styles.title}>My Reviews</Text>
+        <AppText style={styles.title}>My Reviews</AppText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -46,8 +47,8 @@ export default function MyReviewsScreen() {
         {reviews.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="star-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No reviews written</Text>
-            <Text style={styles.emptySub}>You haven't reviewed any shops or products yet.</Text>
+            <AppText style={styles.emptyText}>No reviews written</AppText>
+            <AppText style={styles.emptySub}>You haven't reviewed any shops or products yet.</AppText>
           </View>
         ) : (
           reviews.map((review: any) => {
@@ -68,10 +69,10 @@ export default function MyReviewsScreen() {
                     </View>
                   )}
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.targetType}>{isProduct ? 'Product Review' : 'Shop Review'}</Text>
-                    <Text style={styles.targetName} numberOfLines={1}>{targetName}</Text>
+                    <AppText style={styles.targetType}>{isProduct ? 'Product Review' : 'Shop Review'}</AppText>
+                    <AppText style={styles.targetName} numberOfLines={1}>{targetName}</AppText>
                   </View>
-                  <Text style={styles.date}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                  <AppText style={styles.date}>{new Date(review.createdAt).toLocaleDateString()}</AppText>
                 </View>
 
                 <View style={styles.divider} />
@@ -80,11 +81,11 @@ export default function MyReviewsScreen() {
                   {[...Array(5)].map((_, i) => (
                     <Ionicons key={i} name={i < review.rating ? "star" : "star-outline"} size={16} color="#F59E0B" />
                   ))}
-                  <Text style={styles.ratingText}>{review.rating}.0</Text>
+                  <AppText style={styles.ratingText}>{review.rating}.0</AppText>
                 </View>
                 
                 {review.comment && (
-                  <Text style={styles.comment}>{review.comment}</Text>
+                  <AppText style={styles.comment}>{review.comment}</AppText>
                 )}
               </View>
             );
